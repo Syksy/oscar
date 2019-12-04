@@ -1,0 +1,2 @@
+useDynLib(blasso, .registration=TRUE)
+export("testblasso_f")

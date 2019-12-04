@@ -1,0 +1,10 @@
+C_OBJS = blassoc.o
+FT_OBJS = blassof.o
+
+all:
+	@$(MAKE) $(SHLIB)
+	@rm -f *.mod *.o
+
+$(SHLIB): $(FT_OBJS) $(C_OBJS)
+
+blassoc.c: blassof.o
