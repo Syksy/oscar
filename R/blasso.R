@@ -17,6 +17,7 @@ blassomat_f <- function(x){
 	else{
 		ncol <- ncol(x)
 		nrow <- nrow(x)
-		# .Call(c_blassomat_f, as.double(x), as.integer(ncol), as.integer(nrow)
+		# .Call(c_blassomat_f, as.double(x), as.integer(ncol), as.integer(nrow))
 	}
 }
+
