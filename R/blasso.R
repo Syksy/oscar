@@ -11,3 +11,12 @@ testblasso_f <- function(x){
 	.Call(c_testblasso_f, x) # Calculate sum of vector values
 }
 
+#' Wrap up matrix to Fortran
+blassomat_f <- function(x){
+	if(!is.matrix(x)) stop("Function argument 'x' should be of 'matrix' class")
+	else{
+		ncol <- ncol(x)
+		nrow <- nrow(x)
+		# .Call(c_blassomat_f, as.double(x), as.integer(ncol), as.integer(nrow)
+	}
+}
