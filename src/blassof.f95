@@ -31,6 +31,7 @@ contains
         integer                                         	:: i,j,ind	!Internal count
 	real(kind = c_double), dimension(nrow,ncol)		:: xmat 	!Matrix inside Fortran 
  
+ 	! Populate the matrix xmat
         ind = 0
         DO i = 1, nrow
           DO j = 1, ncol
