@@ -22,6 +22,7 @@ contains
  
     end subroutine testblasso
  
+    ! Subroutine testing for computing column averages for an input matrix from R
     subroutine blassomat(x, nrow, ncol, res) bind(C, name = "blassomat_f_")
  
         integer(kind = c_int), intent(in), value		:: nrow 	!Number of rows in x
@@ -31,14 +32,20 @@ contains
         integer                                         	:: i,j,ind	!Internal count
 	real(kind = c_double), dimension(nrow,ncol)		:: xmat 	!Matrix inside Fortran 
  
+ 	write(*,*) 'Function starts'
+ 	write(*,*) nrow, ncol
+ 	write(*,*) x
+ 
  	! Populate the matrix xmat
         ind = 0
-        DO i = 1, nrow
-          DO j = 1, ncol
+	DO j = 1, ncol
+          DO i = 1, nrow
             ind = ind +1
             xmat(i,j) = x(ind)
           END DO
         END DO
+
+ 	write(*,*) 'Matrix populated'
 
 	! Compute column averages as an example of a matrix operation
         res = 0.0_c_double
@@ -49,6 +56,8 @@ contains
 	  res(j) = res(j) / nrow
 	END DO
  
+  	write(*,*) 'End of Fortran subroutine'
+
     end subroutine blassomat
   
 end module blasso

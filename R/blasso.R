@@ -14,9 +14,13 @@ testblasso_f <- function(x){
 #' Wrap up matrix to Fortran
 blassomat_f <- function(x){
 	if(!is.matrix(x)) stop("Function argument 'x' should be of 'matrix' class")
+	if(!is.double(x)) { storage.mode(x) <- 'double' }	
 	else{
 		ncol <- ncol(x)
 		nrow <- nrow(x)
+		if(!is.integer(ncol)) { storage.mode(ncol) <- 'integer' }
+		if(!is.integer(nrow)) { storage.mode(nrow) <- 'integer' }
+		print(paste("R: nrow:", nrow, "& ncol:", ncol))
 		.Call(c_blassomat_f, as.double(x), as.integer(nrow), as.integer(ncol))
 	}
 }
