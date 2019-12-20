@@ -26,10 +26,10 @@ blasso_basic <- function(X,Y,K,C,problem,lambda,user_nk){
   if(!is.matrix(K)) stop("Kit matrix 'K' should be of 'matrix' class.")
   if(!is.matrix(C)) stop("Kit cost matrix 'C' should be of 'matrix' class.")
   
-  if(problem !%in% c(1,2)){stop("Objective function 'problem' should be an integer 1 (for L1) or 2 (for L0).")  }
+  if(!(problem %in% c(1,2))){stop("Objective function 'problem' should be an integer 1 (for L1) or 2 (for L0).")  }
   if(user_nk <0){stop("Number of nonzero elements in L0 'user_nk' should be non-negative")}
   
-  ## HUOM! Miten user_nk yläraja? Tarvitaanko? Miten se perusversio valikoi, piirteittäin vai kiteittäin.
+  ## HUOM! Miten user_nk ylÃ¤raja? Tarvitaanko? Miten se perusversio valikoi, piirteittÃ¤in vai kiteittÃ¤in.
   
   #
   nft <- ncol(X)      # Number of features
