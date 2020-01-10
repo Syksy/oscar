@@ -70,7 +70,7 @@ contains
 	integer(kind = c_int), intent(in), dimension(xnrow)		:: ytime	!Integer of follow-up times (presumably in full days/months/etc)
         real(kind = c_double), intent(in), dimension(xnrow*xncol)	:: x    	!Vector of data values
         integer(kind = c_int), intent(in), dimension(knrow*kncol) 	:: k    	!Vector of indicator matrix values
-        real(kind = c_double), intent(in), dimension(xncol)		:: costvec    	!Vector of data values
+        real(kind = c_double), intent(in), dimension(kncol)		:: costvec    	!Vector of data values
 	! Helper variables, i.e. populating x and k matrices
         integer(kind = c_int), intent(in), value			:: xnrow 	!Number of rows in data matrix X
         integer(kind = c_int), intent(in), value			:: xncol 	!Number of cols in data matrix X
