@@ -50,13 +50,18 @@ blasso_basic <- function(X,Y,K,C,problem,lambda,user_nk){
     stop(paste("Number of kit costs (",nrow(C),") is not equal to number of kits (",nkits,"). Check that correct kits are included."))
   }
   
-  
+    ## Check that event is 0/1. Check that Y has time in column 1 and event in column 2.
+  #event01 <- Y[,2] %in% c(0,1)
+
   if(!is.double(X)) { storage.mode(X) <- 'double' }	
   
   else{
     if(!is.integer(nft)) { storage.mode(nft) <- 'integer' }
     if(!is.integer(nrecord)) { storage.mode(nrecord) <- 'integer' }
-    print(paste("R: nrow:", nrow, "& ncol:", ncol))
-    .Call(c_blassomat_f, as.double(X), as.integer(nrecord), as.integer(nft))
+    print(paste("R: nrow:", nrecord, "& ncol:", nft))
+    
+    ## HUOM! Matriisit/ncol/nrow varmistettava oikein päin!
+    .Call(c_blassocoxfit_f, as.double(Y[,2]),as.double(Y[,1]),as.double(X), as.integer(nrecord), as.integer(nft),
+          as.double(K), as.double(nkits),as.double(nft),as.double(C))
   }
 }
