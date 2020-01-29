@@ -50,18 +50,31 @@ blasso_basic <- function(X,Y,K,C,problem,lambda,user_nk){
     stop(paste("Number of kit costs (",nrow(C),") is not equal to number of kits (",nkits,"). Check that correct kits are included."))
   }
   
-    ## Check that event is 0/1. Check that Y has time in column 1 and event in column 2.
-  #event01 <- Y[,2] %in% c(0,1)
+## Check that event is 0/1.
+  if(!all(Y[,2] %in% c(0,1))){
+    stop(paste("It seems that in the second column of the response matrix (Y) there is an event that is not 0 or 1. Check that the events are either 0 or 1.\n
+               Additionally, check that the event is in the seconf column of response matrix."))
+  }
 
   if(!is.double(X)) { storage.mode(X) <- 'double' }	
+  if(!is.double(Y)) { storage.mode(X) <- 'double' }	
+  if(!is.double(K)) { storage.mode(X) <- 'double' }	
+  if(!is.double(C)) { storage.mode(X) <- 'double' }
   
   else{
     if(!is.integer(nft)) { storage.mode(nft) <- 'integer' }
     if(!is.integer(nrecord)) { storage.mode(nrecord) <- 'integer' }
-    print(paste("R: nrow:", nrecord, "& ncol:", nft))
+    if(!is.integer(nkits)) { storage.mode(nkits) <- 'integer' }
+   
+    print(paste("X: nrow:", nrecord, "& ncol:", nft))
     
     ## HUOM! Matriisit/ncol/nrow varmistettava oikein päin!
-    .Call(c_blassocoxfit_f, as.double(Y[,2]),as.double(Y[,1]),as.double(X), as.integer(nrecord), as.integer(nft),
+    result <-.Call(c_blassocoxfit_f, as.double(Y[,2]),as.double(Y[,1]),as.double(X), as.integer(nrecord), as.integer(nft),
           as.double(K), as.double(nkits),as.double(nft),as.double(C))
+  }
+  if(exists(result)){
+    return(result)
+  }else{
+    stop(paste("Result was not obtained."))
   }
 }
