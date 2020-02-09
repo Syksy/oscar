@@ -56,10 +56,22 @@ blasso_basic <- function(X,Y,K,C,problem,lambda,user_nk){
                Additionally, check that the event is in the seconf column of response matrix."))
   }
 
-  if(!is.double(X)) { storage.mode(X) <- 'double' }	
-  if(!is.double(Y)) { storage.mode(X) <- 'double' }	
-  if(!is.double(K)) { storage.mode(X) <- 'double' }	
-  if(!is.double(C)) { storage.mode(X) <- 'double' }
+  ## Make X and K into vectors (order: feature 1 all obs, feature 2 all obs, etc)
+  inX <- as.vector(X)  # When making a vector from a matrix, it is done columnwise.
+  inK <- as.vector(K)
+  
+  ## Check dimension of X and K
+  if(length(inX)!= nft*nrecord){
+    stop(paste("Length of vector X, made from the matrix X, differs from the actual amount of datapoints (nrow(X)*ncol(X))"))
+  }
+  if(length(inK)!= nft*nkits){
+    stop(paste("Length of vector K, made from the matrix K, differs from the actual amount of datapoints (nrow(K)*ncol(K))"))
+  }
+  
+  if(!is.double(inX)) { storage.mode(inX) <- 'double' }	
+  if(!is.double(Y)) { storage.mode(Y) <- 'double' }	
+  if(!is.double(inK)) { storage.mode(inK) <- 'double' }	
+  if(!is.double(C)) { storage.mode(C) <- 'double' }
   
   else{
     if(!is.integer(nft)) { storage.mode(nft) <- 'integer' }
@@ -68,9 +80,9 @@ blasso_basic <- function(X,Y,K,C,problem,lambda,user_nk){
    
     print(paste("X: nrow:", nrecord, "& ncol:", nft))
     
-    ## HUOM! Matriisit/ncol/nrow varmistettava oikein päin!
-    result <-.Call(c_blassocoxfit_f, as.double(Y[,2]),as.double(Y[,1]),as.double(X), as.integer(nrecord), as.integer(nft),
-          as.double(K), as.double(nkits),as.double(nft),as.double(C))
+    ## HUOM! Pitäisikö C pyytää alkujaankin vektorina?
+    result <- .Call(c_blassocoxfit_f,as.integer(nft),as.integer(nrecord),as.integer(nkits),as.double(inX),c(as.double(Y[,1]),as.double(Y[,2])),
+          as.double(inK),as.double(as.vector(C)),problem,lambda,user_nk)
   }
   if(exists(result)){
     return(result)
