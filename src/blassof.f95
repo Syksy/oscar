@@ -81,7 +81,7 @@ contains
 	integer(kind = c_int), dimension(knrow,kncol)			:: kmat		!Indicator matrix inside Fortran 
         integer                                         		:: i,j,ind	!Internal variables
 	! Output back to C and R
-        real(kind = c_double), intent(out), dimension(ncol)     	:: beta  	!Output variable
+        real(kind = c_double), intent(out), dimension(xncol)     	:: beta  	!Output variable
  
  	write(*,*) 'Function starts'
  	!write(*,*) nrow, ncol
