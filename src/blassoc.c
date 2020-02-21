@@ -11,7 +11,10 @@ void F77_NAME(blassomat_f)(double *x, int nrow, int ncol, double *res);
 // Actual fitting function for budget-aware LASSO (Cox regression)
 void F77_NAME(blassocoxfit_f)(int *yevent, int *ytime, double *x, int xnrow, int xncol, int *k, int knrow, int kncol, double *costvec, double *beta);
 // Wrapper for Kaisa's DBDC COX optimization subroutine
-void F77_NAME(coxdbdc_loop_kits_f)(double *beta_for_k, double *f_for_k, double *in_vX, int *in_vY, int *in_vK, double *in_vC, double *CPUtime, int nft, int nrecords, int nkits, int iprint, int start);
+void F77_NAME(coxdbdc_loop_kits_f)(int nft, int nrecords, int nkits, double *in_vX, int *in_vY, double *in_vC, int *in_vK, double *f_for_k, double *beta_for_k, int iprint, int start);
+// Wrapper testing
+// extern SEXP c_coxdbdc_test_f(SEXP nf, SEXP nr, SEXP nk, SEXP in_vX, SEXP in_vY, SEXP in_vK, SEXP in_vC){
+void F77_NAME(coxdbdc_test_f)(int nft, int nrecords, int nkits, double *in_vX, int *in_vY, double *in_vC, int *in_vK, double *f_for_k, double *beta_for_k, int start, int iprint);
 
 // Define the C wrapper function that calls Fortran
 extern SEXP c_testblasso_f(SEXP x){
@@ -78,17 +81,81 @@ extern SEXP c_coxdbdc_loop_kits_f(SEXP nf, SEXP nr, SEXP nk, SEXP in_vX, SEXP in
 	const int iprint = asInteger(printPar);
 	const int start = asInteger(startPar); // Starting conditions
 
+	// Integer constants
+	Rprintf("nft: %i , nrecords: %i , nkits: %i\n", nft, nrecords, nkits);
+	Rprintf("start: %i , iprint: %i \n", start, iprint);
+	Rprintf("\n\n");
+
+	// Check first element of all matrices
+	Rprintf("in_vX[1:3]: %f %f %f \n", REAL(in_vX)[0], REAL(in_vX)[1], REAL(in_vX)[2]);
+	Rprintf("in_vY[1:3]: %i %i %i \n", INTEGER(in_vY)[0], INTEGER(in_vY)[1], INTEGER(in_vY)[2]);
+	Rprintf("in_vK[1:3]: %i %i %i \n", INTEGER(in_vK)[0], INTEGER(in_vK)[1], INTEGER(in_vK)[2]);
+	Rprintf("in_vC[1:3]: %f %f %f \n", REAL(in_vC)[0], REAL(in_vC)[1], REAL(in_vC)[2]);
+	Rprintf("\n\n");
+
 	Rprintf("Preparing output variables... \n");
 	SEXP f_for_k; // Objective function values at each k
 	SEXP beta_for_k; // Beta values for each k
-	SEXP CPUtime; // Computational time
+	//SEXP CPUtime; // Computational time
 	Rprintf("Reserving memory for output variables... \n");
 	PROTECT(f_for_k = allocVector(REALSXP, nkits));
 	PROTECT(beta_for_k = allocVector(REALSXP, nft*nkits));
-	PROTECT(CPUtime = allocVector(REALSXP, 1));
+	//PROTECT(CPUtime = allocVector(REALSXP, 1));
+
+    //       SUBROUTINE coxdbdc_loop_kits(nft, nrecord, nkits, in_vX, in_vY, in_vC, in_vK, &
+    //       	& f_for_k, beta_for_k, CPUTime, iprint, start) &
+    //       	& BIND(C, name = "coxdbdc_loop_kits_f_")
 
 	Rprintf("Calling Fortran DBDC... \n");
-	F77_CALL(coxdbdc_loop_kits_f)(REAL(beta_for_k), REAL(f_for_k), REAL(in_vX), INTEGER(in_vY), INTEGER(in_vK), REAL(in_vC), REAL(CPUtime), nft, nrecords, nkits, iprint, start);
+	//F77_CALL(coxdbdc_loop_kits_f)(nft, nrecords, nkits, REAL(in_vX), INTEGER(in_vY), REAL(in_vC), INTEGER(in_vK), REAL(f_for_k), REAL(beta_for_k), REAL(CPUtime), iprint, start);
+	F77_CALL(coxdbdc_loop_kits_f)(nft, nrecords, nkits, REAL(in_vX), INTEGER(in_vY), REAL(in_vC), INTEGER(in_vK), REAL(f_for_k), REAL(beta_for_k), iprint, start);
+
+	Rprintf("Wrap up and return output variables... \n");
+	UNPROTECT(1);
+	return(beta_for_k);
+}
+
+
+// C wrapper function
+extern SEXP c_coxdbdc_test_f(SEXP nf, SEXP nr, SEXP nk, SEXP in_vX, SEXP in_vY, SEXP in_vK, SEXP in_vC, SEXP startPar, SEXP printPar){
+
+	Rprintf("Defining data constants... \n");
+	// Data description
+	const int nft = asInteger(nf); // Features, i.e. columns in data
+	//Rprintf("1... \n");
+	const int nrecords = asInteger(nr); // Records, i.e. rows in data
+	//Rprintf("2... \n");
+	const int nkits = asInteger(nk); // Kits, i.e. how many feature-structuring kits are included
+	//Rprintf("3... \n");
+	// Run parameters
+	const int iprint = asInteger(printPar);
+	const int start = asInteger(startPar); // Starting conditions
+
+	// Integer constants
+	Rprintf("nft: %i , nrecords: %i , nkits: %i\n", nft, nrecords, nkits);
+	Rprintf("start: %i , iprint: %i \n", start, iprint);
+	Rprintf("\n\n");
+
+	// Check first element of all matrices
+	Rprintf("in_vX[1:3]: %f %f %f \n", REAL(in_vX)[0], REAL(in_vX)[1], REAL(in_vX)[2]);
+	Rprintf("in_vY[1:3]: %i %i %i \n", INTEGER(in_vY)[0], INTEGER(in_vY)[1], INTEGER(in_vY)[2]);
+	Rprintf("in_vK[1:3]: %i %i %i \n", INTEGER(in_vK)[0], INTEGER(in_vK)[1], INTEGER(in_vK)[2]);
+	Rprintf("in_vC[1:3]: %f %f %f \n", REAL(in_vC)[0], REAL(in_vC)[1], REAL(in_vC)[2]);
+	Rprintf("\n\n");
+
+	Rprintf("Preparing output variables... \n");
+	SEXP f_for_k; // Objective function values at each k
+	SEXP beta_for_k; // Beta values for each k
+	Rprintf("Reserving memory for output variables... \n");
+	PROTECT(f_for_k = allocVector(REALSXP, nkits));
+	PROTECT(beta_for_k = allocVector(REALSXP, nft*nkits));
+
+    //       SUBROUTINE coxdbdc_loop_kits(nft, nrecord, nkits, in_vX, in_vY, in_vC, in_vK, &
+    //       	& f_for_k, beta_for_k, CPUTime, iprint, start) &
+    //       	& BIND(C, name = "coxdbdc_loop_kits_f_")
+
+	Rprintf("Calling Fortran DBDC... \n");
+	F77_CALL(coxdbdc_test_f)(nft, nrecords, nkits, REAL(in_vX), INTEGER(in_vY), REAL(in_vC), INTEGER(in_vK), REAL(f_for_k), REAL(beta_for_k), start, iprint);
 
 	Rprintf("Wrap up and return output variables... \n");
 	UNPROTECT(1);
@@ -101,6 +168,7 @@ static const R_CallMethodDef CallEntries[] = {
   {"c_blassomat_f",	(DL_FUNC) &c_blassomat_f,		1},
   {"c_blassocoxfit_f", (DL_FUNC) &c_blassocoxfit_f,	1},
   {"c_coxdbdc_loop_kits_f",	(DL_FUNC) &c_coxdbdc_loop_kits_f,	1},
+  {"c_coxdbdc_test_f",	(DL_FUNC) &c_coxdbdc_test_f,	1},
   {NULL,				NULL,						0}
 };
 

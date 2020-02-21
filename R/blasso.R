@@ -44,8 +44,8 @@ dbdc <- function(
 	y,	# two-column survival vector(s) Y (time, event)
 	k, 	# kit matric K
 	c, 	# cost vector c
-	start = 1,	# Start control parameter
-	print = 1,	# iprint control parameter
+	startPar = 1,	# Start control parameter
+	printPar = 1,	# iprint control parameter
 	... 	#
 ){
 	nr <- nrow(x)
@@ -56,5 +56,21 @@ dbdc <- function(
 	# extern SEXP c_coxdbdc_loop_kits_f(SEXP nf, SEXP nr, SEXP nk, SEXP in_vX, SEXP in_vY, SEXP in_vK, SEXP in_vC, SEXP startPar, SEXP printPar){
 	# ...
 	# F77_CALL(coxdbdc_loop_kits_f)(REAL(beta_for_k), REAL(f_for_k), REAL(in_vX), INTEGER(in_vY), INTEGER(in_vK), REAL(in_vC), REAL(CPUtime), nft, nrecords, nkits, iprint, start);
-	.Call(c_coxdbdc_loop_kits_f, as.integer(nc), as.integer(nr), as.integer(nk), as.double(x), as.integer(y), as.integer(k), as.double(c), as.integer(start), as.integer(print))
+	.Call(c_coxdbdc_loop_kits_f, as.integer(nc), as.integer(nr), as.integer(nk), as.double(x), as.integer(y), as.integer(k), as.double(c), as.integer(startPar), as.integer(printPar))
+}
+
+test <- function(
+	x, 	# data matrix X
+	y,	# two-column survival vector(s) Y (time, event)
+	k, 	# kit matric K
+	c, 	# cost vector c
+	startPar = 1,
+	printPar = 1,
+	... 	#
+){
+	nr <- nrow(x)
+	nc <- ncol(x)
+	nk <- nrow(k)
+	# extern SEXP c_coxdbdc_test_f(SEXP nf, SEXP nr, SEXP nk, SEXP in_vX, SEXP in_vY, SEXP in_vK, SEXP in_vC){
+	.Call(c_coxdbdc_test_f, as.integer(nc), as.integer(nr), as.integer(nk), as.double(x), as.integer(y), as.integer(k), as.double(c), as.integer(startPar), as.integer(printPar))
 }
