@@ -25,3 +25,36 @@ blassomat_f <- function(x){
 	}
 }
 
+#' R wrapper for Cox's DBDC
+# Thus far:
+#
+#> library(blasso)
+#> data(ex)
+#> blasso::dbdc(
+#x=     y=     k=     c=     start= print= ...=
+#> blasso::dbdc(x=ex_X, y=ex_Y, c=ex_c, k=ex_K)
+#Defining data constants...
+#Preparing output variables...
+#Reserving memory for output variables...
+#Calling Fortran DBDC...
+#
+# ... crash.
+dbdc <- function(
+	x, 	# data matrix X
+	y,	# two-column survival vector(s) Y (time, event)
+	k, 	# kit matric K
+	c, 	# cost vector c
+	start = 1,	# Start control parameter
+	print = 1,	# iprint control parameter
+	... 	#
+){
+	nr <- nrow(x)
+	nc <- ncol(x)
+	nk <- nrow(k)
+	# From the corresponding R <-> C wrapper:
+	# ...
+	# extern SEXP c_coxdbdc_loop_kits_f(SEXP nf, SEXP nr, SEXP nk, SEXP in_vX, SEXP in_vY, SEXP in_vK, SEXP in_vC, SEXP startPar, SEXP printPar){
+	# ...
+	# F77_CALL(coxdbdc_loop_kits_f)(REAL(beta_for_k), REAL(f_for_k), REAL(in_vX), INTEGER(in_vY), INTEGER(in_vK), REAL(in_vC), REAL(CPUtime), nft, nrecords, nkits, iprint, start);
+	.Call(c_coxdbdc_loop_kits_f, as.integer(nc), as.integer(nr), as.integer(nk), as.double(x), as.integer(y), as.integer(k), as.double(c), as.integer(start), as.integer(print))
+}

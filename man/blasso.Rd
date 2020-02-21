@@ -1,5 +1,5 @@
 \name{blasso}
-\alias{testblasso_f}
+\alias{testblasso_f} \alias{blassomat_f} \alias{dbdc}
 \title{blasso placeholder}
 \usage{
 	testblasso_f(x)

@@ -1,3 +1,5 @@
 useDynLib(blasso, .registration=TRUE)
 export("testblasso_f")
 export("blassomat_f")
+export("dbdc")
+

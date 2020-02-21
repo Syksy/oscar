@@ -68,6 +68,8 @@ extern SEXP c_blassocoxfit_f(SEXP yevent, SEXP ytime, SEXP x, SEXP xnrow, SEXP x
 
 // C wrapper function
 extern SEXP c_coxdbdc_loop_kits_f(SEXP nf, SEXP nr, SEXP nk, SEXP in_vX, SEXP in_vY, SEXP in_vK, SEXP in_vC, SEXP startPar, SEXP printPar){
+
+	Rprintf("Defining data constants... \n");
 	// Data description
 	const int nft = asInteger(nf); // Features, i.e. columns in data
 	const int nrecords = asInteger(nr); // Records, i.e. rows in data
@@ -76,20 +78,20 @@ extern SEXP c_coxdbdc_loop_kits_f(SEXP nf, SEXP nr, SEXP nk, SEXP in_vX, SEXP in
 	const int iprint = asInteger(printPar);
 	const int start = asInteger(startPar); // Starting conditions
 
-	//Rprintf("nrow: %i , ncol: %i \n", nr, nc);
+	Rprintf("Preparing output variables... \n");
 	SEXP f_for_k; // Objective function values at each k
 	SEXP beta_for_k; // Beta values for each k
 	SEXP CPUtime; // Computational time
-	//SEXP cols = PROTECT(allocVector(INTSXP, 1
-	//Rprintf("step2 \n");
+	Rprintf("Reserving memory for output variables... \n");
 	PROTECT(f_for_k = allocVector(REALSXP, nkits));
 	PROTECT(beta_for_k = allocVector(REALSXP, nft*nkits));
 	PROTECT(CPUtime = allocVector(REALSXP, 1));
-	//Rprintf("step3 \n");
+
+	Rprintf("Calling Fortran DBDC... \n");
 	F77_CALL(coxdbdc_loop_kits_f)(REAL(beta_for_k), REAL(f_for_k), REAL(in_vX), INTEGER(in_vY), INTEGER(in_vK), REAL(in_vC), REAL(CPUtime), nft, nrecords, nkits, iprint, start);
-	//Rprintf("step4 \n");
+
+	Rprintf("Wrap up and return output variables... \n");
 	UNPROTECT(1);
-	//Rprintf("step5 \n");
 	return(beta_for_k);
 }
 

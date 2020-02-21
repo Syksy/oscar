@@ -166,7 +166,7 @@
             ! NOTICE: * 'iprint' has to be 0, 1, 2 or 3. If it is NOT then DEFAULT value 1 is used.             
             
             !***********************************************************************************
-            !   IMPLICIT NONE
+               IMPLICIT NONE
             !**************************** NEEDED FROM USER *************************************           
                REAL(KIND=c_double), DIMENSION(nft*nkits), INTENT(OUT) :: beta_for_k  ! the solution vectors beta obtained for the problem 3 with different k
                REAL(KIND=c_double), DIMENSION(nkits), INTENT(OUT)     :: f_for_k     ! the objective function values for the problem 3 with different k
