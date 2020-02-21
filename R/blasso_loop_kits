@@ -89,7 +89,7 @@ blasso_loop_kits <- function(X,Y,K,C,iprint=1,start=1,...){
     
     ## HUOM! Pitäisikö C pyytää alkujaankin vektorina?
     result <- .Call(c_coxdbdc_loop_kits_f,as.integer(nft),as.integer(nrecord),as.integer(nkits),as.double(inX),c(as.double(Y[,1]),as.double(Y[,2])),
-                    as.double(inK),as.double(as.vector(C)),iprint,start)
+                    as.double(as.vector(C)),as.double(inK),iprint,start)
   }
   if(exists(result)){
     return(result)
