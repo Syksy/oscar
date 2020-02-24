@@ -1,6 +1,7 @@
 useDynLib(blasso, .registration=TRUE)
-export("testblasso_f")
-export("blassomat_f")
-export("dbdc")
-export("test")
+#export("testblasso_f")
+#export("blassomat_f")
+export("blassocox")
+#export("dbdc")
+#export("test")
 

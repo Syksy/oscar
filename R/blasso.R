@@ -5,23 +5,18 @@
 #
 ##
 
-#' The first test blasso function
-testblasso_f <- function(x){
-	if(!is.double(x)) { storage.mode(x) <- 'double' }
-	.Call(c_testblasso_f, x) # Calculate sum of vector values
-}
-
 #' Wrap up matrix to Fortran
-blassomat_f <- function(x){
+blassocox <- function(x, y, kits, costs, ...){
 	if(!is.matrix(x)) stop("Function argument 'x' should be of 'matrix' class")
 	if(!is.double(x)) { storage.mode(x) <- 'double' }	
 	else{
 		ncol <- ncol(x)
 		nrow <- nrow(x)
+		nkits <- nrow(kits)
 		if(!is.integer(ncol)) { storage.mode(ncol) <- 'integer' }
 		if(!is.integer(nrow)) { storage.mode(nrow) <- 'integer' }
-		print(paste("R: nrow:", nrow, "& ncol:", ncol))
-		.Call(c_blassomat_f, as.double(x), as.integer(nrow), as.integer(ncol))
+		#print(paste("R: nrow:", nrow, "& ncol:", ncol))
+		.Call(c_blassocox_f, as.double(x), as.double(y), as.integer(kits), as.double(costs), as.integer(nrow), as.integer(ncol), as.integer(nkits))
 	}
 }
 
@@ -51,6 +46,9 @@ dbdc <- function(
 	nr <- nrow(x)
 	nc <- ncol(x)
 	nk <- nrow(k)
+	if(!is.integer(nr)) { storage.mode(nr) <- 'integer' }
+	if(!is.integer(nc)) { storage.mode(nc) <- 'integer' }
+	if(!is.integer(nk)) { storage.mode(nk) <- 'integer' }
 	# From the corresponding R <-> C wrapper:
 	# ...
 	# extern SEXP c_coxdbdc_loop_kits_f(SEXP nf, SEXP nr, SEXP nk, SEXP in_vX, SEXP in_vY, SEXP in_vK, SEXP in_vC, SEXP startPar, SEXP printPar){
@@ -71,6 +69,9 @@ test <- function(
 	nr <- nrow(x)
 	nc <- ncol(x)
 	nk <- nrow(k)
+	if(!is.integer(nr)) { storage.mode(nr) <- 'integer' }
+	if(!is.integer(nc)) { storage.mode(nc) <- 'integer' }
+	if(!is.integer(nk)) { storage.mode(nk) <- 'integer' }
 	# extern SEXP c_coxdbdc_test_f(SEXP nf, SEXP nr, SEXP nk, SEXP in_vX, SEXP in_vY, SEXP in_vK, SEXP in_vC){
 	.Call(c_coxdbdc_test_f, as.integer(nc), as.integer(nr), as.integer(nk), as.double(x), as.integer(y), as.integer(k), as.double(c), as.integer(startPar), as.integer(printPar))
 }

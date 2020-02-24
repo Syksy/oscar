@@ -324,13 +324,13 @@
                
                WRITE(*,*) 'Starting subroutine in Fortran'
                
-               iprint0 = iprint
-               CALL cpu_time(s_time)   ! Start CPU timing     
+               !iprint0 = iprint
+               !CALL cpu_time(s_time)   ! Start CPU timing     
               
                ! The default print is used if user specifieed value is not acceptable
-               IF (iprint0 < 0 .OR. iprint0 > 4) THEN
-                  iprint0 = 1
-               END IF              
+               !IF (iprint0 < 0 .OR. iprint0 > 4) THEN
+               !   iprint0 = 1
+               !END IF              
                
                ! If start = 5 then start_max is the number of starting points in each L0-norm problem
                start_max = 5
@@ -340,6 +340,8 @@
                mrounds_clarke = 500      ! maximum number of rounds during one 'Clarke stationary' algorithm
           
                iprint_DBDC = 0           ! basic print of intermediate results and extended print of final results
+
+               WRITE(*,*) 'Checkpoint 1'
           
                agg_used = .TRUE.         ! Aggregation is used
                stepsize_used = .FALSE.   ! Simple stepsize determination is not used
@@ -371,19 +373,22 @@
                               & ei hyodynneta edellisen kierroksen ratkaisua uutena lahtopisteena'
                END IF
                
-               IF (start > 0) THEN 
-                  WRITE(*,*) 'Tehtavat lapi pienimmasta suurimpaan'
-               ELSE   
-                  WRITE(*,*) 'Tehtavat lapi suurimmasta pienimpaan'
-               END IF
+               !IF (start > 0) THEN 
+               !   WRITE(*,*) 'Tehtavat lapi pienimmasta suurimpaan'
+               !ELSE   
+               !   WRITE(*,*) 'Tehtavat lapi suurimmasta pienimpaan'
+               !END IF
                
-               WRITE(*,*) 'Lahtopisteet generoidaan tavalla:', start 
+               !WRITE(*,*) 'Lahtopisteet generoidaan tavalla:', start 
                WRITE(*,*) 'Penalisointitehtavan ratkaisemiseen kaytetyt rho-arvot:', mrho
                
                WRITE(*,*) 
                            
                WRITE(*,*)  '  f  ', '  zero_elements  ', '  nonzero_elements  ', '  cost  ', '  num_kits  ', 'kits'   ! Prints the solution to the file 'ratkaisu.txt'
        
+
+               WRITE(*,*) 'Checkpoint 2'
+          
                
               !--------------------------------------------------------------------------------------
           
@@ -395,36 +400,40 @@
               !                       POPULATING DATA MATRICES
               !---------------------------------------------------------------------------
  
-               ! Populate the matrix in_mX
-               ind = 0
-               DO j = 1, nft
-                  DO i = 1, nrecord
-                     ind = ind +1
-                     in_mX(i,j) = in_vX(ind)
-                  END DO
-               END DO
-               
-               ! Populate the matrix in_mY
-               ind = 0
-               DO j = 1, 2
-                  DO i = 1, nrecord
-                     ind = ind +1
-                     in_mY(i,j) = in_vY(ind)
-                  END DO
-               END DO              
- 
-               ! Populate the matrix in_mK
-               ind = 0
-               DO j = 1, nft
-                  DO i = 1, nkits
-                     ind = ind +1
-                     in_mK(i,j) = in_vK(ind)
-                  END DO
-               END DO           
-               ! Populate the vector in_mC
-               DO j = 1, nkits
-                  in_mC(j) = in_vC(j)
-               END DO
+               !! Populate the matrix in_mX
+               !ind = 0
+               !DO j = 1, nft
+               !   DO i = 1, nrecord
+               !      ind = ind +1
+               !      in_mX(i,j) = in_vX(ind)
+               !   END DO
+               !END DO
+               ! WRITE(*,*) 'Checkpoint 3'          
+               !
+               !! Populate the matrix in_mY
+               !ind = 0
+               !DO j = 1, 2
+               !   DO i = 1, nrecord
+               !      ind = ind +1
+               !      in_mY(i,j) = in_vY(ind)
+               !   END DO
+               !END DO              
+               ! WRITE(*,*) 'Checkpoint 4'          
+ 	       !
+               !! Populate the matrix in_mK
+               !ind = 0
+               !DO j = 1, nft
+               !   DO i = 1, nkits
+               !      ind = ind +1
+               !      in_mK(i,j) = in_vK(ind)
+               !   END DO
+               !END DO           
+               !! Populate the vector in_mC
+               ! WRITE(*,*) 'Checkpoint 5'          
+               !DO j = 1, nkits
+               !   in_mC(j) = in_vC(j)
+               !END DO
+               ! WRITE(*,*) 'Checkpoint 6'          
             
                WRITE(*,*) 'Matrix X populated:', in_mX
                WRITE(*,*) 'Matrix Y populated:', in_mY
@@ -572,7 +581,7 @@
 	       
 	       WRITE(*,*) 'Starting test subroutine'
 
-               iprint0 = iprint
+               !iprint0 = iprint
                !CALL cpu_time(s_time)   ! Start CPU timing     
               
                ! The default print is used if user specifieed value is not acceptable
@@ -582,6 +591,8 @@
                
                ! If start = 5 then start_max is the number of starting points in each L0-norm problem
                start_max = 5
+
+	       WRITE(*,*) 'Checkpoint 1'
                
                mrounds = 5000            ! maximum number of rounds during one 'main iterations'
                mit = 5000                ! maximum number of 'main iteration'
@@ -593,6 +604,9 @@
                stepsize_used = .FALSE.   ! Simple stepsize determination is not used
           
                scale_in_use = .TRUE.     ! The scaling of data is used
+
+	       WRITE(*,*) 'Checkpoint 2'
+               
             
                mrho = (/0.2_c_double, 0.5_c_double, 1.0_c_double, 2.0_c_double, &
                	& 5.0_c_double, 10.0_c_double, 20.0_c_double, 50.0_c_double /) 
@@ -603,27 +617,29 @@
                                             
                 user_n = nft
                 
-                tol_zero = (10.0_c_double)**(-6)
+               ! tol_zero = (10.0_c_double)**(-6)
 
                ed_sol_in_pen = .FALSE.
 
+	       WRITE(*,*) 'Checkpoint 3'
+               
        
-               IF (ed_sol_in_pen) THEN 
-                  WRITE(*,*) 'Penalisointitehtavaa ratkaistaessa &
-                              & hyodynnetaan edellisen kierroksen ratkaisua uutena lahtopisteena'
-               ELSE
-                  WRITE(*,*) 'Penalisointitehtavaa ratkaistaessa &
-                              & ei hyodynneta edellisen kierroksen ratkaisua uutena lahtopisteena'
-               END IF
+               !IF (ed_sol_in_pen) THEN 
+               !   WRITE(*,*) 'Penalisointitehtavaa ratkaistaessa &
+               !               & hyodynnetaan edellisen kierroksen ratkaisua uutena lahtopisteena'
+               !ELSE
+               !   WRITE(*,*) 'Penalisointitehtavaa ratkaistaessa &
+               !               & ei hyodynneta edellisen kierroksen ratkaisua uutena lahtopisteena'
+               !END IF
    
 	       !! Tästä eteenpäin ei käänny, ei saa jostain syystä esim. start printattua tai starting vertailua
    
    
-               IF (start > 0) THEN 
-                  WRITE(*,*) 'Tehtavat lapi pienimmasta suurimpaan'
-               ELSE   
-                  WRITE(*,*) 'Tehtavat lapi suurimmasta pienimpaan'
-               END IF
+               !IF (start > 0) THEN 
+               !   WRITE(*,*) 'Tehtavat lapi pienimmasta suurimpaan'
+               !ELSE   
+               !   WRITE(*,*) 'Tehtavat lapi suurimmasta pienimpaan'
+               !END IF
                
                !WRITE(*,*) 'Lahtopisteet generoidaan tavalla:', start 
                WRITE(*,*) 'Penalisointitehtavan ratkaisemiseen kaytetyt rho-arvot:', mrho
@@ -632,11 +648,22 @@
                            
                WRITE(*,*)  '  f  ', '  zero_elements  ', '  nonzero_elements  ', '  cost  ', '  num_kits  ', 'kits'   ! Prints the solution to the file 'ratkaisu.txt'
        
+       	       WRITE(*,*) 'Checkpoint 4'
+                      
+       	       !WRITE(*,*) 'in_vX'
+	       !WRITE(*,*) in_vX
+       	       !WRITE(*,*) 'in_vY'
+	       !WRITE(*,*) in_vY
+    	       !WRITE(*,*) 'in_vK'
+	       !WRITE(*,*) in_vK
+       	       !WRITE(*,*) 'in_vC'
+	       !WRITE(*,*) in_vC
+
               !--------------------------------------------------------------------------------------
           
               ! The starting points for the test problems presented in MODULE functions.f95 and in the articles [1] and [2]  
         
-                  x_0 = 0.0_c_double
+              !    x_0 = 0.0_c_double
                                  
               !---------------------------------------------------------------------------
               !                       POPULATING DATA MATRICES
@@ -645,40 +672,45 @@
  		!! Seuraavat kohdat kaatavat Fortran subrutiinin
  
                ! Populate the matrix in_mX
-               ind = 0
-               DO j = 1, nft
-                  DO i = 1, nrecord
-                     ind = ind +1
-                     in_mX(i,j) = in_vX(ind)
-                  END DO
-               END DO
+               !ind = 0
+               !DO j = 1, nft
+               !   DO i = 1, nrecord
+               !      ind = ind +1
+               !      in_mX(i,j) = in_vX(ind)
+               !   END DO
+               !END DO
+               
+	       WRITE(*,*) 'Checkpoint 5'
                
                ! Populate the matrix in_mY
-               ind = 0
-               DO j = 1, 2
-                  DO i = 1, nrecord
-                     ind = ind +1
-                     in_mY(i,j) = in_vY(ind)
-                  END DO
-               END DO              
- 
+               !ind = 0
+               !DO j = 1, 2
+               !   DO i = 1, nrecord
+               !      ind = ind +1
+               !      in_mY(i,j) = in_vY(ind)
+               !   END DO
+               !END DO              
+	       WRITE(*,*) 'Checkpoint 6'
+               
                ! Populate the matrix in_mK
-               ind = 0
-               DO j = 1, nft
-                  DO i = 1, nkits
-                     ind = ind +1
-                     in_mK(i,j) = in_vK(ind)
-                  END DO
-               END DO           
+               !ind = 0
+               !DO j = 1, nft
+               !   DO i = 1, nkits
+               !      ind = ind +1
+               !      in_mK(i,j) = in_vK(ind)
+               !   END DO
+               !END DO           
                ! Populate the vector in_mC
-               DO j = 1, nkits
-                  in_mC(j) = in_vC(j)
-               END DO
+	       WRITE(*,*) 'Checkpoint 7'
+               
+               !DO j = 1, nkits
+               !   in_mC(j) = in_vC(j)
+               !END DO
             
-               WRITE(*,*) 'Matrix X populated:', in_mX
-               WRITE(*,*) 'Matrix Y populated:', in_mY
-               WRITE(*,*) 'Matrix K populated:', in_mK
-               WRITE(*,*) 'Vector C populated:', in_mC
+               !WRITE(*,*) 'Matrix X populated:', in_mX
+               !WRITE(*,*) 'Matrix Y populated:', in_mY
+               !WRITE(*,*) 'Matrix K populated:', in_mK
+               !WRITE(*,*) 'Vector C populated:', in_mC
            
               ! Varsinainen koodi tulee seuraavaksi ...
 
