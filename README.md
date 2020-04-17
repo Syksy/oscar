@@ -37,6 +37,7 @@ TO DO:
 Compiling the code:
 * R CMD build blasso
 * R CMD INSTALL blasso_VERSION.tar.gz
+* Alternatively from inside an on-going R-session run: > install.packages("blasso_VERSION.tar.gz", source=TRUE)
 * R -> Start R session inside command prompt
 * > library(blasso) # Load blasso-package
 * > data(ex) # Load example dataset (consists of ex_X, ex_Y, ex_K and ex_c)

@@ -1,5 +1,5 @@
 C_OBJS = blassoc.o
-FT_OBJS = blassof.o cox_dbdc_f.o
+FT_OBJS = blassof.o
 
 all:
 	@$(MAKE) $(SHLIB)
@@ -8,7 +8,6 @@ all:
 $(SHLIB): $(FT_OBJS) $(C_OBJS)
 
 blassoc.c: blassof.o
-blassoc.c: cox_dbdc_f.o
 
 
 

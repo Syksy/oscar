@@ -106,7 +106,7 @@ contains
         beta = 1.234_c_double ! Test non-zero double formatting
         fperk = 0.0_c_double
 
-	! 
+	!
 	! ... ACTUAL ALGORITHM ...
 	!
  
