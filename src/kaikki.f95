@@ -5595,7 +5595,7 @@
       END MODULE dbdc
 
 
-  MODULE blasso_kaikki
+  MODULE blasso
      USE, INTRINSIC :: iso_c_binding
  
      USE functions                 ! INFORMATION from the USER
@@ -5606,7 +5606,7 @@
      IMPLICIT NONE   
         
 	 PRIVATE	
-     PUBLIC :: blassocox_kaikki 
+     PUBLIC :: blassocox 
         
         CONTAINS 
         
@@ -5638,8 +5638,8 @@
         !***************************************************************************************
         
     ! Subroutine for blasso
-          SUBROUTINE blassocox_kaikki(x, y, kits, costs, nrow, ncol, nkits, beta, fperk) &
-    	& BIND(C, name = "blassocox_kaikki_f_")
+          SUBROUTINE blassocox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk) &
+    	& BIND(C, name = "blassocox_f_")
 
 
 		    ! Oma alkuperäinen: 
@@ -6771,7 +6771,7 @@
              CALL deallocate_data() 
                 
 
-         END SUBROUTINE blassocox_kaikki       
+         END SUBROUTINE blassocox       
  
   
         ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
@@ -6808,7 +6808,7 @@
         !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
   
 
-  END MODULE blasso_kaikki
+  END MODULE blasso
 
 
 

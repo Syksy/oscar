@@ -1,7 +1,7 @@
 RM = rm
 
 C_OBJS = blassoc.o
-FT_OBJS = blasso_koe.o plqdf1.o
+FT_OBJS = kaikki.o plqdf1.o
 
 all:
 	@$(MAKE) $(SHLIB)
@@ -13,7 +13,6 @@ clean:
 
 $(SHLIB): $(FT_OBJS) $(C_OBJS)
 
-blassoc.c: blasso_koe.o
 blassoc.c: kaikki.o
 
 
