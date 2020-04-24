@@ -15,7 +15,15 @@ blassocox <- function(x, y, kits, costs, ...){
 		nkits <- nrow(kits)
 		if(!is.integer(ncol)) { storage.mode(ncol) <- 'integer' }
 		if(!is.integer(nrow)) { storage.mode(nrow) <- 'integer' }
-		#print(paste("R: nrow:", nrow, "& ncol:", ncol))
-		.Call(c_blassocox_f, as.double(x), as.double(y), as.integer(kits), as.double(costs), as.integer(nrow), as.integer(ncol), as.integer(nkits))
+
+		# Store betas per kits
+		betakits <- matrix(
+			.Call(c_blassocox_f, as.double(x), as.double(y), as.integer(kits), as.double(costs), as.integer(nrow), as.integer(ncol), as.integer(nkits)),
+			nrow = ncol(x),
+			ncol = nrow(kits)
+		)
+		colnames(betakits) <- colnames(x)
+		rownames(betakits) <- rownames(kits)
+		betakits
 	}
 }

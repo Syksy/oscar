@@ -440,19 +440,19 @@
                ! WRITE(*,*) 'Matrix K populated:', in_mK
                ! WRITE(*,*) 'Vector C populated:', in_mC
            
-				write(*,*) 'Values of nr, nc, and nk:'
-				write(*,*) nrecord
-				write(*,*) nft
-				write(*,*) nk
+				! write(*,*) 'Values of nr, nc, and nk:'
+				! write(*,*) nrecord
+				! write(*,*) nft
+				! write(*,*) nk
 	
-				write(*,*) 'First row of xmat:'
-				write(*,*) in_mX(1,:)
+				! write(*,*) 'First row of xmat:'
+				! write(*,*) in_mX(1,:)
 
  
-				write(*,*) 'End of Fortran subroutine'
+				! write(*,*) 'End of Fortran subroutine'
                 
                 ! Test altering values of beta for returning values to R
-                beta(1) = 10.1_c_double
+                ! beta(1) = 10.1_c_double
                 
 
          END SUBROUTINE blassocox_tmp       

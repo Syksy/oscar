@@ -6005,16 +6005,15 @@
                ! WRITE(*,*) 'Matrix K populated:', in_mK
                ! WRITE(*,*) 'Vector C populated:', in_mC
            
-				write(*,*) 'Values of nr, nc, and nk:'
-				write(*,*) nrecord
-				write(*,*) nft
-				write(*,*) nk
+				! write(*,*) 'Values of nr, nc, and nk:'
+				! write(*,*) nrecord
+				! write(*,*) nft
+				! write(*,*) nk
 	
-				write(*,*) 'First row of xmat:'
-				write(*,*) in_mX(1,:)
+				! write(*,*) 'First row of xmat:'
+				! write(*,*) in_mX(1,:)
 
- 
-				write(*,*) 'End of Fortran subroutine'
+				! write(*,*) 'End of Fortran subroutine'
 
            
               !---------------------------------------------------------------------------
@@ -6215,6 +6214,8 @@
                       END IF 
                     END IF
                 
+			WRITE(*,*) 'lahtopiste', x_0                
+			
                     ! The optimization problem is solved fot the current rho and x_0
      
                     CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
