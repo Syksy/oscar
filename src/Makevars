@@ -14,6 +14,7 @@ clean:
 $(SHLIB): $(FT_OBJS) $(C_OBJS)
 
 blassoc.c: blasso_koe.o
+blassoc.c: kaikki.o
 
 
 

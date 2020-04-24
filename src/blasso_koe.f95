@@ -31,7 +31,7 @@
         !| .**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**. |
         !*..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..*
 
-  MODULE blasso
+  MODULE blasso_tmp
      USE, INTRINSIC :: iso_c_binding
  
      !USE functions                 ! INFORMATION from the USER
@@ -42,7 +42,7 @@
      IMPLICIT NONE   
         
 	 PRIVATE	
-     PUBLIC :: blassocox 
+     PUBLIC :: blassocox_tmp 
         
         CONTAINS 
         
@@ -74,8 +74,8 @@
         !***************************************************************************************
         
     ! Subroutine for blasso
-          SUBROUTINE blassocox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk) &
-    	& BIND(C, name = "blassocox_f_")
+          SUBROUTINE blassocox_tmp(x, y, kits, costs, nrow, ncol, nkits, beta, fperk) &
+    	& BIND(C, name = "blassocox_tmp_f_")
 
 
 		    ! Oma alkuperäinen: 
@@ -410,7 +410,7 @@
                     END DO
                  END DO
 				 
-			   ! Populate response matrix of dim {nrow,2}
+		! Populate response matrix of dim {nrow,2}
 	             ind = 0
 	             DO j = 1, 2
 	                DO i = 1, nrecord
@@ -451,8 +451,11 @@
  
 				write(*,*) 'End of Fortran subroutine'
                 
+                ! Test altering values of beta for returning values to R
+                beta(1) = 10.1_c_double
+                
 
-         END SUBROUTINE blassocox       
+         END SUBROUTINE blassocox_tmp       
  
   
         ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
@@ -489,7 +492,7 @@
         !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
   
 
-  END MODULE blasso
+  END MODULE blasso_tmp
 
 
 
