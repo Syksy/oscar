@@ -14,8 +14,8 @@ all: tdbdc
 tdbdc: kaikki.o tdbdc.o plqdf1.o 
 	$(FF) -o tdbdc $(FFLAGS) $(OPEN) kaikki.o tdbdc.o plqdf1.o 
 	
-kaikki.o: kaikki.f95
-	$(FF) -c $(FFLAGS) $(OPEN) kaikki.f95 
+#kaikki.o: kaikki.f95
+#	$(FF) -c $(FFLAGS) $(OPEN) kaikki.f95 
 	
 tdbdc.o: kaikki.o tdbdc.f95
 	$(FF) -c $(FFLAGS) $(OPEN) tdbdc.f95 

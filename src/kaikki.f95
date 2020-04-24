@@ -3885,7 +3885,7 @@
 
 
                !CHARACTER*30 outfi/'results.txt'/
-               OPEN(40,file=outfi)             
+               !OPEN(40,file=outfi)             
                
                CALL cpu_time(start_time)                ! Start CPU timing     
 
@@ -5595,7 +5595,7 @@
       END MODULE dbdc
 
 
-  MODULE blasso
+  MODULE blasso_kaikki
      USE, INTRINSIC :: iso_c_binding
  
      USE functions                 ! INFORMATION from the USER
@@ -5606,7 +5606,7 @@
      IMPLICIT NONE   
         
 	 PRIVATE	
-     PUBLIC :: blassocox 
+     PUBLIC :: blassocox_kaikki 
         
         CONTAINS 
         
@@ -5638,11 +5638,11 @@
         !***************************************************************************************
         
     ! Subroutine for blasso
-          SUBROUTINE blassocox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk) &
-    	& BIND(C, name = "blassocox_f_")
+          SUBROUTINE blassocox_kaikki(x, y, kits, costs, nrow, ncol, nkits, beta, fperk) &
+    	& BIND(C, name = "blassocox_kaikki_f_")
 
 
-		    ! Oma alkuper√§inen: 
+		    ! Oma alkuper‰inen: 
             ! SUBROUTINE coxdbdc_loop_kits( nft, nrecord, nkits,  &
             !                     & in_vX, in_vY, in_vC, in_vK,  &
             !                     & f_for_k, beta_for_k)		
@@ -5731,7 +5731,6 @@
                !INTEGER(KIND=c_int), DIMENSION(nkits*nft), INTENT(IN) :: in_vK      ! kit matrix in vector format
                !REAL(KIND=c_double), DIMENSION(nkits), INTENT(IN) :: in_vC          ! kit costs in vector format              
            
-               !REAL(KIND=c_double), INTENT(OUT) :: CPUtime                         ! the CPU time (in seconds)
                                                        
                !INTEGER(KIND=c_int), INTENT(IN) :: nft                     ! the dimension of the problem = the number of features in a predictor
                !INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
@@ -5886,6 +5885,8 @@
                INTEGER(KIND=c_int) :: nremoved
                INTEGER(KIND=c_int) :: kit_num, kit_num_ed   ! The number of kits in the current and previous solutions
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
+
+               REAL(KIND=c_double) :: CPUtime                         ! the CPU time (in seconds)
                 
                CALL cpu_time(s_time)   ! Start CPU timing     
    	           
@@ -6770,7 +6771,7 @@
              CALL deallocate_data() 
                 
 
-         END SUBROUTINE blassocox       
+         END SUBROUTINE blassocox_kaikki       
  
   
         ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
@@ -6807,7 +6808,7 @@
         !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
   
 
-  END MODULE blasso
+  END MODULE blasso_kaikki
 
 
 
