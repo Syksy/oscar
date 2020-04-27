@@ -22,8 +22,8 @@ blassocox <- function(x, y, kits, costs, ...){
 			nrow = ncol(x),
 			ncol = nrow(kits)
 		)
-		colnames(betakits) <- colnames(x)
-		rownames(betakits) <- rownames(kits)
+		#colnames(betakits) <- colnames(x)
+		#rownames(betakits) <- rownames(kits)
 		betakits
 	}
 }

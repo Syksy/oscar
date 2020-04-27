@@ -5642,7 +5642,7 @@
     	& BIND(C, name = "blassocox_f_")
 
 
-		    ! Oma alkuper‰inen: 
+		    ! Oma alkuper√§inen: 
             ! SUBROUTINE coxdbdc_loop_kits( nft, nrecord, nkits,  &
             !                     & in_vX, in_vY, in_vC, in_vK,  &
             !                     & f_for_k, beta_for_k)		
@@ -5731,7 +5731,6 @@
                !INTEGER(KIND=c_int), DIMENSION(nkits*nft), INTENT(IN) :: in_vK      ! kit matrix in vector format
                !REAL(KIND=c_double), DIMENSION(nkits), INTENT(IN) :: in_vC          ! kit costs in vector format              
            
-                                                       
                !INTEGER(KIND=c_int), INTENT(IN) :: nft                     ! the dimension of the problem = the number of features in a predictor
                !INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
                !INTEGER(KIND=c_int), INTENT(IN) :: nkits                   ! the number of kits
@@ -5739,6 +5738,8 @@
                                            
            !***************************** LOCAL VARIABLES ************************************      
  
+               REAL(KIND=c_double) :: CPUtime                         ! the CPU time (in seconds)
+
                INTEGER(KIND=c_int) :: nft                     ! the dimension of the problem = the number of features in a predictor
                INTEGER(KIND=c_int) :: nrecord                 ! the number of records (data points)
                INTEGER(KIND=c_int) :: nk                      ! the number of kits 
@@ -5885,8 +5886,6 @@
                INTEGER(KIND=c_int) :: nremoved
                INTEGER(KIND=c_int) :: kit_num, kit_num_ed   ! The number of kits in the current and previous solutions
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
-
-               REAL(KIND=c_double) :: CPUtime                         ! the CPU time (in seconds)
                 
                CALL cpu_time(s_time)   ! Start CPU timing     
    	           
@@ -5895,22 +5894,22 @@
 			   nft = ncol
 			   nk = nkits
 			  
-               start = 2       ! Starting point generation procedure
-               iprint = 1      ! Print option
+               start = 2_c_int       ! Starting point generation procedure
+               iprint = 3_c_int      ! Print option
               
                ! The default print is used if user specifieed value is not acceptable
                IF (iprint < 0 .OR. iprint > 4) THEN
-                  iprint = 1
+                  iprint = 1_c_int
                END IF              
                
                ! If start = 5 then start_max is the number of starting points in each L0-norm problem
-               start_max = 5
+               start_max = 5_c_int
                
-               mrounds = 5000            ! maximum number of rounds during one 'main iterations'
-               mit = 5000                ! maximum number of 'main iteration'
-               mrounds_clarke = 500      ! maximum number of rounds during one 'Clarke stationary' algorithm
+               mrounds = 5000_c_int            ! maximum number of rounds during one 'main iterations'
+               mit = 5000_c_int                ! maximum number of 'main iteration'
+               mrounds_clarke = 500_c_int      ! maximum number of rounds during one 'Clarke stationary' algorithm
           
-               iprint_DBDC = 0           ! basic print of intermediate results and extended print of final results
+               iprint_DBDC = 0_c_int           ! basic print of intermediate results and extended print of final results
           
                agg_used = .TRUE.         ! Aggregation is used
                stepsize_used = .FALSE.   ! Simple stepsize determination is not used
@@ -5927,8 +5926,8 @@
 			         & 5.0_c_double, 10.0_c_double, 20.0_c_double, 50.0_c_double /) 
 
                 ! Problem 
-                problem1 = 3
-                problem2 = 3                
+                problem1 = 3_c_int
+                problem2 = 3_c_int                
                
                 user_n = nft
                 
@@ -6005,15 +6004,16 @@
                ! WRITE(*,*) 'Matrix K populated:', in_mK
                ! WRITE(*,*) 'Vector C populated:', in_mC
            
-				! write(*,*) 'Values of nr, nc, and nk:'
-				! write(*,*) nrecord
-				! write(*,*) nft
-				! write(*,*) nk
+				write(*,*) 'Values of nr, nc, and nk:'
+				write(*,*) nrecord
+				write(*,*) nft
+				write(*,*) nk
 	
-				! write(*,*) 'First row of xmat:'
-				! write(*,*) in_mX(1,:)
+				write(*,*) 'First row of xmat:'
+				write(*,*) in_mX(1,:)
 
-				! write(*,*) 'End of Fortran subroutine'
+ 
+				write(*,*) 'End of Fortran subroutine'
 
            
               !---------------------------------------------------------------------------
@@ -6214,8 +6214,6 @@
                       END IF 
                     END IF
                 
-			WRITE(*,*) 'lahtopiste', x_0                
-			
                     ! The optimization problem is solved fot the current rho and x_0
      
                     CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
@@ -6234,7 +6232,7 @@
                       END IF
                     END DO
                                 
-                    cost = 0.0_c_double            ! The initialization of the cost of 'beta_solution'
+                    cost = 0.0_c_double      ! The initialization of the cost of 'beta_solution'
                     kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
                     kits_beta = 0            ! The initialization of kits in 'beta_solution'
                   
