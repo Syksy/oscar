@@ -739,8 +739,8 @@
         !| |    UPDATE BUNDLE                : update_b2(set, new_grad, d, value_change)      | |
         !| |    SOLUTION FOR SUBPROBLEM i    : add_solution(set, i , d, delta, obj)           | |   
         !| |    ADD INDEX OF GLOBAL SOLUTION : add_glob_index(set)                            | |
-        !| |    RESET BUNDLE:                : reset_b2(set)                                  | |		
-        !| |    DEALLOCATION:                : deallocation_b2(set)                           | |		
+        !| |    RESET BUNDLE:                : reset_b2(set)                                  | |       
+        !| |    DEALLOCATION:                : deallocation_b2(set)                           | |       
         !| |                                                                                  | |
         !| |                                                                                  | |
         !| |              CONTAIN FUNCTIONS GIVING DIFFERENT VALUES:                          | |   
@@ -1088,7 +1088,7 @@
                
            END SUBROUTINE deallocation_b2   
 
-		   
+           
 
         !*..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..*
         !| .**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**. |
@@ -1698,9 +1698,9 @@
            
            END SUBROUTINE allocate_data
            !------------------------------------------------------------------------------------------
-		   
-		   
-		   !------------------------------------------------------------------------------------------
+           
+           
+           !------------------------------------------------------------------------------------------
            SUBROUTINE set_k(nk)
                !
                ! Changes the value of k
@@ -1716,9 +1716,9 @@
                        
            END SUBROUTINE set_k
            !------------------------------------------------------------------------------------------
-		   
-		   
-		   !------------------------------------------------------------------------------------------
+           
+           
+           !------------------------------------------------------------------------------------------
            SUBROUTINE deallocate_data()
                !
                ! Deallocates the data matrices.              
@@ -1730,9 +1730,9 @@
                DEALLOCATE(mX,mY,mK,mC,k_norm_ind,k_norm_ind_k,mFail,mUnique,hav)
            
            END SUBROUTINE deallocate_data
-		   !------------------------------------------------------------------------------------------
+           !------------------------------------------------------------------------------------------
            
-		   
+           
            !------------------------------------------------------------------------------------------                      
            SUBROUTINE scaling()
                !
@@ -1798,8 +1798,8 @@
                        
            END SUBROUTINE rescaling     
            !------------------------------------------------------------------------------------------                      
-		   
-		   
+           
+           
            !------------------------------------------------------------------------------------------                      
            SUBROUTINE rescaling_beta(y)
                !
@@ -3628,7 +3628,7 @@
 
 
 
-		
+        
 
       MODULE dbdc
       
@@ -3656,9 +3656,9 @@
         !*..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..*
                 
         USE, INTRINSIC :: iso_c_binding
-		
-		!USE omp_lib
-		
+        
+        !USE omp_lib
+        
         USE bundle1                    ! The BUNDLE of the DC component f_1
         USE bundle2                    ! The BUNDLE of the DC component f_2
         USE functions                  ! Contains INFORMATION from the USER
@@ -3871,7 +3871,7 @@
                                                 ! 3 - the biggest possible number of rounds executed in the 'main iteration'
                                                 ! 5 - the biggest possible number of rounds executed in the 'Clarke stationary' algorithm
                
-			   ! Needed in parallellization
+               ! Needed in parallellization
                !INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
                !INTEGER(KIND=c_int) :: threads               ! the number of threads used in parallellization
                !INTEGER(KIND=c_int) :: max_sub_prob          ! the maximum number of subproblems solved at the same time
@@ -5605,7 +5605,7 @@
          
      IMPLICIT NONE   
         
-	 PRIVATE	
+     PRIVATE    
      PUBLIC :: blassocox 
         
         CONTAINS 
@@ -5639,23 +5639,23 @@
         
     ! Subroutine for blasso
           SUBROUTINE blassocox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk) &
-    	& BIND(C, name = "blassocox_f_")
+        & BIND(C, name = "blassocox_f_")
 
 
-		    ! Oma alkuperäinen: 
+            ! Oma alkuperäinen: 
             ! SUBROUTINE coxdbdc_loop_kits( nft, nrecord, nkits,  &
             !                     & in_vX, in_vY, in_vC, in_vK,  &
-            !                     & f_for_k, beta_for_k)		
-			! Eli * nft -> ncol
-			!     * nrecord -> nrow
-			!     * nkits -> nkits
-			!     * in_vX -> x
-			!     * in_vY -> y 
-			!     * in_vC -> costs
-			!     * in_vK -> kits
-			!     * f_for_k -> fprek
-			!     * beta_for_k -> beta 
-			
+            !                     & f_for_k, beta_for_k)        
+            ! Eli * nft -> ncol
+            !     * nrecord -> nrow
+            !     * nkits -> nkits
+            !     * in_vX -> x
+            !     * in_vY -> y 
+            !     * in_vC -> costs
+            !     * in_vK -> kits
+            !     * f_for_k -> fprek
+            !     * beta_for_k -> beta 
+            
                                
             
             ! * 'problem = 3'        : the used objective function is Cox's proportional hazards model with L0-norm for kits
@@ -5708,21 +5708,21 @@
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-  			   INTEGER(KIND = c_int), INTENT(IN), VALUE		:: nrow 	!Number of rows in x (i.e. records)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE		:: ncol 	!Number of cols in x (i.e. features)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE		:: nkits 	!Number of kits for features
-			   
-               REAL(KIND = c_double), INTENT(IN), DIMENSION(nrow*ncol)  :: x    	!Vector of data values
-               REAL(KIND = c_double), INTENT(IN), DIMENSION(nrow*2) 	:: y    	!Vector of response values (2-column survival, time + event)
-               INTEGER(KIND = c_int), INTENT(IN), DIMENSION(nkits*ncol) :: kits		!Vector of kit indicator values (binary indicators)
-               REAL(KIND = c_double), INTENT(IN), DIMENSION(nkits)	    :: costs	!Costs associated to each kit
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow     !Number of rows in x (i.e. records)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol     !Number of cols in x (i.e. features)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits    !Number of kits for features
+               
+               REAL(KIND = c_double), INTENT(IN), DIMENSION(nrow*ncol)  :: x        !Vector of data values
+               REAL(KIND = c_double), INTENT(IN), DIMENSION(nrow*2)     :: y        !Vector of response values (2-column survival, time + event)
+               INTEGER(KIND = c_int), INTENT(IN), DIMENSION(nkits*ncol) :: kits     !Vector of kit indicator values (binary indicators)
+               REAL(KIND = c_double), INTENT(IN), DIMENSION(nkits)      :: costs    !Costs associated to each kit
             ! OUTPUTs
-               REAL(KIND = c_double), INTENT(OUT), DIMENSION(ncol*nkits)  :: beta  	!Output variable for beta coefficients per k
-               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nkits)    	  :: fperk 	!Output variable target function value per k
-		       ! fprek pituus pitää olla nkits	    
-		       ! beta pituus pitää olla nkits*ncol    
-				
-			   ! Alla omat vanhat muuttujat	
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(ncol*nkits)  :: beta   !Output variable for beta coefficients per k
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nkits)       :: fperk  !Output variable target function value per k
+               ! fprek pituus pitää olla nkits      
+               ! beta pituus pitää olla nkits*ncol    
+                
+               ! Alla omat vanhat muuttujat 
                !REAL(KIND=c_double), DIMENSION(nft*nkits), INTENT(OUT) :: beta_for_k  ! the solution vectors beta obtained for the problem 3 with different k
                !REAL(KIND=c_double), DIMENSION(nkits), INTENT(OUT)     :: f_for_k     ! the objective function values for the problem 3 with different k
                
@@ -5753,8 +5753,8 @@
                REAL(KIND=c_double), DIMENSION(ncol) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
                
                REAL(KIND=c_double), DIMENSION(nrow,ncol) :: in_mX      ! predictor matrix (row is an observation)
-               INTEGER(KIND=c_int), DIMENSION(nrow,2) :: in_mY      ! observed times and labels matrix (row is an observation)  
-               INTEGER(KIND=c_int), DIMENSION(nkits,ncol) :: in_mK  ! kit matrix (row is a kit)
+               INTEGER(KIND=c_int), DIMENSION(nrow,2) :: in_mY         ! observed times and labels matrix (row is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(nkits,ncol) :: in_mK     ! kit matrix (row is a kit)
                REAL(KIND=c_double), DIMENSION(nkits) :: in_mC          ! kit costs                   
 
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta     ! indices of kits in the solution 'beta_solution'
@@ -5888,12 +5888,12 @@
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
                 
                CALL cpu_time(s_time)   ! Start CPU timing     
-   	           
-			   ! Set the number of rows and columns inside Fortran  + kits           
-			   nrecord = nrow
-			   nft = ncol
-			   nk = nkits
-			  
+               
+               ! Set the number of rows and columns inside Fortran  + kits           
+               nrecord = nrow
+               nft = ncol
+               nk = nkits
+              
                start = 2_c_int       ! Starting point generation procedure
                iprint = 3_c_int      ! Print option
               
@@ -5921,9 +5921,9 @@
 
                !Values for parameter rho used in penalization problem 
                !mrho = (/0.1_c_double, 0.2_c_double, 0.5_c_double, 1.0_c_double &
-			   !      & 2.0_c_double, 5.0_c_double, 10.0_c_double, 20.0_c_double /) 
+               !      & 2.0_c_double, 5.0_c_double, 10.0_c_double, 20.0_c_double /) 
                mrho = (/0.2_c_double, 0.5_c_double, 1.0_c_double, 2.0_c_double, &
-			         & 5.0_c_double, 10.0_c_double, 20.0_c_double, 50.0_c_double /) 
+                     & 5.0_c_double, 10.0_c_double, 20.0_c_double, 50.0_c_double /) 
 
                 ! Problem 
                 problem1 = 3_c_int
@@ -5967,53 +5967,74 @@
  
                ! Populate the matrix xmat of dim {nrow,ncol}
                  ind = 0
-	             DO j = 1, nft
+                 DO j = 1, nft
                     DO i = 1, nrecord
                       ind = ind +1
                       in_mX(i,j) = x(ind)
                     END DO
                  END DO
-				 
-			   ! Populate response matrix of dim {nrow,2}
-	             ind = 0
-	             DO j = 1, 2
-	                DO i = 1, nrecord
-	                  ind = ind + 1
-	                  in_mY(i,j) = y(ind)
-	                END DO
-	             END DO
-				 
+                 
+               ! Populate response matrix of dim {nrow,2}
+                 ind = 0
+                 DO j = 1, 2
+                    DO i = 1, nrecord
+                      ind = ind + 1
+                      in_mY(i,j) = y(ind)
+                    END DO
+                 END DO
+                 
               ! Populate response matrix of dim {nkits,ncol}
-	             ind = 0
-	             DO j = 1, nft
-	                DO i = 1, nk
-	                  ind = ind + 1
-	                  in_mK(i,j) = kits(ind)
-	                END DO
-	             END DO
-				 
-           	  ! Populate the cost vector for kits
-           	     ind = 0
-      	         DO i = 1, nk
-	                ind = ind + 1
-	                in_mC(i) = costs(ind)
-	             END DO
+                 ind = 0
+                 DO j = 1, nft
+                    DO i = 1, nk
+                      ind = ind + 1
+                      in_mK(i,j) = kits(ind)
+                    END DO
+                 END DO
+                 
+              ! Populate the cost vector for kits
+                 ind = 0
+                 DO i = 1, nk
+                    ind = ind + 1
+                    in_mC(i) = costs(ind)
+                 END DO
             
                ! WRITE(*,*) 'Matrix X populated:', in_mX
                ! WRITE(*,*) 'Matrix Y populated:', in_mY
                ! WRITE(*,*) 'Matrix K populated:', in_mK
                ! WRITE(*,*) 'Vector C populated:', in_mC
            
-				write(*,*) 'Values of nr, nc, and nk:'
-				write(*,*) nrecord
-				write(*,*) nft
-				write(*,*) nk
-	
-				write(*,*) 'First row of xmat:'
-				write(*,*) in_mX(1,:)
+                write(*,*) 'Values of nr, nc, and nk:'
+                write(*,*) nrecord
+                write(*,*) nft
+                write(*,*) nk
 
- 
-				write(*,*) 'End of Fortran subroutine'
+                WRITE(*,*)
+                write(*,*) 'Matrix X (input features):'
+                DO i = 1, nrecord
+                   write(*,*) 'row', i, ':', in_mX(i,:)
+                   write(*,*) '------------------------' 
+                END DO
+
+                WRITE(*,*)
+                write(*,*) 'Matrix Y (time and label):'
+                DO i = 1, nrecord
+                   write(*,*) 'row', i, ':', in_mY(i,:)
+                   write(*,*) '------------------------' 
+                END DO
+                
+                WRITE(*,*)
+                write(*,*) 'Matrix K (kit structure):'
+                DO i = 1, nk
+                   write(*,*) 'row', i, ':', in_mK(i,:)
+                   write(*,*) '------------------------' 
+                END DO
+                
+                WRITE(*,*)
+                WRITE(*,*) 'costs:', in_mC
+                WRITE(*,*)
+
+                write(*,*) 'End of initialization'    
 
            
               !---------------------------------------------------------------------------
@@ -6254,7 +6275,7 @@
                     END DO
     
                     IF (iprint > 2) THEN
-                       WRITE(45,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+                       WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
                     END IF
     
                     ! We check if the optimization of problem 3 with k kits can be stopped            
@@ -6281,7 +6302,7 @@
                     END IF  
                     IF (iprint >=2 .AND. (kit_num > k)) THEN                                      
                       WRITE(*,*)
-                      WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be smaller than', k 
+                      WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
                     END IF
                     END IF
                     
@@ -6586,7 +6607,7 @@
                     END DO
                               
                     IF (iprint > 2) THEN
-                       WRITE(45,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+                       WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
                     END IF                            
                               
                     ! We check if the optimization of problem 3 with k kits can be stopped            
@@ -6613,7 +6634,7 @@
                     END IF  
                     IF (iprint >=2 .AND. (kit_num > k)) THEN                                      
                       WRITE(*,*)
-                      WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be smaller than', k 
+                      WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
                     END IF
                     END IF
                   
