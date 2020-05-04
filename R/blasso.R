@@ -28,7 +28,7 @@ blassocox <- function(x, y, kits, costs, ...){
 		ncol = nrow(kits)
 	)
 	rownames(betakits) <- colnames(x)
-	colnames(betakits) <- paste("kstep_", 1:nrow(kits))
+	colnames(betakits) <- paste("kstep_", 1:nrow(kits), sep="")
 	betakits <- t(betakits)
 	# Add complete set of kits in order as attributes to the beta/kits output
 	kitorder <- apply(betakits, MARGIN=1, FUN=function(z) { which(!ex_K %*% z == 0) })
