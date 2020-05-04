@@ -6004,37 +6004,37 @@
                ! WRITE(*,*) 'Matrix K populated:', in_mK
                ! WRITE(*,*) 'Vector C populated:', in_mC
            
-                write(*,*) 'Values of nr, nc, and nk:'
-                write(*,*) nrecord
-                write(*,*) nft
-                write(*,*) nk
+               ! write(*,*) 'Values of nr, nc, and nk:'
+               ! write(*,*) nrecord
+               ! write(*,*) nft
+               ! write(*,*) nk
 
-                WRITE(*,*)
-                write(*,*) 'Matrix X (input features):'
-                DO i = 1, nrecord
-                   write(*,*) 'row', i, ':', in_mX(i,:)
-                   write(*,*) '------------------------' 
-                END DO
+               ! WRITE(*,*)
+               ! write(*,*) 'Matrix X (input features):'
+               ! DO i = 1, nrecord
+               !    write(*,*) 'row', i, ':', in_mX(i,:)
+               !    write(*,*) '------------------------' 
+               ! END DO
 
-                WRITE(*,*)
-                write(*,*) 'Matrix Y (time and label):'
-                DO i = 1, nrecord
-                   write(*,*) 'row', i, ':', in_mY(i,:)
-                   write(*,*) '------------------------' 
-                END DO
+               ! WRITE(*,*)
+               ! write(*,*) 'Matrix Y (time and label):'
+               ! DO i = 1, nrecord
+               !    write(*,*) 'row', i, ':', in_mY(i,:)
+               !    write(*,*) '------------------------' 
+               ! END DO
                 
-                WRITE(*,*)
-                write(*,*) 'Matrix K (kit structure):'
-                DO i = 1, nk
-                   write(*,*) 'row', i, ':', in_mK(i,:)
-                   write(*,*) '------------------------' 
-                END DO
+               ! WRITE(*,*)
+               ! write(*,*) 'Matrix K (kit structure):'
+               ! DO i = 1, nk
+               !    write(*,*) 'row', i, ':', in_mK(i,:)
+               !    write(*,*) '------------------------' 
+               ! END DO
                 
-                WRITE(*,*)
-                WRITE(*,*) 'costs:', in_mC
-                WRITE(*,*)
+               ! WRITE(*,*)
+               ! WRITE(*,*) 'costs:', in_mC
+               ! WRITE(*,*)
 
-                write(*,*) 'End of initialization'    
+               ! write(*,*) 'End of initialization'    
 
            
               !---------------------------------------------------------------------------
@@ -6198,10 +6198,11 @@
                     run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
                     num_rho = 0                 ! The selection of the first value of penalization parameter rho
                   
-                    IF (iprint >= 2) THEN
-                       WRITE(*,*) '-------------------------------------' 
-                       WRITE(*,*) 'New start point used.' 
-                    END IF
+                   !! TDL: Reducing debug output for now while verbosity parameters are fixed
+                   ! IF (iprint >= 2) THEN
+                   !    WRITE(*,*) '-------------------------------------' 
+                   !    WRITE(*,*) 'New start point used.' 
+                   ! END IF
                   
                     DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
                   
@@ -6274,9 +6275,10 @@
                       END IF 
                     END DO
     
-                    IF (iprint > 2) THEN
-                       WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-                    END IF
+                    !! TDL: Reducing debugging output while having fixed verbosity parameter
+                    !IF (iprint > 2) THEN
+                    !   WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+                    !END IF
     
                     ! We check if the optimization of problem 3 with k kits can be stopped            
                     IF (kit_num <= k .OR. run_stop) THEN 
@@ -6295,16 +6297,17 @@
                     f1_current = f1(beta_solution,3,user_n)
                     f2_current = f2(beta_solution,3,user_n)
                   
-                    IF (run_stop) THEN
-                    IF (iprint >= 2 .AND. (kit_num <= k)) THEN   
-                      WRITE(*,*)
-                      WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                    END IF  
-                    IF (iprint >=2 .AND. (kit_num > k)) THEN                                      
-                      WRITE(*,*)
-                      WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-                    END IF
-                    END IF
+                    !! TDL: Reducing debugging output while having fixed verbosity parameter
+                    ! IF (run_stop) THEN
+                    ! IF (iprint >= 2 .AND. (kit_num <= k)) THEN   
+                    !   WRITE(*,*)
+                    !   WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
+                    ! END IF  
+                    ! IF (iprint >=2 .AND. (kit_num > k)) THEN                                      
+                    !   WRITE(*,*)
+                    !   WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
+                    ! END IF
+                    ! END IF
                     
                     END DO
                     
