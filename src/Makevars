@@ -1,10 +1,19 @@
+RM = rm
+
 C_OBJS = blassoc.o
-FT_OBJS = blassof.o
+FT_OBJS = kaikki.o plqdf1.o
 
 all:
 	@$(MAKE) $(SHLIB)
 	@rm -f *.mod *.o
 
+clean:	
+	$(RM) *.mod *.o  
+	echo Clean done
+
 $(SHLIB): $(FT_OBJS) $(C_OBJS)
 
-blassoc.c: blassof.o
+blassoc.c: kaikki.o
+
+
+
