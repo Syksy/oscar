@@ -6425,7 +6425,7 @@
                  
                  IF (start == -1) THEN
                     nstart = 1
-                 ELSE IF (start == -2 .AND. start == -3 ) THEN
+                 ELSE IF (start == -2 .OR. start == -3 ) THEN
                     nstart = nk
                  ELSE IF (start == -4) THEN     
                     nstart = start_max
