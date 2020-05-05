@@ -8,12 +8,25 @@
 #' Wrap up matrix to Fortran
 blassocox <- function(x, y, kits, costs, print=3, start=2, ...){
 	if(!is.matrix(x)) stop("Function argument 'x' should be of 'matrix' class")
-	if(!is.double(x)) { storage.mode(x) <- 'double' }	
+	if(!is.double(x)) { storage.mode(x) <- 'double' }
+	
+	if(!is.matrix(y)) stop("Function argument 'y' should be of 'matrix' class with two columns")
+	if(!is.double(y)) { storage.mode(y) <- 'double' }
+	
+	if(!is.matrix(kits)) stop("Function argument 'kitsä should be of 'matrix' class")
+	if(!is.integer(kits)) { storage.mode(kits) <- 'integer' }
+	
+	if(!is.double(costs)) { storage.mode(costs) <- 'double' }
+	
 	# Sanity checks to prevent nonsensical data being sent to Fortran subroutine
 	if(!ncol(kits)==ncol(x)) stop("'kits' matrix should have as many columns (variables) as the input data matrix 'x'")
 	if(!all(kits) %in% c(0,1)) stop("'kits' should be an indicator matrix composing only of ones and zeroes")
 	if(!nrow(kits)==length(costs)) stop("The number of rows in 'kits' (i.e. different kits) should be of same length as costs matrix (i.e. cost for each kits)")
 
+	if(!nrow(y)==nrow(x)) stop("The number of rows in argument 'y' should be same as in 'x'")
+	if(!ncol(y)==2) stop("Function argument 'y' should have two columns: time in the first and event in the second column")
+	if(!all(y[,2] %in% c(0,1))) stop("Events (second column in argument 'y') should be 0 or 1")
+	
 	# Call C-interface and Fortran-subroutine	
 	ncol <- ncol(x)
 	nrow <- nrow(x)
