@@ -6,7 +6,7 @@
 ##
 
 #' Wrap up matrix to Fortran
-blassocox <- function(x, y, kits, costs, ...){
+blassocox <- function(x, y, kits, costs, print=3, start=2, ...){
 	if(!is.matrix(x)) stop("Function argument 'x' should be of 'matrix' class")
 	if(!is.double(x)) { storage.mode(x) <- 'double' }	
 	# Sanity checks to prevent nonsensical data being sent to Fortran subroutine
@@ -23,7 +23,7 @@ blassocox <- function(x, y, kits, costs, ...){
 
 	# Store betas per kits
 	betakits <- matrix(
-		.Call(c_blassocox_f, as.double(x), as.double(y), as.integer(kits), as.double(costs), as.integer(nrow), as.integer(ncol), as.integer(nkits)),
+		.Call(c_blassocox_f, as.double(x), as.double(y), as.integer(kits), as.double(costs), as.integer(nrow), as.integer(ncol), as.integer(nkits),as.integer(print),as.integer(start)),
 		nrow = ncol(x),
 		ncol = nrow(kits)
 	)
