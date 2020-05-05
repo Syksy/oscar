@@ -12,5 +12,5 @@
 }
 \examples{
 	data(ex)
-	blassocox(x=ex_X[1:5,1:5], y=ex_Y[1:5,], kits=ex_K[1:5,1:5], costs=ex_c[1:5])
+	blassocox(x=ex_X, y=ex_Y, kits=ex_K, costs=ex_c)
 }

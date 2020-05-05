@@ -7,13 +7,14 @@
 
 #' Wrap up matrix to Fortran
 blassocox <- function(x, y, kits, costs, print=3, start=2, ...){
+	# Checking for data types
 	if(!is.matrix(x)) stop("Function argument 'x' should be of 'matrix' class")
 	if(!is.double(x)) { storage.mode(x) <- 'double' }
 	
 	if(!is.matrix(y)) stop("Function argument 'y' should be of 'matrix' class with two columns")
 	if(!is.double(y)) { storage.mode(y) <- 'double' }
 	
-	if(!is.matrix(kits)) stop("Function argument 'kitsä should be of 'matrix' class")
+	if(!is.matrix(kits)) stop("Function argument 'kits should be of 'matrix' class")
 	if(!is.integer(kits)) { storage.mode(kits) <- 'integer' }
 	
 	if(!is.double(costs)) { storage.mode(costs) <- 'double' }
