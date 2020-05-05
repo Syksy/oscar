@@ -5,14 +5,16 @@
 #include <R_ext/Rdynload.h>
 
 // Blasso Cox DBDC
-void F77_NAME(blassocox_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk);
+void F77_NAME(blassocox_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start);
 
 // Define the C wrapper function for matrix operation testing
-extern SEXP c_blassocox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits){
+extern SEXP c_blassocox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start){
 	// Define constants (dimensions in data / features)
 	const int nr = asInteger(nrow);
 	const int nc = asInteger(ncol);
 	const int nk = asInteger(nkits);
+	const int inprint = asInteger(print);
+	const int instart = asInteger(start);
 	SEXP beta;
 	SEXP fperk;
 	// Format output and protect them from garbage collection
@@ -20,7 +22,7 @@ extern SEXP c_blassocox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	PROTECT(fperk = allocVector(REALSXP, nk));
 
 	// Call Fortran subroutine
-	F77_CALL(blassocox_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk));
+	F77_CALL(blassocox_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart);
 
 	// Wrap up and return
 	UNPROTECT(1);
