@@ -44,3 +44,10 @@ Compiling the code:
 * > blassocox(x=ex_X, y=ex_Y, kits=ex_K, costs=ex_c) # Test run, notice this uses all the data! Smaller test would be feasible
 * ...
 
+Working with git:
+* git status
+* git pull
+* git checkout branchname
+* git add .
+* git commit -m "Did X changes"
+* git push
