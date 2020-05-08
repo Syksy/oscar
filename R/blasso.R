@@ -6,7 +6,17 @@
 ##
 
 #' Wrap up matrix to Fortran
-blassocox <- function(x, y, kits, costs, print=3, start=2, ...){
+blassocox <- function(
+	## Data
+	x,	# Data matrix X
+	y,	# Survival vectors (events and times)
+	kits,	# Kit indicator matrix 
+	costs,	# Vector of kit costs
+	## Tuning parameters
+	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
+	start=2,#  
+	...
+){
 	# Checking for data types
 	if(!is.matrix(x)) stop("Function argument 'x' should be of 'matrix' class")
 	if(!is.double(x)) { storage.mode(x) <- 'double' }
@@ -28,6 +38,8 @@ blassocox <- function(x, y, kits, costs, print=3, start=2, ...){
 	if(!ncol(y)==2) stop("Function argument 'y' should have two columns: time in the first and event in the second column")
 	if(!all(y[,2] %in% c(0,1))) stop("Events (second column in argument 'y') should be 0 or 1")
 	
+	if(!print %in% c(-1,0,1,2,3)) stop("'print' parameter ought to be one of the values {-1,0,1,2,3}")
+	
 	# Call C-interface and Fortran-subroutine	
 	ncol <- ncol(x)
 	nrow <- nrow(x)
@@ -37,7 +49,7 @@ blassocox <- function(x, y, kits, costs, print=3, start=2, ...){
 
 	# Store betas per kits
 	betakits <- matrix(
-		.Call(c_blassocox_f, as.double(x), as.double(y), as.integer(kits), as.double(costs), as.integer(nrow), as.integer(ncol), as.integer(nkits),as.integer(print),as.integer(start)),
+		.Call(c_blassocox_f, as.double(x), as.double(y), as.integer(kits), as.double(costs), as.integer(nrow), as.integer(ncol), as.integer(nkits), as.integer(print),as.integer(start)),
 		nrow = ncol(x),
 		ncol = nrow(kits)
 	)
