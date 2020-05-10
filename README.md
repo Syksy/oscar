@@ -23,15 +23,15 @@ Root files
 * README.md   : This file
 * ...
 
-TO DO:
-* Include Kaisa's preliminary Fortran implementation
-* Extend current naive example
-* Roxygenize R package documentation
-* Make sure Fortran makefile is correct
-* Testing for final modeling procedure (Ideally R unit testing folder)
-* Extending R functionality to actually work
-* Include a small R test data
-* Many many things...
+Version plan:
+* 0.x - Roxygenize R package documentation
+* 0.x - Testing for final modeling procedure (Ideally R unit testing folder)
+* 0.x - Include a small R test data (currently ex_X and ex_Y are already in ePCR, maybe include only ex_K and ex_c in blasso)
+* 0.2 - Basic diagnostics and results interpretation of the modeling results; visualizations, fitting of coxph-models in R based on the results from Fortran, prediction, model coefficient extraction etc
+* 0.3 - Additional DBDC fine-tuning; starting-point robustness, speed, 
+* 0.4 - An S4-class for blasso-objects instead of saving helper variables as attributes
+* 0.5 - User-friendliness in R-package; vignette, helper tools
+* 0.6 - Comfortable to other similar packages, e.g. predict.blasso-function to with type = "coefficients" and with adjustable "k" parameter, type = "response" for particular Cox-model predictions etc
 * ...
 
 Compiling the code:

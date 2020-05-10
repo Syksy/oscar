@@ -69,7 +69,9 @@ blassocox <- function(
 	attr(betakits, "kitorder") <- kitorder
 	# Pick kit names and the order in which each individual kit was added
 	attr(betakits, "kitnames") <- rownames(kits)[c(kitorder[[1]], unlist(lapply(2:length(kitorder), FUN=function(z) { base::setdiff(kitorder[[z]], kitorder[[z-1]]) })))]
+	# Functio target values at each kit count
+	attr(betakits, "fkits") <- fkits
 	# Rows are the sequence in which kits are picked; columns are variables, which are picked in bundles according to kits
-	cat(fkits)
+	#cat(fkits)
 	betakits
 }
