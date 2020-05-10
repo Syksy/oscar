@@ -24,10 +24,18 @@ extern SEXP c_blassocox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	// Call Fortran subroutine
 	F77_CALL(blassocox_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart);
 
+	// Create result structure
+	SEXP res = PROTECT(allocVector(VECSXP,2));
+	SET_VECTOR_ELT(res,0,beta);
+	SET_VECTOR_ELT(res,1,fperk);
+	
 	// Wrap up and return
 	UNPROTECT(1);
 	UNPROTECT(1);
-	return(beta);
+	UNPROTECT(1);
+	
+	//return(beta);
+	return(res);
 }
 // Tell R of our available Fortran functions; should probably have one for each model family
 static const R_CallMethodDef CallEntries[] = {
