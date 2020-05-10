@@ -48,11 +48,11 @@ blassocox <- function(
 	if(!is.integer(nrow)) { storage.mode(nrow) <- 'integer' }
 
 	# Call C function
-	res <- .Call(c_blassocox_f, as.double(x), as.double(y), as.integer(kits), as.double(costs), as.integer(nrow), as.integer(ncol), as.integer(nkits), as.integer(print),as.integer(start)),
+	res <- .Call(c_blassocox_f, as.double(x), as.double(y), as.integer(kits), as.double(costs), as.integer(nrow), as.integer(ncol), as.integer(nkits), as.integer(print), as.integer(start))
 		
 	# Store betas per kits
 	betakits <- matrix(
-		res[[1]]
+		res[[1]],
 		nrow = ncol(x),
 		ncol = nrow(kits)
 	)
