@@ -47,12 +47,19 @@ blassocox <- function(
 	if(!is.integer(ncol)) { storage.mode(ncol) <- 'integer' }
 	if(!is.integer(nrow)) { storage.mode(nrow) <- 'integer' }
 
+	# Call C function
+	res <- .Call(c_blassocox_f, as.double(x), as.double(y), as.integer(kits), as.double(costs), as.integer(nrow), as.integer(ncol), as.integer(nkits), as.integer(print),as.integer(start)),
+		
 	# Store betas per kits
 	betakits <- matrix(
-		.Call(c_blassocox_f, as.double(x), as.double(y), as.integer(kits), as.double(costs), as.integer(nrow), as.integer(ncol), as.integer(nkits), as.integer(print),as.integer(start)),
+		res[[1]]
 		nrow = ncol(x),
 		ncol = nrow(kits)
 	)
+	
+	# Store target function values per kits
+	fkits <- res[[2]]
+	
 	rownames(betakits) <- colnames(x)
 	colnames(betakits) <- paste("kstep_", 1:nrow(kits), sep="")
 	betakits <- t(betakits)
@@ -63,5 +70,6 @@ blassocox <- function(
 	# Pick kit names and the order in which each individual kit was added
 	attr(betakits, "kitnames") <- rownames(kits)[c(kitorder[[1]], unlist(lapply(2:length(kitorder), FUN=function(z) { base::setdiff(kitorder[[z]], kitorder[[z-1]]) })))]
 	# Rows are the sequence in which kits are picked; columns are variables, which are picked in bundles according to kits
+	cat(fkits)
 	betakits
 }
