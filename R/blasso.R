@@ -1,11 +1,10 @@
 ###
 #
-# First preliminary tests for R <-> C <-> Fortran interfaces
-# Testing based on https://www.avrahamadler.com/2018/12/09/the-need-for-speed-part-1-building-an-r-package-with-fortran/
+# Main blasso Fortran/C-wrappers and R-functions for building fit model objects
 #
 ##
 
-#' Wrap up matrix to Fortran
+#' Fit blasso Cox model objects as a function of kits using L0-norm
 blassocox <- function(
 	## Data
 	x,	# Data matrix X
@@ -69,9 +68,16 @@ blassocox <- function(
 	attr(betakits, "kitorder") <- kitorder
 	# Pick kit names and the order in which each individual kit was added
 	attr(betakits, "kitnames") <- rownames(kits)[c(kitorder[[1]], unlist(lapply(2:length(kitorder), FUN=function(z) { base::setdiff(kitorder[[z]], kitorder[[z-1]]) })))]
+	# Save kit indices in the order in which they were picked
+	attr(betakits, "kitindices") <- c(kitorder[[1]], unlist(lapply(2:length(kitorder), FUN=function(z) { base::setdiff(kitorder[[z]], kitorder[[z-1]]) })))
 	# Functio target values at each kit count
 	attr(betakits, "fkits") <- fkits
+	# Save kit costs
+	attr(betakits, "costs") <- costs
+	# Save kit indicator matrix
+	attr(betakits, "kits") <- kits
+	# Total kit cost at each kit combination
+	attr(betakits, "costkits") <- lapply(kitorder, FUN=function(z) { sum(costs[z]) })
 	# Rows are the sequence in which kits are picked; columns are variables, which are picked in bundles according to kits
-	#cat(fkits)
 	betakits
 }
