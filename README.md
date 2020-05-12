@@ -41,7 +41,7 @@ Compiling the code:
 * R -> Start R session inside command prompt
 * > library(blasso) # Load blasso-package
 * > data(ex) # Load example dataset (consists of ex_X, ex_Y, ex_K and ex_c)
-* > bc <- blassocox::blassocox(x=ex_X, y=ex_Y, kits=ex_K, costs=ex_c) # Test run, notice this uses all the data! Smaller test would be feasible
+* > bc <- blasso::blassocox(x=ex_X, y=ex_Y, kits=ex_K, costs=ex_c) # Test run, notice this uses all the data! Smaller test would be feasible
 * > bc # Show model results and other attributes
 * ...
 
