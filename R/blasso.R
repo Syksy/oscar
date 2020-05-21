@@ -63,7 +63,7 @@ blassocox <- function(
 	colnames(betakits) <- paste("kstep_", 1:nrow(kits), sep="")
 	betakits <- t(betakits)
 	# Add complete set of kits in order as attributes to the beta/kits output
-	kitorder <- apply(betakits, MARGIN=1, FUN=function(z) { which(!ex_K %*% z == 0) })
+	kitorder <- apply(betakits, MARGIN=1, FUN=function(z) { which(!kits %*% z == 0) })
 	names(kitorder) <- paste("kstep_",1:nrow(kits))
 	attr(betakits, "kitorder") <- kitorder
 	# Pick kit names and the order in which each individual kit was added
