@@ -1,8 +1,8 @@
 Package: blasso
 Type: Package
-Title: Budget-aware LASSO
-Version: 0.1.3
-Date: 2020-05-12
+Title: Cardinality-constrained Absolute Subset Selection Optimization (CASSO) using the L0-pseudonorm
+Version: 0.1.4
+Date: 2020-05-25
 Authors@R: c(
 	person(given="Teemu Daniel", family="Laajala", role=c("aut", "cre"), email="teelaa@utu.fi", comment = c(ORCID = "0000-0002-7016-7354")),
 	person(given="Kaisa", family="Joki", role=c("aut"), email="kjjoki@utu.fi"),
@@ -11,6 +11,6 @@ Description: TO DO. This is still a work in progress before becoming a finalized
 License: GPL-3
 LazyData: true
 NeedsCompilation: yes
-Depends: R (>= 3.5.0)
+Depends: R (>= 4.0.0)
 Imports: 
 Suggests: glmnet, hamlet, ePCR

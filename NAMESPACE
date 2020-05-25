@@ -1,4 +1,5 @@
 useDynLib(blasso, .registration=TRUE)
-export("blassocox")
-export("funcvalcost")
+#export("bassocox")
+#export("funcvalcost")
+export("casso")
 

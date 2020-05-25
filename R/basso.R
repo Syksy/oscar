@@ -5,7 +5,7 @@
 ##
 
 #' Fit blasso Cox model objects as a function of kits using L0-norm
-blassocox <- function(
+bassocox <- function(
 	## Data
 	x,	# Data matrix X
 	y,	# Survival vectors (events and times)
