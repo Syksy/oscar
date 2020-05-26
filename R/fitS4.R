@@ -5,16 +5,16 @@
 #
 ####
 
-#' S4-class for basso
+#' S4-class for casso
 setClass("casso", # abbreviation
 	representation(
 		# Set class representations for the S4-class @-slots
 		## Results from Fortran
 		bperk = "matrix",	# Rows: different kit k-values, columns: beta coefficients  in model fit
 		fperk = "numeric",	# Target function values at each k-value
+		kperk = "list",		# Which kits were picked at which k-step (named indices vector)
+		cperk = "numeric",	# Cumulative kit costs per each k-value
 		#cputime = "numeric",	# Total CPU time for computations
-		kitorder = "integer",	# Integer order in which kits were selected
-		kitnames = "character",	# Names of the corresponding kits (rownames of the provided kit indicator matrix)
 		rho = "numeric",	# Vector of utilized rho-values in the penalization
 		## Provided data, saved in R
 		x = "matrix",		# Original data matrix for fitting
@@ -31,8 +31,8 @@ setClass("casso", # abbreviation
 		## Results from Fortran
 		bperk = matrix(NA, nrow=0, ncol=0),
 		fperk = NA_real_,
-		kitorder = NA_integer_,
-		kitnames = NA_character_,
+		kperk = list(),
+		cperk = NA_real_,
 		rho = NA_real_,
 		## Provided data, saved in R
 		x = matrix(NA, nrow=0, ncol=0),
@@ -100,11 +100,21 @@ casso <- function(
 	# Transpose so that coefficients are columns and k-steps are rows in bperk
 	bperk <- t(bperk)
 
+	# Kits picked per each k-step
+	kperk <- t(apply(bperk, MARGIN=1, FUN=function(z) as.integer(!z==0)))
+	# Indices as a named vector
+	kperk <- apply(kperk %*% t(k), MARGIN=1, FUN=function(z) { which(!z==0) })
+	
+	# Kit costs per each k-step
+	cperk <- unlist(lapply(kperk, FUN=function(z) { sum(w[z]) }))
+
 	# Return the freshly built S4 model object
 	new("casso", 
 		## Model fit results
-		bperk = bperk,
-		fperk = fperk,
+		bperk = bperk, # Beta coef per k-steps
+		fperk = fperk, # Target function values per k-steps
+		kperk = kperk, # Chosen kits per k-steps
+		cperk = cperk, # Total kit costs per each k-step
 		## Data slots
 		x=as.matrix(x), 
 		y=as.matrix(y), 
@@ -116,6 +126,57 @@ casso <- function(
 }
 
 
+#' Showing casso-objects
+#'
+#' @export
+setMethod("show", "casso",
+	function(object){
+	cat("Cardinality-constrained Absolute Subset Selection Optimizated model object\n")
+	cat(paste("Model family: ", object@family,"\n", sep=""))
+	cat(paste("k steps: ", nrow(object@k),"\n", sep=""))
+	cat(paste("dim(x): [", paste(dim(object@x),collapse=","),"]\n", sep=""))
+	cat(paste("dim(y): [", paste(dim(object@y),collapse=","),"]\n", sep=""))
+})
+
+
+#' Plotting casso-objects
+#'
+#' @export
+setMethod("plot", "casso",
+	function(
+		object
+	){
+	legend <- TRUE
+	mtexts <- TRUE
+	par(las=2,  # All labels orthogonally to axes
+		mar=c(7,4,1,4), # Inner margins
+		oma=c(ifelse(mtexts, 2, 0), ifelse(mtexts, 2, 0), 0, ifelse(mtexts, 2, 0))) # Outer margins depend on additional labels with mtext
+	y1 <- object@fperk
+	y2 <- object@cperk
+	x <- 1:nrow(object@k)
+	# Two y-axes overlayed in a single graphics device, rigid first example
+	plot.new()
+	# First part (target function values)
+	plot.window(xlim=c(1,length(x)), ylim=range(y1))
+	axis(1, at=1:length(x), labels=x)
+	axis(2, col.axis="red")
+	box()
+	points(1:length(x), y1, pch=16, col="red")
+	points(1:length(x), y1, type="l", col="red")
+	# Second part (cost accumulation)
+	plot.window(xlim=c(1,length(x)), ylim=range(y2))
+	axis(4, col.axis="blue")
+	points(1:length(x), y2, pch=16, col="blue")
+	points(1:length(x), y2, type="l", col="blue")
+	if(legend){
+		legend("top", col=c("red", "blue"), pch=16, lwd=1, legend=c("Target function value", "Cumulative kit cost"))
+	}
+	if(mtexts){
+		mtext(side=1, text="K steps", las=0, outer=TRUE)
+		mtext(side=2, text="Target function value", las=0, outer=TRUE)
+		mtext(side=4, text="Cumulative kit costs", las=0, outer=TRUE)
+	}
+})
 
 
 
