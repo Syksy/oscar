@@ -1,8 +1,8 @@
 Package: blasso
 Type: Package
 Title: Cardinality-constrained Absolute Subset Selection Optimization (CASSO) using the L0-pseudonorm
-Version: 0.1.4
-Date: 2020-05-25
+Version: 0.1.5
+Date: 2020-05-28
 Authors@R: c(
 	person(given="Teemu Daniel", family="Laajala", role=c("aut", "cre"), email="teelaa@utu.fi", comment = c(ORCID = "0000-0002-7016-7354")),
 	person(given="Kaisa", family="Joki", role=c("aut"), email="kjjoki@utu.fi"),
@@ -12,5 +12,5 @@ License: GPL-3
 LazyData: true
 NeedsCompilation: yes
 Depends: R (>= 4.0.0)
-Imports: 
+Imports: survival
 Suggests: glmnet, hamlet, ePCR

@@ -6,6 +6,10 @@
 ####
 
 #' S4-class for casso
+#'
+#'
+#'
+#' @export
 setClass("casso", # abbreviation
 	representation(
 		# Set class representations for the S4-class @-slots
@@ -23,6 +27,7 @@ setClass("casso", # abbreviation
 		w = "numeric",		# Kit value (cost ~ weights) vector, length ought to be same as nrow(k)
 		## Additional
 		family = "character",	# Utilized model family, in early versions only 'cox' supported (to be added: normal/gaussian, logistic, ...
+		goodness = "numeric",	# Goodness metric at each k based on model fit; dependent on 'family': cox is concordance-index, ...
 		fits = "list",		# Pre-fitted model objects, where each model fit only allows the optimal subset of features to be incorporated into the model; length should be equal to k sequence
 		info = "character"	# Additional error messages, warnings or such reported e.g. during model fitting
 	),	
@@ -41,6 +46,7 @@ setClass("casso", # abbreviation
 		w = NA_real_,
 		## Additional
 		family = NA_character_,
+		goodness = NA_real_,
 		fits = list(),
 		info = NA_character_
 	),
@@ -55,7 +61,22 @@ setClass("casso", # abbreviation
 
 #' Function for conveniently creating new model objects
 #'
+#' TODO: Extended explanation of the casso S4-class here.
 #'
+#' @param x Data matrix 'x'
+#' @param y Response vector/two-column matrix 'y' (see: family); number of rows equal to nrow(x)
+#' @param k Integer (0/1) kit indicator matrix; number of columns equal to ncol(x)
+#' @param w Kit cost weight vector w of length nrow(k)
+#' @param family Model family, should be one of: 'cox'
+#' @param print Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}
+#' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}
+#'
+#' @return casso S4-object fit using 
+#'
+#' @examples
+#' data(ex)
+#' fit <- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c)
+#' fit
 #'
 #' @export
 casso <- function(
@@ -109,7 +130,7 @@ casso <- function(
 	cperk <- unlist(lapply(kperk, FUN=function(z) { sum(w[z]) }))
 
 	# Return the freshly built S4 model object
-	new("casso", 
+	obj <- new("casso", 
 		## Model fit results
 		bperk = bperk, # Beta coef per k-steps
 		fperk = fperk, # Target function values per k-steps
@@ -123,6 +144,25 @@ casso <- function(
 		## Additional
 		family=as.character(family)
 	)
+	
+	# Fit lm/glm/coxph/... models per each estimated set of beta coefs (function call depends on 'family')
+	obj@fits <- apply(bperk, MARGIN=1, FUN=function(bs){
+		if(family=="cox"){
+			survival::coxph(
+				survival::Surv(time=obj@y[,1], event=obj@y[,2]) ~ obj@x, # Formula for response 'y' modeled using data matrix 'x' 
+				init = bs, # Use model coefficients obtained using the DBDC optimization 
+				control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
+			)
+		}
+	})
+	
+	# Calculate/extract model goodness metric at each k
+	if(family=="cox"){
+		obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { z$concordance["concordance"] }))
+	}
+	
+	# Return the new model object
+	obj
 }
 
 
@@ -131,52 +171,11 @@ casso <- function(
 #' @export
 setMethod("show", "casso",
 	function(object){
-	cat("Cardinality-constrained Absolute Subset Selection Optimizated model object\n")
+	cat("Cardinality-constrained Absolute Subset Selection Optimized model object\n")
 	cat(paste("Model family: ", object@family,"\n", sep=""))
 	cat(paste("k steps: ", nrow(object@k),"\n", sep=""))
 	cat(paste("dim(x): [", paste(dim(object@x),collapse=","),"]\n", sep=""))
 	cat(paste("dim(y): [", paste(dim(object@y),collapse=","),"]\n", sep=""))
 })
-
-
-#' Plotting casso-objects
-#'
-#' @export
-setMethod("plot", "casso",
-	function(
-		object
-	){
-	legend <- TRUE
-	mtexts <- TRUE
-	par(las=2,  # All labels orthogonally to axes
-		mar=c(7,4,1,4), # Inner margins
-		oma=c(ifelse(mtexts, 2, 0), ifelse(mtexts, 2, 0), 0, ifelse(mtexts, 2, 0))) # Outer margins depend on additional labels with mtext
-	y1 <- object@fperk
-	y2 <- object@cperk
-	x <- 1:nrow(object@k)
-	# Two y-axes overlayed in a single graphics device, rigid first example
-	plot.new()
-	# First part (target function values)
-	plot.window(xlim=c(1,length(x)), ylim=range(y1))
-	axis(1, at=1:length(x), labels=x)
-	axis(2, col.axis="red")
-	box()
-	points(1:length(x), y1, pch=16, col="red")
-	points(1:length(x), y1, type="l", col="red")
-	# Second part (cost accumulation)
-	plot.window(xlim=c(1,length(x)), ylim=range(y2))
-	axis(4, col.axis="blue")
-	points(1:length(x), y2, pch=16, col="blue")
-	points(1:length(x), y2, type="l", col="blue")
-	if(legend){
-		legend("top", col=c("red", "blue"), pch=16, lwd=1, legend=c("Target function value", "Cumulative kit cost"))
-	}
-	if(mtexts){
-		mtext(side=1, text="K steps", las=0, outer=TRUE)
-		mtext(side=2, text="Target function value", las=0, outer=TRUE)
-		mtext(side=4, text="Cumulative kit costs", las=0, outer=TRUE)
-	}
-})
-
 
 
