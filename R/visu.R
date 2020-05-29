@@ -6,6 +6,18 @@
 
 #' Target function value and total kit cost as a function of number of kits included
 #'
+#' @param y
+#' @param cols
+#' @param legend
+#' @param mtexts
+#' @param ...
+#'
+#' @examples
+#' data(ex)
+#' fit <- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c)
+#' visu(fit, y=c("goodness", "cost") # Goodness-of-fit vs. cost of kits
+#' visu(fit, y=c("target", "cost") # Target function value vs. cost of kits
+#'
 #' @export
 visu <- function(
 	object,	# casso-object (with corresponding slots available)
@@ -20,7 +32,6 @@ visu <- function(
 	cols = c("red", "blue"),
 	legend = "top", # Legend on top, FALSE/NA omits legend, otherwise it's used for placing the legend
 	mtexts = TRUE, # Outer margin texts
-	gtexts = TRUE, # Goodness measure texts
 	...
 ){
 	if(!class(object) %in% "casso") stop("'object' should be of class 'casso'")

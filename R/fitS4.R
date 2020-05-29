@@ -20,6 +20,7 @@ setClass("casso", # abbreviation
 		cperk = "numeric",	# Cumulative kit costs per each k-value
 		#cputime = "numeric",	# Total CPU time for computations
 		rho = "numeric",	# Vector of utilized rho-values in the penalization
+		start = "numeric",	# Method of generating starting values
 		## Provided data, saved in R
 		x = "matrix",		# Original data matrix for fitting
 		y = "matrix",		# Response vector (two-column Surv-object for Cox modelling)
@@ -39,6 +40,7 @@ setClass("casso", # abbreviation
 		kperk = list(),
 		cperk = NA_real_,
 		rho = NA_real_,
+		start = NA_real_,
 		## Provided data, saved in R
 		x = matrix(NA, nrow=0, ncol=0),
 		y = matrix(NA, nrow=0, ncol=0),
@@ -136,6 +138,7 @@ casso <- function(
 		fperk = fperk, # Target function values per k-steps
 		kperk = kperk, # Chosen kits per k-steps
 		cperk = cperk, # Total kit costs per each k-step
+		start = start, # Method for generating starting points
 		## Data slots
 		x=as.matrix(x), 
 		y=as.matrix(y), 

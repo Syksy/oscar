@@ -2,4 +2,7 @@ useDynLib(blasso, .registration=TRUE)
 #export("bassocox")
 #export("funcvalcost")
 export("casso")
+export("visu")
+export("bs.casso")
+export("cv.casso")
 
