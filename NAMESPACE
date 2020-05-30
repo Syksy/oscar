@@ -1,8 +1,5 @@
-useDynLib(blasso, .registration=TRUE)
-#export("bassocox")
-#export("funcvalcost")
+useDynLib(casso, .registration=TRUE)
 export("casso")
 export("visu")
 export("bs.casso")
 export("cv.casso")
-

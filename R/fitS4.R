@@ -100,7 +100,7 @@ casso <- function(
 	if(family=="cox"){
 
 		# Call C function
-		res <- .Call(c_blassocox_f, 
+		res <- .Call(c_cassocox_f, 
 			as.double(x), # Data matrix x
 			as.double(y), # Response y
 			as.integer(k), # Kit indicator matrix k 

@@ -75,11 +75,13 @@ bs.casso <- function(
 	if(!is.null(seed)) set.seed(seed)
 	# Generate and fit bootstrapped datasets
 	bperks <- lapply(1:bootstrap, FUN=function(i){
+		if(verb>=1) print(paste("Bootstrap iteration", i))
 		# Sampling with replacement from rows
 		samps <- sample(1:nrow(fit@x), replace=TRUE)
 		xtemp <- fit@x[samps,]
 		ytemp <- fit@y[samps,]
 		ftemp <- casso(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, print = verb, start = fit@start)
+		
 		ftemp@bperk # Return bootstrapped beta per ks
 	})
 	# Return bootstrapped beta per ks

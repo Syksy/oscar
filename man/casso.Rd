@@ -1,8 +1,7 @@
-\name{blassocox}
-\alias{blassocox_f}
-\title{blasso placeholder}
+\name{casso}
+\title{casso placeholder}
 \usage{
-	blassocox(x)
+	casso(x, y, k, w)
 }
 \arguments{
 	\item{x}{a vector of values}
@@ -12,5 +11,5 @@
 }
 \examples{
 	data(ex)
-	blassocox(x=ex_X, y=ex_Y, kits=ex_K, costs=ex_c)
+	casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c)
 }

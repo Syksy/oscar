@@ -5595,7 +5595,7 @@
       END MODULE dbdc
 
 
-  MODULE blasso
+  MODULE casso
      USE, INTRINSIC :: iso_c_binding
  
      USE functions                 ! INFORMATION from the USER
@@ -5606,7 +5606,7 @@
      IMPLICIT NONE   
         
      PRIVATE    
-     PUBLIC :: blassocox 
+     PUBLIC :: cassocox 
         
         CONTAINS 
         
@@ -5615,7 +5615,7 @@
         !| |                                                                                  | |
         !| |                            CONTAINS SUBROUTINES:                                 | | 
         !| |                                                                                  | |
-        !| |      blassocox   : The double bundle method for Cox's model                      | |                                                                                   | |       
+        !| |      cassocox   : The double bundle method for Cox's model                      | |                                                                                   | |       
         !| |                                                                                  | |
         !| |                                                                                  | |
         !| .**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**. |
@@ -5637,9 +5637,9 @@
         !  ----------------------------------------------------------------------------------  |
         !***************************************************************************************
         
-    ! Subroutine for blasso
-          SUBROUTINE blassocox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, in_print, in_start) &
-        & BIND(C, name = "blassocox_f_")           
+    ! Subroutine for casso
+          SUBROUTINE cassocox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, in_print, in_start) &
+        & BIND(C, name = "cassocox_f_")           
                                
             
             ! * 'problem = 3'        : the used objective function is Cox's proportional hazards model with L0-norm for kits
@@ -6776,7 +6776,7 @@
              CALL deallocate_data() 
                 
 
-         END SUBROUTINE blassocox       
+         END SUBROUTINE cassocox       
  
   
         ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
@@ -6813,7 +6813,7 @@
         !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
   
 
-  END MODULE blasso
+  END MODULE casso
 
 
 
