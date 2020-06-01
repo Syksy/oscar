@@ -1847,6 +1847,7 @@
                
                m = 0
                a1 = mY(1,eka)            ! Time for the first failure
+               eka = 1                   ! The place of the first failure
                fsum = 0                  ! One failure at this time
                unique = 1
                DO i = 1, nrecord0
