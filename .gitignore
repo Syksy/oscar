@@ -3,4 +3,6 @@ src/*.so
 src/*.dll
 src/*.mod
 *.tws
+src-i386/*
+src-x64/*
 

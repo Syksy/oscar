@@ -94,7 +94,8 @@ casso <- function(
 	family = "cox",
 	## Tuning parameters
 	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
-	start=2 #  
+	start=2,#  
+	verb=1  # Level of R verbosity (1 = standard, 2 = debug level, 0<= none)
 ){
 	# Call correct internal function based on the specified model family
 	if(family=="cox"){
@@ -111,7 +112,9 @@ casso <- function(
 			as.integer(print), # Tuning parameter for verbosity
 			as.integer(start) # Tuning parameter for starting values
 		)
-		#print(fit)
+		if(verb>=2){
+			print(res)
+		}
 	}
 	# Beta per k steps
 	bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
@@ -126,10 +129,16 @@ casso <- function(
 	# Kits picked per each k-step
 	kperk <- t(apply(bperk, MARGIN=1, FUN=function(z) as.integer(!z==0)))
 	# Indices as a named vector
-	kperk <- apply(kperk %*% t(k), MARGIN=1, FUN=function(z) { which(!z==0) })
+	kperk <- as.list(apply(kperk %*% t(k), MARGIN=1, FUN=function(z) { which(!z==0) }))
 	
 	# Kit costs per each k-step
 	cperk <- unlist(lapply(kperk, FUN=function(z) { sum(w[z]) }))
+
+	if(verb>=2){
+		print(bperk)
+		print(fperk)
+		print(kperk)
+	}
 
 	# Return the freshly built S4 model object
 	obj <- new("casso", 

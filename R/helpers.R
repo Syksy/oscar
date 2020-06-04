@@ -68,7 +68,7 @@ bs.casso <- function(
 	# RNG seed (integer) that can be set for exact reproducibility
 	seed = NULL,
 	# Level of verbosity (<1 supresses everything in R; parameter also passed to Fortran subroutine)
-	verb = 1,
+	verb = 3,
 	...
 ){
 	# Seed number for RNG reproducibility
@@ -80,7 +80,7 @@ bs.casso <- function(
 		samps <- sample(1:nrow(fit@x), replace=TRUE)
 		xtemp <- fit@x[samps,]
 		ytemp <- fit@y[samps,]
-		ftemp <- casso(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, print = verb, start = fit@start)
+		ftemp <- casso(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, print = verb, start = fit@start, verb = verb)
 		
 		ftemp@bperk # Return bootstrapped beta per ks
 	})
