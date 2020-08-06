@@ -116,6 +116,38 @@ casso <- function(
 			print(res)
 		}
 	}
+	if(family=="mse"){
+
+		# Call C function
+		res <- .Call(c_cassomse_f, 
+			as.double(x), # Data matrix x
+			as.double(y), # Response y
+			as.integer(k), # Kit indicator matrix k 
+			as.double(w), # Kit weights/costs
+			as.integer(nrow(x)), # Number of samples (rows in x)
+			as.integer(ncol(x)), # Number of variables (columns in x)
+			as.integer(nrow(k)), # Number of kits
+			as.integer(print), # Tuning parameter for verbosity
+			as.integer(start) # Tuning parameter for starting values
+		)
+		#print(fit)
+	}
+	if(family=="logistic"){
+
+		# Call C function
+		res <- .Call(c_cassologistic_f, 
+			as.double(x), # Data matrix x
+			as.integer(y), # Response y
+			as.integer(k), # Kit indicator matrix k 
+			as.double(w), # Kit weights/costs
+			as.integer(nrow(x)), # Number of samples (rows in x)
+			as.integer(ncol(x)), # Number of variables (columns in x)
+			as.integer(nrow(k)), # Number of kits
+			as.integer(print), # Tuning parameter for verbosity
+			as.integer(start) # Tuning parameter for starting values
+		)
+		#print(fit)
+	}
 	# Beta per k steps
 	bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
 	# Target function values per k steps
@@ -165,6 +197,12 @@ casso <- function(
 				init = bs, # Use model coefficients obtained using the DBDC optimization 
 				control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
 			)
+		}else if(family=="mse"){
+			## To be added
+			list(2)
+		}else if(family=="logistic"){
+			## To be added
+			list(2)
 		}
 	})
 	
