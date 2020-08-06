@@ -44,7 +44,7 @@ Compiling the code:
 * ...
 
 Working with git:
-* git clone https://github.com/<AddressHere>/casso.git
+* git clone https://github.com/Syksy/casso.git
 * git status
 * git pull
 * git checkout branchname

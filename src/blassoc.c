@@ -4,12 +4,20 @@
 #include <Rmath.h>
 #include <R_ext/Rdynload.h>
 
+<<<<<<< HEAD
 // family Cox
 void F77_NAME(casso_cox_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start);
 // family Gaussian (MSE)
 void F77_NAME(casso_mse_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start);
 // family Logistic
 void F77_NAME(casso_mse_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start);
+=======
+// Blasso Cox DBDC
+void F77_NAME(casso_cox_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start);
+void F77_NAME(casso_mse_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start);
+void F77_NAME(casso_logistic_f)(double *x, int *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start);
+
+>>>>>>> 758e41998571facbf0200d148ab41b50e199f778
 
 // Define the C wrapper function for Cox regression
 extern SEXP c_casso_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start){
@@ -27,6 +35,69 @@ extern SEXP c_casso_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 
 	// Call Fortran subroutine
 	F77_CALL(casso_cox_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart);
+<<<<<<< HEAD
+=======
+
+	// Create result structure
+	SEXP res = PROTECT(allocVector(VECSXP,2));
+	SET_VECTOR_ELT(res,0,beta);
+	SET_VECTOR_ELT(res,1,fperk);
+
+	// Wrap up and return
+	UNPROTECT(1);
+	UNPROTECT(1);
+	UNPROTECT(1);
+
+	//return(beta);
+	return(res);
+}
+// Wrapper for mean square error solver
+extern SEXP c_cassomse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start){
+	// Define constants (dimensions in data / features)
+	const int nr = asInteger(nrow);
+	const int nc = asInteger(ncol);
+	const int nk = asInteger(nkits);
+	const int inprint = asInteger(print);
+	const int instart = asInteger(start);
+	SEXP beta;
+	SEXP fperk;
+	// Format output and protect them from garbage collection
+	PROTECT(beta = allocVector(REALSXP, nc*nk));
+	PROTECT(fperk = allocVector(REALSXP, nk));
+
+	// Call Fortran subroutine
+	F77_CALL(casso_mse_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart);
+
+	// Create result structure
+	SEXP res = PROTECT(allocVector(VECSXP,2));
+	SET_VECTOR_ELT(res,0,beta);
+	SET_VECTOR_ELT(res,1,fperk);
+
+	// Wrap up and return
+	UNPROTECT(1);
+	UNPROTECT(1);
+	UNPROTECT(1);
+
+	//return(beta);
+	return(res);
+}
+// Wrapper for logistic solver
+extern SEXP c_cassologistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start){
+	// Define constants (dimensions in data / features)
+	const int nr = asInteger(nrow);
+	const int nc = asInteger(ncol);
+	const int nk = asInteger(nkits);
+	const int inprint = asInteger(print);
+	const int instart = asInteger(start);
+	SEXP beta;
+	SEXP fperk;
+	// Format output and protect them from garbage collection
+	PROTECT(beta = allocVector(REALSXP, nc*nk));
+	PROTECT(fperk = allocVector(REALSXP, nk));
+
+	// Call Fortran subroutine
+	F77_CALL(casso_logistic_f)(REAL(x), INTEGER(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart);
+>>>>>>> 758e41998571facbf0200d148ab41b50e199f778
 
 	// Create result structure
 	SEXP res = PROTECT(allocVector(VECSXP,2));
@@ -107,9 +178,15 @@ extern SEXP c_casso_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, 
 
 // Tell R of our available Fortran functions
 static const R_CallMethodDef CallEntries[] = {
+<<<<<<< HEAD
   {"c_casso_cox_f",	(DL_FUNC) &c_casso_cox_f,		9},
   {"c_casso_mse_f",	(DL_FUNC) &c_casso_mse_f,		9},
   {"c_casso_logistic_f",	(DL_FUNC) &c_casso_logistic_f,		9},
+=======
+  {"c_cassocox_f",	(DL_FUNC) &c_cassocox_f,		9},
+  {"c_cassomse_f",	(DL_FUNC) &c_cassomse_f,		9},
+  {"c_cassologistic_f",	(DL_FUNC) &c_cassologistic_f,		9},
+>>>>>>> 758e41998571facbf0200d148ab41b50e199f778
   {NULL,				NULL,						0}
 };
 

@@ -146,6 +146,7 @@ casso <- function(
 		)
 	
 	}
+
 	# Beta per k steps
 	bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
 	# Target function values per k steps
@@ -195,6 +196,12 @@ casso <- function(
 				init = bs, # Use model coefficients obtained using the DBDC optimization 
 				control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
 			)
+		}else if(family=="mse"){
+			## To be added
+			list(2)
+		}else if(family=="logistic"){
+			## To be added
+			list(2)
 		}
 	})
 	
