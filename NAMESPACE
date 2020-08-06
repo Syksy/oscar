@@ -1,3 +1,5 @@
-useDynLib(blasso, .registration=TRUE)
-export("blassocox")
-
+useDynLib(casso, .registration=TRUE)
+export("casso")
+export("visu")
+export("bs.casso")
+export("cv.casso")

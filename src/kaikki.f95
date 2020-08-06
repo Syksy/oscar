@@ -1847,6 +1847,7 @@
                
                m = 0
                a1 = mY(1,eka)            ! Time for the first failure
+               eka = 1                   ! The place of the first failure
                fsum = 0                  ! One failure at this time
                unique = 1
                DO i = 1, nrecord0
@@ -5595,7 +5596,7 @@
       END MODULE dbdc
 
 
-  MODULE blasso
+  MODULE casso
      USE, INTRINSIC :: iso_c_binding
  
      USE functions                 ! INFORMATION from the USER
@@ -5606,7 +5607,7 @@
      IMPLICIT NONE   
         
      PRIVATE    
-     PUBLIC :: blassocox 
+     PUBLIC :: cassocox 
         
         CONTAINS 
         
@@ -5615,7 +5616,7 @@
         !| |                                                                                  | |
         !| |                            CONTAINS SUBROUTINES:                                 | | 
         !| |                                                                                  | |
-        !| |      blassocox   : The double bundle method for Cox's model                      | |                                                                                   | |       
+        !| |      cassocox   : The double bundle method for Cox's model                      | |                                                                                   | |       
         !| |                                                                                  | |
         !| |                                                                                  | |
         !| .**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**. |
@@ -5637,25 +5638,9 @@
         !  ----------------------------------------------------------------------------------  |
         !***************************************************************************************
         
-    ! Subroutine for blasso
-          SUBROUTINE blassocox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk) &
-        & BIND(C, name = "blassocox_f_")
-
-
-            ! Oma alkuperäinen: 
-            ! SUBROUTINE coxdbdc_loop_kits( nft, nrecord, nkits,  &
-            !                     & in_vX, in_vY, in_vC, in_vK,  &
-            !                     & f_for_k, beta_for_k)        
-            ! Eli * nft -> ncol
-            !     * nrecord -> nrow
-            !     * nkits -> nkits
-            !     * in_vX -> x
-            !     * in_vY -> y 
-            !     * in_vC -> costs
-            !     * in_vK -> kits
-            !     * f_for_k -> fprek
-            !     * beta_for_k -> beta 
-            
+    ! Subroutine for casso
+          SUBROUTINE cassocox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, in_print, in_start) &
+        & BIND(C, name = "cassocox_f_")           
                                
             
             ! * 'problem = 3'        : the used objective function is Cox's proportional hazards model with L0-norm for kits
@@ -5666,29 +5651,33 @@
             ! 
             ! Solves the unconstrained nonsmooth DC minimization problem
             !
-            ! INPUT:  * 'nft'            : The dimension of the problem = the number of features in a predictor, INTEGER
-            !         * 'nrecord'        : The number of records (data points), INTEGER
-            !         * 'nkits'          : the (maximum) number of kits, INTEGER
+            ! INPUT:  * 'ncol'        : The dimension of the problem = the number of features in a predictor, INTEGER
+            !         * 'nrow'        : The number of records (data points), INTEGER
+            !         * 'nkits'       : the (maximum) number of kits, INTEGER
+            !
+            !         * 'in_print'    : specifies the print, INTEGER
+            !         * 'in_start'    : specifies how starting points are selected when the L0-norm problem is solved for  
+            !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
             !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
             !
-            !         * 'in_vX'          : the matrix X of input variables in vector form --> will be stored to in_mX (each row is one observation)
+            !         * 'x'          : the matrix X of input variables in vector form --> will be stored to in_mX (each row is one observation)
             !                               REAL, DIMENSION(nrecord*nft)  
-            !         * 'in_vY'          : the matrix Y of y_time and y_event in vector form --> will be stored to in_mY (each row cosists of time and event)
+            !         * 'y'          : the matrix Y of y_time and y_event in vector form --> will be stored to in_mY (each row cosists of time and event)
             !                               INTEGER, DIMENSION(nrecord*2) 
-            !         * 'in_vC'          : the cost vector C for kits --> will be stored to in_mC
+            !         * 'costs'      : the cost vector C for kits --> will be stored to in_mC
             !                               REAL, DIMENSION(knits)
-            !         * 'in_vK'          : the matrix K of kit structures in vector form --> will be stored to in_mK (each row is one kit)
+            !         * 'kits'       : the matrix K of kit structures in vector form --> will be stored to in_mK (each row is one kit)
             !                               INTEGER, DIMENSION(knits*nft)
             !
             !
-            ! OUTPUT: * 'f_for_k'       : The vector containing objective function values at for each L0-norm problem with the fixed number of k=1,...,nkits of kits, 
+            ! OUTPUT: * 'fperk'      : The vector containing objective function values at for each L0-norm problem with the fixed number of k=1,...,nkits of kits, 
             !                              REAL, DIMENSION(nkits) 
-            !         * 'beta_for_k'    : The vector containing solution vectors beta obtained for each L0-norm problem with the fixed number of k=1,...,nkits of kits, 
+            !         * 'beta'       : The vector containing solution vectors beta obtained for each L0-norm problem with the fixed number of k=1,...,nkits of kits, 
             !                              REAL, DIMENSION(nft*nkits) 
             !
-            ! NOTICE: * The dimension of vectors 'f_for_k' has to be 'nkits' ('nkits' is the maximum number of kits)
-            !         * The dimension of vectors 'beta_solution' has to be 'nft*nkits' ('nft' is the dimension of the problem and 'nkits' is the number of kits)
+            ! NOTICE: * The dimension of vectors 'fperk' has to be 'nkits' ('nkits' is the maximum number of kits)
+            !         * The dimension of vectors 'beta' has to be 'nft*nkits' ('nft' is the dimension of the problem and 'nkits' is the number of kits)
             !
             ! OPTIONAL INPUT (CAN BE INCLUDED AS INPUT PARAMETERS IF NEEDED. AT THE MOMENT DEFAULT VALUES ARE USED FOR THEM.):
             !         * 'mit'            : The maximum number of 'main iterations', INTEGER                  
@@ -5697,12 +5686,10 @@
             !         * 'agg_used'       : If .TRUE. then aggregation is used in the algorithm, LOGICAL           
             !         * 'stepsize_used'  : If .TRUE. then simple stepsize determination is used in the algorithm, LOGICAL
             !         * 'scale_in_use'   : If .TRUE. then the data is scaled
-            !         * 'iprint'         : specifies the print, INTEGER 
-            !         * 'start'          : specifies how starting points are selected when the L0-norm problem is solved for the fixed number of kits 
-            !                              and in which order the L0-norm problems are solved, INTEGER
             !         * 'CPUtime'       : the CPU time (in seconds) REAL
             !
-            ! NOTICE: * 'iprint' has to be 0, 1, 2 or 3. If it is NOT then DEFAULT value 1 is used.             
+            ! NOTICE: * 'in_print' has to be 0, 1, 2 or 3. If it is NOT then DEFAULT value 1 is used.             
+            !         * 'in_start' has to be -4, -3, -2, -1, 1, 2, 3 or 4. If it is NOT then DEFAULT value 1 is used.             
             
             !***********************************************************************************
                IMPLICIT NONE
@@ -5711,6 +5698,9 @@
                INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow     !Number of rows in x (i.e. records)
                INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol     !Number of cols in x (i.e. features)
                INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits    !Number of kits for features
+               
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start    ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print    ! Print used
                
                REAL(KIND = c_double), INTENT(IN), DIMENSION(nrow*ncol)  :: x        !Vector of data values
                REAL(KIND = c_double), INTENT(IN), DIMENSION(nrow*2)     :: y        !Vector of response values (2-column survival, time + event)
@@ -5721,19 +5711,6 @@
                REAL(KIND = c_double), INTENT(OUT), DIMENSION(nkits)       :: fperk  !Output variable target function value per k
                ! fprek pituus pitää olla nkits      
                ! beta pituus pitää olla nkits*ncol    
-                
-               ! Alla omat vanhat muuttujat 
-               !REAL(KIND=c_double), DIMENSION(nft*nkits), INTENT(OUT) :: beta_for_k  ! the solution vectors beta obtained for the problem 3 with different k
-               !REAL(KIND=c_double), DIMENSION(nkits), INTENT(OUT)     :: f_for_k     ! the objective function values for the problem 3 with different k
-               
-               !REAL(KIND=c_double), DIMENSION(nrecord*nft), INTENT(IN) :: in_vX    ! predictor matrix in vector format
-               !INTEGER(KIND=c_int), DIMENSION(nrecord*2), INTENT(IN) :: in_vY      ! observed times and labels matrix in vector format
-               !INTEGER(KIND=c_int), DIMENSION(nkits*nft), INTENT(IN) :: in_vK      ! kit matrix in vector format
-               !REAL(KIND=c_double), DIMENSION(nkits), INTENT(IN) :: in_vC          ! kit costs in vector format              
-           
-               !INTEGER(KIND=c_int), INTENT(IN) :: nft                     ! the dimension of the problem = the number of features in a predictor
-               !INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
-               !INTEGER(KIND=c_int), INTENT(IN) :: nkits                   ! the number of kits
                
                                            
            !***************************** LOCAL VARIABLES ************************************      
@@ -5760,24 +5737,24 @@
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta     ! indices of kits in the solution 'beta_solution'
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
 
-               REAL(KIND=c_double), DIMENSION(ncol) :: x_0               ! the starting point
+               REAL(KIND=c_double), DIMENSION(ncol) :: x_0            ! the starting point
                
-               REAL(KIND=c_double), DIMENSION(nrow) :: mTimes         ! Times for the observations   
-               INTEGER(KIND=c_int), DIMENSION(nrow) :: mTimesInd   ! Labels of times for the observations (0=alive, 1=death)  
+               REAL(KIND=c_double), DIMENSION(nrow) :: mTimes        ! Times for the observations   
+               INTEGER(KIND=c_int), DIMENSION(nrow) :: mTimesInd     ! Labels of times for the observations (0=alive, 1=death)  
               
                REAL(KIND=c_double), DIMENSION(8) :: mrho        ! Vector containing the values of rho parameter used in the method 
               
-               INTEGER(KIND=c_int) :: nstart                 ! the number of starting point
-               INTEGER(KIND=c_int) :: start_max              ! the number of starting point when 'start = 5'
+               INTEGER(KIND=c_int) :: nstart              ! the number of starting point
+               INTEGER(KIND=c_int) :: start_max           ! the number of starting point when 'start = 5'
 
-               INTEGER(KIND=c_int) :: termination            ! The reason for termination in DBDC method
+               INTEGER(KIND=c_int) :: termination         ! The reason for termination in DBDC method
                                                           ! 1 - the stopping condition is satisfied (i.e. Clarke stationarity)
                                                           ! 2 - the approximate stopping condition is satisfied (i.e. the step-length beta* < eps)
                                                           ! 3 - the maximum number 'mrounds' of rounds executed in one main iteration
                                                           ! 4 - the maximum number of 'main iterations' is executed  
                                                           ! 5 - the maximum number 'mrounds_clarke' of rounds executed in one 'Clarke stationary' alqorithm
                                                           
-               INTEGER(KIND=c_int), DIMENSION(8) :: counter      ! contains the values of different counteres for DBDC method: 
+               INTEGER(KIND=c_int), DIMENSION(8) :: counter   ! contains the values of different counteres for DBDC method: 
                                                               !   counter(1) = iter_counter         the number of 'main iterations' executed
                                                               !   counter(2) = subprob_counter      the number of subproblems solved
                                                               !   counter(3) = f_counter            the number of function values evaluated for DC component in 'main iteration'
@@ -5788,15 +5765,15 @@
                                                               !   counter(7) = clarke_f_counter     the number of function values evaluated for f in 'Clarke stationary algorithms'
                                                               !   counter(8) = clarke_sub_counter   the number of subgradients caluculated for f in 'Clarke stationary algorithms'             
         
-               INTEGER(KIND=c_int) :: user_n                ! the dimension of the problem
+               INTEGER(KIND=c_int) :: user_n             ! the dimension of the problem
                        
-               INTEGER(KIND=c_int) :: mit                   ! the maximum number of 'main iterations'
+               INTEGER(KIND=c_int) :: mit                ! the maximum number of 'main iterations'
                                                          ! If 'mit' <=0 then DEFAULT value 'mit'=5000 is used
                
-               INTEGER(KIND=c_int) :: mrounds               ! the maximum number of rounds during one 'main iteration'
+               INTEGER(KIND=c_int) :: mrounds            ! the maximum number of rounds during one 'main iteration'
                                                          ! If 'mrounds' <=0 then DEFAULT value 'mrounds'=5000 is used
                
-               INTEGER(KIND=c_int) :: mrounds_clarke        ! the maximum number of rounds during one 'Clarke stationary' algorithm
+               INTEGER(KIND=c_int) :: mrounds_clarke     ! the maximum number of rounds during one 'Clarke stationary' algorithm
                                                          ! If 'mrounds_clarke' <=0 then DEFAULT value 'mrounds_clarke'=5000 is used
                
                INTEGER(KIND=c_int) :: iprint_DBDC  ! variable that specifies print option in DBDC method:
@@ -5813,13 +5790,14 @@
                                                 ! If 'iprint' <= -5 .OR. 'iprint' >= 5 then DEFAULT value 'iprint'=1 is used    
 
                ! Possible USER PARAMETER
-               INTEGER(KIND=c_int) :: iprint      ! specifies the print
+               INTEGER(KIND=c_int) :: iprint   ! specifies the print
                                                !   iprint = 0 : print is suppressed
-                                               !   iprint = 1 : prints for each L0-norm problem the final value of Cox's proportional hazard model
+                                               !   iprint = -1 : prints for each L0-norm problem the final value of Cox's proportional hazard model (Not table form)
+                                               !   iprint = 1 : prints for each L0-norm problem the final value of Cox's proportional hazard model (Table form)
                                                !   iprint = 2 : prints for each L0-norm problem the final value of Cox's proportional hazard model obtained from each starting point
                                                !   iprint = 3 : prints for each starting point and L0-norm problem all intermediate results together the final results
  
-               INTEGER(KIND=c_int) :: start       !   start = 1  : only one starting point for L0-norm problem with k nonzero components 
+               INTEGER(KIND=c_int) :: start    !   start = 1  : only one starting point for L0-norm problem with k nonzero components 
                                                !                L0-problems are solved in order: k = 1, 2, ... , nkits
                                                !                (starting point is the solution obtained for L0-norm problem with k-1 nonzero components)
                                                !
@@ -5874,8 +5852,8 @@
                
                REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
                
-               REAL(KIND=c_double) :: random_num                        ! Random number
-               REAL(KIND=c_double), DIMENSION(nkits) :: mRand           ! Random number matrix
+               REAL(KIND=c_double) :: random_num                     ! Random number
+               REAL(KIND=c_double), DIMENSION(nkits) :: mRand        ! Random number matrix
                INTEGER(KIND=c_int), DIMENSION(nkits) :: mRandInd     ! Original indices of random numbers in matrix
                
                INTEGER(KIND=c_int) :: problem1              ! The DC component f1 
@@ -5894,12 +5872,17 @@
                nft = ncol
                nk = nkits
               
-               start = 2_c_int       ! Starting point generation procedure
-               iprint = 3_c_int      ! Print option
+               start = in_start       ! Starting point generation procedure
+               iprint = in_print      ! Print option
               
                ! The default print is used if user specifieed value is not acceptable
-               IF (iprint < 0 .OR. iprint > 4) THEN
+               IF (iprint < -1 .OR. iprint > 4) THEN
                   iprint = 1_c_int
+               END IF   
+
+               ! The default start is used if user specifieed value is not acceptable
+               IF ((ABS(start)> 4) .OR. (start == 0)) THEN
+                  start = 2_c_int
                END IF              
                
                ! If start = 5 then start_max is the number of starting points in each L0-norm problem
@@ -5933,24 +5916,25 @@
                 
                 tol_zero = (10.0_c_double)**(-6)
        
-               IF (ed_sol_in_pen) THEN 
+               IF ( (iprint > 0) .OR. (iprint == -1) ) THEN 
+                 IF (ed_sol_in_pen) THEN 
                   WRITE(*,*) 'Penalisointitehtavaa ratkaistaessa &
                               & hyodynnetaan edellisen kierroksen ratkaisua uutena lahtopisteena'
-               ELSE
+                 ELSE
                   WRITE(*,*) 'Penalisointitehtavaa ratkaistaessa &
                               & ei hyodynneta edellisen kierroksen ratkaisua uutena lahtopisteena'
-               END IF
-               
-               IF (start > 0) THEN 
+                 END IF
+                
+                 IF ( start > 0 ) THEN 
                   WRITE(*,*) 'Tehtavat lapi pienimmasta suurimpaan'
-               ELSE   
+                 ELSE   
                   WRITE(*,*) 'Tehtavat lapi suurimmasta pienimpaan'
-               END IF
+                 END IF
                
-               WRITE(*,*) 'Lahtopisteet generoidaan tavalla:', start 
-               WRITE(*,*) 'Penalisointitehtavan ratkaisemiseen kaytetyt rho-arvot:', mrho
+                 WRITE(*,*) 'Lahtopisteet generoidaan tavalla:', start 
+                 WRITE(*,*) 'Penalisointitehtavan ratkaisemiseen kaytetyt rho-arvot:', mrho
                
-                                  
+               END IF                  
                
               !--------------------------------------------------------------------------------------
           
@@ -6097,9 +6081,13 @@
               !         * x_koe is utilized in formation of starting points   
               
                x_ed = 0.01_c_double    ! We initialize the previous solution, since we do not have a value for it 
-               WRITE(*,*) 
-               WRITE(*,*) 'Value of Cox proportional hazard model without regularization:', f_solution
-               WRITE(*,*) 
+               
+               
+               IF ((iprint > 0) .OR. (iprint == -1)) THEN
+                 WRITE(*,*) 
+                 WRITE(*,*) 'Value of Cox proportional hazard model without regularization:', f_solution
+                 WRITE(*,*) 
+               END IF 
                
                IF (iprint==1) THEN
                  WRITE(*,*) '------------------------------------------------------------------------------------------'
@@ -6134,7 +6122,7 @@
                
                  DO k = 1, nk                 ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
                   
-                  IF (iprint>=2) THEN
+                  IF (iprint>=2 .OR. iprint == -1) THEN
                        WRITE(*,*) '-------------------------------------' 
                        WRITE(*,*) 'PROBLEM with', k, 'kits' 
                        
@@ -6168,7 +6156,7 @@
                      
                    IF ( new_start ) THEN       ! .TRUE. if a new starting point is generated
                     
-                    IF (start == 2 .OR. start == 3) THEN 
+                    IF ((start == 2) .OR. (start == 3)) THEN 
                       DO ii = 1, nft 
                         IF (mK(ii,i)==1) THEN
                            x_0(ii) = x_koe(ii)    ! In starting poitnt x_0, we initialize features in kit i with values from solution x_koe
@@ -6198,11 +6186,10 @@
                     run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
                     num_rho = 0                 ! The selection of the first value of penalization parameter rho
                   
-                   !! TDL: Reducing debug output for now while verbosity parameters are fixed
-                   ! IF (iprint >= 2) THEN
-                   !    WRITE(*,*) '-------------------------------------' 
-                   !    WRITE(*,*) 'New start point used.' 
-                   ! END IF
+                    IF (iprint >= 2) THEN
+                       WRITE(*,*) '-------------------------------------' 
+                       WRITE(*,*) 'New start point used.' 
+                    END IF
                   
                     DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
                   
@@ -6275,10 +6262,9 @@
                       END IF 
                     END DO
     
-                    !! TDL: Reducing debugging output while having fixed verbosity parameter
-                    !IF (iprint > 2) THEN
-                    !   WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-                    !END IF
+                    IF (iprint > 2) THEN
+                       WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+                    END IF
     
                     ! We check if the optimization of problem 3 with k kits can be stopped            
                     IF (kit_num <= k .OR. run_stop) THEN 
@@ -6297,17 +6283,16 @@
                     f1_current = f1(beta_solution,3,user_n)
                     f2_current = f2(beta_solution,3,user_n)
                   
-                    !! TDL: Reducing debugging output while having fixed verbosity parameter
-                    ! IF (run_stop) THEN
-                    ! IF (iprint >= 2 .AND. (kit_num <= k)) THEN   
-                    !   WRITE(*,*)
-                    !   WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                    ! END IF  
-                    ! IF (iprint >=2 .AND. (kit_num > k)) THEN                                      
-                    !   WRITE(*,*)
-                    !   WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-                    ! END IF
-                    ! END IF
+                    IF (run_stop) THEN
+                      IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
+                        WRITE(*,*)
+                        WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
+                      END IF  
+                      IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
+                        WRITE(*,*)
+                        WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
+                      END IF
+                    END IF
                     
                     END DO
                     
@@ -6390,7 +6375,7 @@
                    END DO       
 
  
-                   IF (iprint>=2) THEN 
+                   IF ((iprint>=2) .OR. (iprint == -1)) THEN 
                      WRITE(*,*)
                      WRITE(*,*) '-**--**--**--**--**--**--**--**--**--**--**--**-'
                      WRITE(*,*) 'Information about the best solution:'
@@ -6433,7 +6418,7 @@
                
                  DO k = nk, 1, -1            ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
                   
-                  IF (iprint>=2) THEN
+                  IF ((iprint>=2) .OR. (iprint==-1)) THEN
                        WRITE(*,*)
                        WRITE(*,*) '-------------------------------------' 
                        WRITE(*,*) 'PROBLEM with', k, 'kits' 
@@ -6528,8 +6513,6 @@
                        END IF 
                     END IF
                     
-                    !!!WRITE(*,*) 'start', x_0 
-
                     run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
                     num_rho = 0                 ! The selection of the first value of penalization parameter rho
                   
@@ -6720,7 +6703,7 @@
                      END IF 
                    END DO  
                    
-                   IF (iprint>=2) THEN 
+                   IF ((iprint>=2) .OR. (iprint == -1)) THEN 
                      WRITE(*,*)
                      WRITE(*,*) '-**--**--**--**--**--**--**--**--**--**--**--**-'
                      WRITE(*,*) 'Information about the best solution:'
@@ -6787,14 +6770,14 @@
              CALL cpu_time(f_time)   ! Finish CPU timing    
              cpu = f_time-s_time             
              
-             IF (iprint >= 1) THEN               
+             IF ((iprint >= 1) .OR. (iprint == -1)) THEN               
                  WRITE(*,*) 'Used CPU:', cpu                 
              END IF
        
              CALL deallocate_data() 
                 
 
-         END SUBROUTINE blassocox       
+         END SUBROUTINE cassocox       
  
   
         ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
@@ -6831,7 +6814,7 @@
         !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
   
 
-  END MODULE blasso
+  END MODULE casso
 
 
 
