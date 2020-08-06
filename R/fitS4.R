@@ -100,8 +100,8 @@ casso <- function(
 	# Call correct internal function based on the specified model family
 	if(family=="cox"){
 
-		# Call C function
-		res <- .Call(c_cassocox_f, 
+		# Call C function for Cox regression
+		res <- .Call(c_casso_cox_f, 
 			as.double(x), # Data matrix x
 			as.double(y), # Response y
 			as.integer(k), # Kit indicator matrix k 
@@ -115,6 +115,36 @@ casso <- function(
 		if(verb>=2){
 			print(res)
 		}
+	}else if(family %in% c("mse", "normal", "gaussian")){
+
+		# Call C function for Mean-Squared Error regression
+		res <- .Call(c_casso_mse_f, 
+			as.double(x), # Data matrix x
+			as.double(y), # Response y
+			as.integer(k), # Kit indicator matrix k 
+			as.double(w), # Kit weights/costs
+			as.integer(nrow(x)), # Number of samples (rows in x)
+			as.integer(ncol(x)), # Number of variables (columns in x)
+			as.integer(nrow(k)), # Number of kits
+			as.integer(print), # Tuning parameter for verbosity
+			as.integer(start) # Tuning parameter for starting values
+		)
+		
+	}else if(family == "logistic"){
+
+		# Call C function for logistic regression
+		res <- .Call(c_casso_logistic_f, 
+			as.double(x), # Data matrix x
+			as.integer(y), # Response y
+			as.integer(k), # Kit indicator matrix k 
+			as.double(w), # Kit weights/costs
+			as.integer(nrow(x)), # Number of samples (rows in x)
+			as.integer(ncol(x)), # Number of variables (columns in x)
+			as.integer(nrow(k)), # Number of kits
+			as.integer(print), # Tuning parameter for verbosity
+			as.integer(start) # Tuning parameter for starting values
+		)
+	
 	}
 	# Beta per k steps
 	bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
