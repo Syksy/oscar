@@ -115,6 +115,10 @@ casso <- function(
 		if(verb>=2){
 			print(res)
 		}
+		# Beta per k steps
+		bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
+		# Naming rows/cols/vector elements
+		rownames(bperk) <- colnames(x)
 	}else if(family %in% c("mse", "normal", "gaussian")){
 
 		# Call C function for Mean-Squared Error regression
@@ -129,6 +133,11 @@ casso <- function(
 			as.integer(print), # Tuning parameter for verbosity
 			as.integer(start) # Tuning parameter for starting values
 		)
+		# Beta per k steps
+		# Add row for intercept
+		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
+		# Naming rows/cols/vector elements
+		rownames(bperk) <- c(colnames(x),"intercept")
 		
 	}else if(family == "logistic"){
 
@@ -144,21 +153,31 @@ casso <- function(
 			as.integer(print), # Tuning parameter for verbosity
 			as.integer(start) # Tuning parameter for starting values
 		)
+		# Beta per k steps
+		# Add row for intercept
+		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
+		# Naming rows/cols/vector elements
+		rownames(bperk) <- c(colnames(x),"intercept")
 	
 	}
 
-	# Beta per k steps
-	bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
+	# Beta per k steps (moved inside if)
+	#bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
 	# Target function values per k steps
 	fperk <- as.numeric(res[[2]])
-	# Naming rows/cols/vector elements
-	rownames(bperk) <- colnames(x)
+	# Naming rows/cols/vector elements (moved inside if)
+	#rownames(bperk) <- colnames(x)
 	names(fperk) <- colnames(bperk) <- paste("k_", 1:nrow(k), sep="")
 	# Transpose so that coefficients are columns and k-steps are rows in bperk
 	bperk <- t(bperk)
 
 	# Kits picked per each k-step
-	kperk <- t(apply(bperk, MARGIN=1, FUN=function(z) as.integer(!z==0)))
+	if(family=="cox"){
+		kperk <- t(apply(bperk, MARGIN=1, FUN=function(z) as.integer(!z==0)))
+	}else if(family %in% c("mse","logistic")){
+		# bperk last column is intercept so that is removed
+		kperk <- t(apply(bperk[,1:(ncol(bperk)-1)], MARGIN=1, FUN=function(z) as.integer(!z==0)))
+	}
 	# Indices as a named vector
 	kperk <- as.list(apply(kperk %*% t(k), MARGIN=1, FUN=function(z) { which(!z==0) }))
 	
@@ -192,13 +211,31 @@ casso <- function(
 	obj@fits <- apply(bperk, MARGIN=1, FUN=function(bs){
 		if(family=="cox"){
 			survival::coxph(
-				survival::Surv(time=obj@y[,1], event=obj@y[,2]) ~ obj@x, # Formula for response 'y' modeled using data matrix 'x' 
+				survival::Surv(time=as.numeric(obj@y[,1]), event=as.numeric(obj@y[,2])) ~ obj@x, # Formula for response 'y' modeled using data matrix 'x' 
 				init = bs, # Use model coefficients obtained using the DBDC optimization 
 				control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
 			)
 		}else if(family=="mse"){
 			## To be added
 			list(2)
+			
+			# TESTING:
+			# To force lm model with beta-coefficients, use offset
+			#tmp.data <- obj@x
+			#nam <- colnames(obj@x)
+			#tmp.data <- cbind(tmp.data,rep(1,nrow(obj@x)))  # 1:s are added to include intercept
+			#browser()
+			#tmp.data <- cbind(tmp.data,t(bs%*%t(cbind(obj@x,rep(1,nrow(obj@x))))))  #1 is added for intercept
+			#colnames(tmp.data) <- c(nam,"intercept","y")
+			#tmp.form <- c("0")
+			#for(i in 1:length(bs)){  #Create formula for lm
+			#		tmp.form <- c(tmp.form, paste("offset(",bs[i]," * ",c(colnames(obj@x),"intercept")[i],")",sep=""))
+			#}
+			#browser()
+			#f <- as.formula(paste(y,paste(tmp.form, collapse = " + "),sep = " ~ "))
+			#lm(f,data=as.data.frame(tmp.data))
+			#offset(bs%*%t(cbind(obj@x,rep(1,nrow(obj@x)))))
+			
 		}else if(family=="logistic"){
 			## To be added
 			list(2)
