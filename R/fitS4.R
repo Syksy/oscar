@@ -174,7 +174,7 @@ casso <- function(
 	# Kits picked per each k-step
 	if(family=="cox"){
 		kperk <- t(apply(bperk, MARGIN=1, FUN=function(z) as.integer(!z==0)))
-	}else if(family %in% c("mse","logistic")){
+	}else if(family %in% c("mse","normal","gaussian","logistic")){
 		# bperk last column is intercept so that is removed
 		kperk <- t(apply(bperk[,1:(ncol(bperk)-1)], MARGIN=1, FUN=function(z) as.integer(!z==0)))
 	}
