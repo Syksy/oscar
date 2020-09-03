@@ -191,23 +191,29 @@ casso <- function(
 	# Fit lm/glm/coxph/... models per each estimated set of beta coefs (function call depends on 'family')
 	obj@fits <- apply(bperk, MARGIN=1, FUN=function(bs){
 		if(family=="cox"){
+			## Prefit a coxph-object
 			survival::coxph(
 				survival::Surv(time=obj@y[,1], event=obj@y[,2]) ~ obj@x, # Formula for response 'y' modeled using data matrix 'x' 
 				init = bs, # Use model coefficients obtained using the DBDC optimization 
 				control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
 			)
-		}else if(family=="mse"){
-			## To be added
-			list(2)
+		}else if(family %in% c("mse", "normal", "gaussian")){
+			## Prefit a linear glm-object with gaussian error
+			stats::glm(y ~ x, start = bs, family = "gaussian", control = stats::glm.control(maxit = 0))
 		}else if(family=="logistic"){
-			## To be added
-			list(2)
+			## Prefit a logistic glm-object with logistic link function
+			stats::glm(y ~ x, start = bs, family = "logistic", control = stats::glm.control(maxit = 0))
 		}
 	})
 	
 	# Calculate/extract model goodness metric at each k
+	# Cox regression
 	if(family=="cox"){
 		obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { z$concordance["concordance"] }))
+	}else if(family==""){
+	
+	}else if(family==""){
+	
 	}
 	
 	# Return the new model object
