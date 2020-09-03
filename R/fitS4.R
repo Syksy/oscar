@@ -198,22 +198,25 @@ casso <- function(
 				control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
 			)
 		}else if(family %in% c("mse", "normal", "gaussian")){
-			## Prefit a linear glm-object with gaussian error
-			stats::glm(y ~ x, start = bs, family = "gaussian", control = stats::glm.control(maxit = 0))
+			## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
+			stats::glm(y ~ x, start = bs, family = gaussian(link="identity"), method = ".glm.fit.mod")
 		}else if(family=="logistic"){
-			## Prefit a logistic glm-object with logistic link function
-			stats::glm(y ~ x, start = bs, family = "logistic", control = stats::glm.control(maxit = 0))
+			## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
+			stats::glm(y ~ x, start = bs, family = binomial(link="logit"), method = ".glm.fit.mod")
 		}
 	})
 	
 	# Calculate/extract model goodness metric at each k
 	# Cox regression
 	if(family=="cox"){
+		# Use c-index as the goodness measure
 		obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { z$concordance["concordance"] }))
-	}else if(family==""){
-	
-	}else if(family==""){
-	
+	}else if(family %in% c("mse", "normal", "gaussian")){
+		# Use mean squared error as the goodness measure
+		#obj@goodness <- ...
+	}else if(family=="logistic"){
+		# Use correct classification percent as the goodness measure
+		#obj@goodness <- ...
 	}
 	
 	# Return the new model object
