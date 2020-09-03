@@ -99,7 +99,6 @@ casso <- function(
 ){
 	# Call correct internal function based on the specified model family
 	if(family=="cox"){
-
 		# Call C function for Cox regression
 		res <- .Call(c_casso_cox_f, 
 			as.double(x), # Data matrix x
@@ -115,8 +114,7 @@ casso <- function(
 		if(verb>=2){
 			print(res)
 		}
-	}else if(family %in% c("mse", "normal", "gaussian")){
-
+	}else if(family %in% c("mse", "gaussian")){
 		# Call C function for Mean-Squared Error regression
 		res <- .Call(c_casso_mse_f, 
 			as.double(x), # Data matrix x
@@ -131,7 +129,6 @@ casso <- function(
 		)
 		
 	}else if(family == "logistic"){
-
 		# Call C function for logistic regression
 		res <- .Call(c_casso_logistic_f, 
 			as.double(x), # Data matrix x
@@ -197,7 +194,7 @@ casso <- function(
 				init = bs, # Use model coefficients obtained using the DBDC optimization 
 				control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
 			)
-		}else if(family %in% c("mse", "normal", "gaussian")){
+		}else if(family %in% c("mse", "gaussian")){
 			## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
 			stats::glm(y ~ x, start = bs, family = gaussian(link="identity"), method = ".glm.fit.mod")
 		}else if(family=="logistic"){
@@ -211,12 +208,12 @@ casso <- function(
 	if(family=="cox"){
 		# Use c-index as the goodness measure
 		obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { z$concordance["concordance"] }))
-	}else if(family %in% c("mse", "normal", "gaussian")){
+	}else if(family %in% c("mse", "gaussian")){
 		# Use mean squared error as the goodness measure
-		#obj@goodness <- ...
+		obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { mean((y - predict.glm(z, type="response"))^2) }))
 	}else if(family=="logistic"){
 		# Use correct classification percent as the goodness measure
-		#obj@goodness <- ...
+		obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { as.numeric(y == (predict.glm(z, type="response")>0.5))/length(y) }))
 	}
 	
 	# Return the new model object

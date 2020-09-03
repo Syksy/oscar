@@ -1,6 +1,6 @@
 RM = rm
 
-C_OBJS = blassoc.o
+C_OBJS = cassoc.o
 FT_OBJS = kaikki.o plqdf1.o
 
 all:
