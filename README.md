@@ -24,12 +24,12 @@ Root files
 * ...
 
 Version plan:
+* 0.4 - Implement cross-validation (cv) and/or bootstrap (bs) for model diagnostics
+* 0.5 - User-friendliness in R-package; vignette, helper tools
+* ...
 * 0.x - Roxygenize R package documentation
+* 0.x - Use omp_lib for parallelization in Fortran (or a similar approach)
 * 0.x - Testing for final modeling procedure (Ideally R unit testing folder)
-* 0.3 - Additional DBDC fine-tuning; starting-point robustness, speed, 
-* 0.4 - User-friendliness in R-package; vignette, helper tools
-* 0.5 - Extend model families beyond Cox regression (e.g. normal, logistic, ...)
-* 0.6 - Comfortable to other similar packages, e.g. predict.blasso-function to with type = "coefficients" and with adjustable "k" parameter, type = "response" for particular Cox-model predictions etc
 * ...
 
 Compiling the code:
@@ -41,15 +41,11 @@ Compiling the code:
 * > data(ex) # Load example dataset (consists of ex_X, ex_Y, ex_K and ex_c) for Cox regression
 * > fit <- casso::casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family="cox") # Test run, notice this uses all the data! Smaller test would be feasible
 * > fit # Show model results and other attributes
-* > visu(fit) # Visualize fit as a function of allowed kits
+* > visu(fit, y=c("target", "goodness")) # Visualize fit as a function of allowed kits
 * > fit2 <- casso::casso(x=ex_X, y=ex_Y[,2], k=ex_K, w=ex_c, family="logistic") # Naive example using events in logistic regression (not good modelling! placeholder)
+* > visu(fit2, y=c("target", "goodness"))
+* > # Example swiss fertility data
+* > data(swiss)
+* > fit_mse <- casso::casso(x=swiss[,-1], y=swiss[,1], family="gaussian")
+* > fit_mse@fits
 * ...
-
-Working with git:
-* git clone https://github.com/Syksy/casso.git
-* git status
-* git pull
-* git checkout branchname
-* git add .
-* git commit -m "Did X changes"
-* git push

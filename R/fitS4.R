@@ -94,7 +94,7 @@ casso <- function(
 	family = "cox",
 	## Tuning parameters
 	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
-	start=2,#  
+	start=2,# Deterministic start point 
 	verb=1  # Level of R verbosity (1 = standard, 2 = debug level, 0<= none)
 ){
 	# TODO: Sanity checks for input here

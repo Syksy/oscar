@@ -13,7 +13,5 @@ clean:
 
 $(SHLIB): $(FT_OBJS) $(C_OBJS)
 
-blassoc.c: kaikki.o
-
-
+cassoc.c: kaikki.o
 
