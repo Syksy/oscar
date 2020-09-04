@@ -53,7 +53,7 @@ extern SEXP c_casso_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	SEXP beta;
 	SEXP fperk;
 	// Format output and protect them from garbage collection
-	PROTECT(beta = allocVector(REALSXP, nc*nk));
+	PROTECT(beta = allocVector(REALSXP, (nc+1)*nk));
 	PROTECT(fperk = allocVector(REALSXP, nk));
 
 	// Call Fortran subroutine
@@ -84,7 +84,7 @@ extern SEXP c_casso_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, 
 	SEXP beta;
 	SEXP fperk;
 	// Format output and protect them from garbage collection
-	PROTECT(beta = allocVector(REALSXP, nc*nk));
+	PROTECT(beta = allocVector(REALSXP, (nc+1)*nk));
 	PROTECT(fperk = allocVector(REALSXP, nk));
 
 	// Call Fortran subroutine

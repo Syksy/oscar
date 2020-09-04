@@ -39,8 +39,10 @@ Compiling the code:
 * R -> Start R session inside command prompt
 * > library(casso) # Load blasso-package
 * > data(ex) # Load example dataset (consists of ex_X, ex_Y, ex_K and ex_c) for Cox regression
-* > fit <- casso::casso(x=ex_X, y=ex_Y, kits=ex_K, costs=ex_c, family="cox") # Test run, notice this uses all the data! Smaller test would be feasible
+* > fit <- casso::casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family="cox") # Test run, notice this uses all the data! Smaller test would be feasible
 * > fit # Show model results and other attributes
+* > visu(fit) # Visualize fit as a function of allowed kits
+* > fit2 <- casso::casso(x=ex_X, y=ex_Y[,2], k=ex_K, w=ex_c, family="logistic") # Naive example using events in logistic regression (not good modelling! placeholder)
 * ...
 
 Working with git:

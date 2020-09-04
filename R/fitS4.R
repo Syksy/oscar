@@ -97,6 +97,17 @@ casso <- function(
 	start=2,#  
 	verb=1  # Level of R verbosity (1 = standard, 2 = debug level, 0<= none)
 ){
+	# If family is not Cox, (Intercept) requires its own row/column in K
+	if(!family == "cox" & ncol(k) == ncol(x)){
+		k <- rbind(0, cbind(0, k))
+		k[1,1] <- 1
+		rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
+	}
+	# If cost for intercept has not been incorporated, add that as 0
+	if(!family == "cox" & length(w) == ncol(x)){
+		w <- c(0, w)
+	}
+
 	# Call correct internal function based on the specified model family
 	if(family=="cox"){
 		# Call C function for Cox regression
@@ -119,6 +130,7 @@ casso <- function(
 		res <- .Call(c_casso_mse_f, 
 			as.double(x), # Data matrix x
 			as.double(y), # Response y
+			## Requires artificial addition of intercept kit?
 			as.integer(k), # Kit indicator matrix k 
 			as.double(w), # Kit weights/costs
 			as.integer(nrow(x)), # Number of samples (rows in x)
@@ -133,6 +145,7 @@ casso <- function(
 		res <- .Call(c_casso_logistic_f, 
 			as.double(x), # Data matrix x
 			as.integer(y), # Response y
+			## Requires artificial addition of intercept kit?
 			as.integer(k), # Kit indicator matrix k 
 			as.double(w), # Kit weights/costs
 			as.integer(nrow(x)), # Number of samples (rows in x)
@@ -144,28 +157,68 @@ casso <- function(
 	
 	}
 
+	# If verb is high enough, print midpoints
+	if(verb>=3){
+		print(res)
+		print(dim(x))
+		print(length(y))
+		print(dim(k))
+		print(length(w))
+	}
+
 	# Beta per k steps
-	bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
+	# Cox regression doesn't have intercept
+	if(family == "cox"){
+		bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
+		rownames(bperk) <- colnames(x)
+	# All other model families have intercept
+	}else{
+		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
+		# Fortran subroutine returns intercept as last, swap that to front
+		#rownames(bperk) <- c("(Intercept)", colnames(x))
+		rownames(bperk) <- c(colnames(x), "(Intercept)")
+		bperk <- bperk[c(nrow(bperk), 1:(nrow(bperk)-1)),]
+	}
+
 	# Target function values per k steps
 	fperk <- as.numeric(res[[2]])
 	# Naming rows/cols/vector elements
-	rownames(bperk) <- colnames(x)
 	names(fperk) <- colnames(bperk) <- paste("k_", 1:nrow(k), sep="")
+	
+	if(verb>=2){
+		print("fperk")
+		print(fperk)
+	}
 	# Transpose so that coefficients are columns and k-steps are rows in bperk
 	bperk <- t(bperk)
 
+	if(verb>=2){
+		print("bperk")
+		print(dim(bperk))
+		print(bperk)
+	}
+	
 	# Kits picked per each k-step
 	kperk <- t(apply(bperk, MARGIN=1, FUN=function(z) as.integer(!z==0)))
+	if(verb>=3){
+		print("kperk1")
+		print(dim(kperk))
+		print(kperk)
+	}
 	# Indices as a named vector
 	kperk <- as.list(apply(kperk %*% t(k), MARGIN=1, FUN=function(z) { which(!z==0) }))
+	if(verb>=3){
+		print("kperk2")
+		print(dim(kperk))
+		print(kperk)
+	}
 	
 	# Kit costs per each k-step
-	cperk <- unlist(lapply(kperk, FUN=function(z) { sum(w[z]) }))
+	cperk <- unlist(lapply(kperk, FUN=function(z) { sum(w[z], na.rm=TRUE) }))
 
 	if(verb>=2){
-		print(bperk)
-		print(fperk)
-		print(kperk)
+		print("cperk")
+		print(cperk)
 	}
 
 	# Return the freshly built S4 model object
@@ -186,35 +239,39 @@ casso <- function(
 	)
 	
 	# Fit lm/glm/coxph/... models per each estimated set of beta coefs (function call depends on 'family')
-	obj@fits <- apply(bperk, MARGIN=1, FUN=function(bs){
-		if(family=="cox"){
-			## Prefit a coxph-object
-			survival::coxph(
-				survival::Surv(time=obj@y[,1], event=obj@y[,2]) ~ obj@x, # Formula for response 'y' modeled using data matrix 'x' 
-				init = bs, # Use model coefficients obtained using the DBDC optimization 
-				control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
-			)
-		}else if(family %in% c("mse", "gaussian")){
-			## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
-			stats::glm(y ~ x, start = bs, family = gaussian(link="identity"), method = ".glm.fit.mod")
-		}else if(family=="logistic"){
-			## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
-			stats::glm(y ~ x, start = bs, family = binomial(link="logit"), method = ".glm.fit.mod")
-		}
+	try({
+		obj@fits <- apply(bperk, MARGIN=1, FUN=function(bs){
+			if(family=="cox"){
+				## Prefit a coxph-object
+				survival::coxph(
+					survival::Surv(time=obj@y[,1], event=obj@y[,2]) ~ obj@x, # Formula for response 'y' modeled using data matrix 'x' 
+					init = bs, # Use model coefficients obtained using the DBDC optimization 
+					control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
+				)
+			}else if(family %in% c("mse", "gaussian")){
+				## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
+				stats::glm(y ~ x, start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod)
+			}else if(family=="logistic"){
+				## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
+				stats::glm(y ~ x, start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod)
+			}
+		})
 	})
 	
 	# Calculate/extract model goodness metric at each k
-	# Cox regression
-	if(family=="cox"){
-		# Use c-index as the goodness measure
-		obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { z$concordance["concordance"] }))
-	}else if(family %in% c("mse", "gaussian")){
-		# Use mean squared error as the goodness measure
-		obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { mean((y - predict.glm(z, type="response"))^2) }))
-	}else if(family=="logistic"){
-		# Use correct classification percent as the goodness measure
-		obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { as.numeric(y == (predict.glm(z, type="response")>0.5))/length(y) }))
-	}
+	try({
+		# Cox regression
+		if(family=="cox"){
+			# Use c-index as the goodness measure
+			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { z$concordance["concordance"] }))
+		}else if(family %in% c("mse", "gaussian")){
+			# Use mean squared error as the goodness measure
+			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { mean((y - predict.glm(z, type="response"))^2) }))
+		}else if(family=="logistic"){
+			# Use correct classification percent as the goodness measure
+			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { sum(as.numeric(y == (predict.glm(z, type="response")>0.5)))/length(y) }))
+		}
+	})
 	
 	# Return the new model object
 	obj
