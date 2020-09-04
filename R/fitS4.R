@@ -97,16 +97,33 @@ casso <- function(
 	start=2,#  
 	verb=1  # Level of R verbosity (1 = standard, 2 = debug level, 0<= none)
 ){
+	# TODO: Sanity checks for input here
+	x <- as.matrix(x)
+	# ...
+	if(verb>=2) print("Sanity checks ready")
+
+	# If kit matrix is missing as input, assume that each variable is alone
+	if(missing(k)){
+		k <- matrix(0, nrow=ncol(x), ncol=ncol(x))
+		diag(k) <- 1
+	}
 	# If family is not Cox, (Intercept) requires its own row/column in K
 	if(!family == "cox" & ncol(k) == ncol(x)){
 		k <- rbind(0, cbind(0, k))
 		k[1,1] <- 1
-		rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
+		if(!is.null(rownames(k)) & !is.null(colnames(k))) rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
+	}
+	if(verb>=2) print("Preprocessing k ready")
+
+	# If kit weights are missing, assume them to be unit cost
+	if(missing(w)){
+		w <- rep(1, times=nrow(k))
 	}
 	# If cost for intercept has not been incorporated, add that as 0
 	if(!family == "cox" & length(w) == ncol(x)){
 		w <- c(0, w)
 	}
+	if(verb>=2) print("Preprocessing w ready")
 
 	# Call correct internal function based on the specified model family
 	if(family=="cox"){
