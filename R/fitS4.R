@@ -95,7 +95,7 @@ casso <- function(
 	## Tuning parameters
 	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
 	start=2,# Deterministic start point 
-	verb=1  # Level of R verbosity (1 = standard, 2 = debug level, 0<= none)
+	verb=1  # Level of R verbosity (1 = standard, 2 = debug level, 3 = excessive debugging, 0<= none)
 ){
 	# TODO: Sanity checks for input here
 	x <- as.matrix(x)
@@ -142,6 +142,11 @@ casso <- function(
 		if(verb>=2){
 			print(res)
 		}
+		# Beta per k steps
+		bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
+		# Naming rows/cols/vector elements
+		rownames(bperk) <- colnames(x)
+	# Gaussian / normal distribution fit using mean-squared error	
 	}else if(family %in% c("mse", "gaussian")){
 		# Call C function for Mean-Squared Error regression
 		res <- .Call(c_casso_mse_f, 
@@ -156,6 +161,11 @@ casso <- function(
 			as.integer(print), # Tuning parameter for verbosity
 			as.integer(start) # Tuning parameter for starting values
 		)
+		# Beta per k steps
+		# Add row for intercept
+		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
+		# Naming rows/cols/vector elements
+		rownames(bperk) <- c(colnames(x),"intercept")
 		
 	}else if(family == "logistic"){
 		# Call C function for logistic regression
@@ -171,6 +181,11 @@ casso <- function(
 			as.integer(print), # Tuning parameter for verbosity
 			as.integer(start) # Tuning parameter for starting values
 		)
+		# Beta per k steps
+		# Add row for intercept
+		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
+		# Naming rows/cols/vector elements
+		rownames(bperk) <- c(colnames(x),"intercept")
 	
 	}
 
@@ -191,8 +206,7 @@ casso <- function(
 	# All other model families have intercept
 	}else{
 		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
-		# Fortran subroutine returns intercept as last, swap that to front
-		#rownames(bperk) <- c("(Intercept)", colnames(x))
+		# Fortran subroutine returns intercept as the last element, swap that to front
 		rownames(bperk) <- c(colnames(x), "(Intercept)")
 		bperk <- bperk[c(nrow(bperk), 1:(nrow(bperk)-1)),]
 	}
