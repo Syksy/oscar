@@ -275,7 +275,8 @@ casso <- function(
 			if(family=="cox"){
 				## Prefit a coxph-object
 				survival::coxph(
-					survival::Surv(time=obj@y[,1], event=obj@y[,2]) ~ obj@x, # Formula for response 'y' modeled using data matrix 'x' 
+					as.formula(paste("survival::Surv(time=obj@y[,1],event=obj@y[,2]) ~",paste(colnames(obj@x),collapse='+'))), # Formula for response 'y' modeled using data matrix 'x' 
+					data=data.frame(obj@x), # Use data matrix 'x'
 					init = bs, # Use model coefficients obtained using the DBDC optimization 
 					control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
 				)
