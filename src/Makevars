@@ -1,6 +1,6 @@
 RM = rm
 
-C_OBJS = blassoc.o
+C_OBJS = cassoc.o
 FT_OBJS = kaikki.o plqdf1.o
 
 all:
@@ -13,7 +13,5 @@ clean:
 
 $(SHLIB): $(FT_OBJS) $(C_OBJS)
 
-blassoc.c: kaikki.o
-
-
+cassoc.c: kaikki.o
 
