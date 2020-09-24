@@ -14,6 +14,8 @@ cv.casso <- function(
 	fold = 10,
 	# RNG seed (integer) that can be set for exact reproducibility
 	seed = NULL,
+	# Level of verbosity mainly for debugging
+	verb = 0,
 	...
 ){
 	# Internal cv-sample allocation function, modified from the ePCR-package
@@ -21,7 +23,7 @@ cv.casso <- function(
 		# Original x data frame
 		x,
 		# Number of CV-folds
-		fold = 10,
+		fold = fold,
 		# Should some strata be balanced over the bins? By default no, should be a vector equal to the number of rows in x
 		strata = rep(1, times=nrow(x)),
 		# Should data be randomized when creating cv-folds in addition to allocating to bins
@@ -53,6 +55,31 @@ cv.casso <- function(
 	# Generate cv-folds
 	cvsets <- cv(fit@x, fold = fold, seed = seed)
 	cvsets
+	# Verbose
+	if(verb>=1) print(str(cvsets))
+	
+	# Fit family to use
+	family <- fit@family
+	# K-steps
+	ks <- 1:nrow(fit@k)
+	# Loop over the CV folds, make a list of predictions and the real values
+	cvs <- lapply(1:fold, FUN=function(z){
+		if(verb>=1) print(paste("CV fold", z))
+		fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=family, k=fit@k)
+		# Perform predictions over all k-value fits
+		pred <- lapply(fittmp@fits, FUN=function(f){
+			predict(f, type="response", newdata=fit@x[cvsets$test[[z]],])
+		})
+		# Check predictions vs. real y-values
+		list(
+			# Predicted values
+			pred = pred, 
+			# True values
+			true = fit@y[cvsets$test[[z]],]
+		)
+	})
+	# Return cv results
+	cvs
 }
 
 
