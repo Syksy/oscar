@@ -1,5 +1,6 @@
 useDynLib(casso, .registration=TRUE)
 export("casso")
 export("visu")
+export("bs.visu")
 export("bs.casso")
 export("cv.casso")

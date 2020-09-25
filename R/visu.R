@@ -109,8 +109,54 @@ bs.visu <- function(
 	bs	# Bootstrapped list from bs.casso
 ){
 	# Omit entries with try-errors
-	bs <- bs[-which(unlist(lapply(bs, FUN=class))=="try-error")]
+	if(any(unlist(lapply(bs, FUN=class))=="try-error")){
+		bs <- bs[-which(unlist(lapply(bs, FUN=class))=="try-error")]
+	}
 	
+	# Choices of variables as a function of k
+	bs <- lapply(bs, FUN=function(z){
+		apply(z, MARGIN=1, FUN=function(q){
+			colnames(z)[which(!q==0)]
+		})
+	})
+	# Order at which variables are selected, vector of variable names
+	#bs <- lapply(bs, FUN=function(z){
+	#	tmp <- z[[1]]
+	#	for(i in 2:length(z)){
+	#		tmp <- c(tmp, c(setdiff(z[[i]], z[[i-1]]), setdiff(z[[i-1]], z[[i]])))
+	#	}
+	#	tmp
+	#})
+	## -> Breaks if variable selection goes back and forth
 	
+	# Concatenate all together into a data.frame
+	bs <- as.data.frame(
+		do.call("rbind", 
+			lapply(1:length(bs), FUN=function(z){
+				do.call("rbind", lapply(1:length(bs[[z]]), FUN=function(q){
+					cbind(
+						kth = rep(paste("k_", q, sep=""), times=length(bs[[z]][[q]])), # k:th var
+						bsn = z, # z:th bootstrap run
+						var = bs[[z]][[q]] # The variables in order
+					)
+				}))
+			})
+		)
+	)
+	
+	#print(is_alluvial_form(bs))
+	
+	# Try to plot Sankey-like diagram of variable over of k:th choice
+	#ggplot(bs,
+	#	aes(x = kth, stratum = var, alluvium = bsn,
+	#		fill = var, label = var)) +
+	#	scale_fill_brewer(type = "qual", palette = "Set2") +
+	#	geom_flow(stat = "alluvium", lode.guidance = "frontback",
+	#		color = "darkgray") +
+	#	geom_stratum() +
+	#	theme(legend.position = "bottom") +
+	#	ggtitle("Variable choices as function of k over boostrap runs")
+	
+	bs
 }
 
