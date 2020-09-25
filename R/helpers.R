@@ -77,11 +77,11 @@ cv.casso <- function(
 			if(fit@family %in% c("mse", "gaussian")){
 				as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))
 			# Logistic placeholder	
-			}else if(fit@family %in% c()){
-			
+			}else if(fit@family %in% c("logistic")){
+				
 			# Cox placeholder
-			}else if(fit@family %in% c()){
-			
+			}else if(fit@family %in% c("cox")){
+				
 			}
 		})
 		#if(fit@family %in% c("mse", "gaussian", "logistic")){
@@ -126,16 +126,16 @@ cv.casso <- function(
 				mean((q-z$true)^2)
 			# Logistic placeholder
 			}else if(fit@family %in% c()){
-			
+				
 			# Cox placeholder
 			}else if(fit@family %in% c()){
-			
+				
 			}
 		})
 	})
 	
 	# Rows: cv-folds, cols: k-values
-	cvs <- do.call("rbind", lapply(tmp, FUN=function(z) do.call("c", z)))
+	cvs <- do.call("rbind", lapply(cvs, FUN=function(z) do.call("c", z)))
 	rownames(cvs) <- paste("cv_", 1:nrow(cvs), sep="")
 	# Return cv results
 	cvs

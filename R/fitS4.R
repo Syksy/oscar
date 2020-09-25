@@ -107,12 +107,13 @@ casso <- function(
 		k <- matrix(0, nrow=ncol(x), ncol=ncol(x))
 		diag(k) <- 1
 	}
+	## -> Intercept is an independent variable that is not subjected to penalization
 	# If family is not Cox, (Intercept) requires its own row/column in K
-	if(!family == "cox" & ncol(k) == ncol(x)){
-		k <- rbind(0, cbind(0, k))
-		k[1,1] <- 1
-		if(!is.null(rownames(k)) & !is.null(colnames(k))) rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
-	}
+	#if(!family == "cox" & ncol(k) == ncol(x)){
+	#	k <- rbind(0, cbind(0, k))
+	#	k[1,1] <- 1
+	#	if(!is.null(rownames(k)) & !is.null(colnames(k))) rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
+	#}
 	if(verb>=2) print("Preprocessing k ready")
 
 	# If kit weights are missing, assume them to be unit cost
@@ -236,6 +237,11 @@ casso <- function(
 		print(dim(kperk))
 		print(kperk)
 	}
+	# If dealing with non-Cox regression, omit (Intercept) from indicator matrix
+	if(!family == "cox" & ncol(k) == ncol(x)){
+		kperk <- kperk[,-1]
+	}
+	
 	# Indices as a named vector
 	kperk <- as.list(apply(kperk %*% t(k), MARGIN=1, FUN=function(z) { which(!z==0) }))
 	if(verb>=3){
@@ -282,14 +288,14 @@ casso <- function(
 				)
 			}else if(family %in% c("mse", "gaussian")){
 				## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
-				#stats::glm(y ~ ., start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod)
+				#stats::glm(y ~ x, start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod)
 				stats::glm(
 					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
 					, data = data.frame(obj@x), start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod
 				)
 			}else if(family=="logistic"){
 				## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
-				#stats::glm(y ~ ., start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod)
+				#stats::glm(y ~ x, start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod)
 				stats::glm(
 					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
 					, data = data.frame(obj@x),, start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod
