@@ -160,3 +160,18 @@ bs.visu <- function(
 	bs
 }
 
+#' Visualize cross-validation as a function of k
+cv.visu <- function(
+	cvs, # Matrix produced by cv.casso; rows are cv-folds, cols are k-values
+	...
+){
+	# Compute statistics for the CV-curve
+	means <- apply(cvs, MARGIN=2, FUN=mean)
+	sds <- apply(cvs, MARGIN=2, FUN=sd)
+	# x-coordinates
+	x <- 1:ncol(cvs)
+	# Plotting
+	plot(x, means, type="l", xlab="k-step", ylab="CV prediction error", ylim=extendrange(c(means+sds, means-sds)))
+	points(x, means, pch=16, col="red")
+	arrows(x0=x, y0=means-sds, x1=x, y1=means+sds, code=3, angle=90, length=0.1)
+}

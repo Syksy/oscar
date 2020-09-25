@@ -66,10 +66,44 @@ cv.casso <- function(
 	cvs <- lapply(1:fold, FUN=function(z){
 		if(verb>=1) print(paste("CV fold", z))
 		fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=family, k=fit@k)
+		if(verb>=1) print("CV fit, predicting...")
 		# Perform predictions over all k-value fits
+		# Model specificity in predictions (?)
 		pred <- lapply(fittmp@fits, FUN=function(f){
-			predict(f, type="response", newdata=fit@x[cvsets$test[[z]],])
+			#if(verb>=2) print(f)
+			x <- as.data.frame(fit@x[cvsets$test[[z]],])
+			colnames(x) <- colnames(fit@x)
+			# MSE/Gaussian
+			if(fit@family %in% c("mse", "gaussian")){
+				as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))
+			# Logistic placeholder	
+			}else if(fit@family %in% c()){
+			
+			# Cox placeholder
+			}else if(fit@family %in% c()){
+			
+			}
 		})
+		#if(fit@family %in% c("mse", "gaussian", "logistic")){
+		#	pred <- lapply(fittmp@fits, FUN=function(f){
+				# Structure the prediction test data
+				#x <- as.data.frame(fit@x[cvsets$test[[z]],])
+				#if(verb>=2) print(head(newx))
+				# Add x-prefix
+				#colnames(newx) <- paste("x", colnames(newx), sep="")
+				# Rename intercept
+				#if("x(Intercept)" %in% colnames(newx)) colnames(newx)[which(colnames(newx)=="x(Intercept)")] <- "(Intercept)"
+				#colnames(newx) <- colnames(fit@x)
+				#stats::predict.glm(f, type="response", newdata=x)
+				#stats::predict.glm(f, type="response", newdata=data.frame(fit@x[cvsets$test[[z]],]))
+				# Note: predict.glm throws warnings for having different variable names; thus adding 'x' that is automatically added otherwise:
+				# https://stackoverflow.com/questions/27464893/getting-warning-newdata-had-1-row-but-variables-found-have-32-rows-on-pred
+		#	})
+		#}else if(fit@family %in% c("cox")){
+		#	pred <- lapply(fittmp@fits, FUN=function(f){
+		#		survival::predict(f, type="response", newdata=as.data.frame(fit@x[cvsets$test[[z]],]))
+		#	})
+		#}
 		# Check predictions vs. real y-values
 		list(
 			# Predicted values
@@ -78,6 +112,31 @@ cv.casso <- function(
 			true = fit@y[cvsets$test[[z]],]
 		)
 	})
+	
+	if(verb>=2) print(cvs)
+	
+	# Construct goodness as a function of k
+	# Loop over cv folds
+	# $pred slot holds k-iterations
+	# $true slot holds the real answer
+	cvs <- lapply(cvs, FUN=function(z){
+		lapply(z$pred, FUN=function(q){
+			# MSE/Gaussian modeling
+			if(fit@family %in% c("mse", "gaussian")){
+				mean((q-z$true)^2)
+			# Logistic placeholder
+			}else if(fit@family %in% c()){
+			
+			# Cox placeholder
+			}else if(fit@family %in% c()){
+			
+			}
+		})
+	})
+	
+	# Rows: cv-folds, cols: k-values
+	cvs <- do.call("rbind", lapply(tmp, FUN=function(z) do.call("c", z)))
+	rownames(cvs) <- paste("cv_", 1:nrow(cvs), sep="")
 	# Return cv results
 	cvs
 }

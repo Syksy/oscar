@@ -282,10 +282,18 @@ casso <- function(
 				)
 			}else if(family %in% c("mse", "gaussian")){
 				## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
-				stats::glm(y ~ x, start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod)
+				#stats::glm(y ~ ., start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod)
+				stats::glm(
+					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
+					, data = data.frame(obj@x), start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod
+				)
 			}else if(family=="logistic"){
 				## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
-				stats::glm(y ~ x, start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod)
+				#stats::glm(y ~ ., start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod)
+				stats::glm(
+					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
+					, data = data.frame(obj@x),, start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod
+				)
 			}
 		})
 	})
