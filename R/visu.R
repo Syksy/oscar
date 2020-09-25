@@ -104,6 +104,13 @@ visu <- function(
 }
 
 
-
-
+# Visualize bootstrap coefficient paths for a casso model object
+bs.visu <- function(
+	bs	# Bootstrapped list from bs.casso
+){
+	# Omit entries with try-errors
+	bs <- bs[-which(unlist(lapply(bs, FUN=class))=="try-error")]
+	
+	
+}
 

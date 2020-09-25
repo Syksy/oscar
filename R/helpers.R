@@ -107,9 +107,16 @@ bs.casso <- function(
 		samps <- sample(1:nrow(fit@x), replace=TRUE)
 		xtemp <- fit@x[samps,]
 		ytemp <- fit@y[samps,]
-		ftemp <- casso(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, print = verb, start = fit@start, verb = verb)
-		
-		ftemp@bperk # Return bootstrapped beta per ks
+		# Wrap expression inside try for catching errors
+		try({
+			ftemp <- casso::casso(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, print = verb, start = fit@start, verb = verb)		
+		})
+		# Return successfully fitted model
+		if(!class(ftemp)=="try-error"){
+			ftemp@bperk # Return bootstrapped beta per ks
+		}else{
+			NA # Model fitting issues, return NA-bperk
+		}
 	})
 	# Return bootstrapped beta per ks
 	bperks
