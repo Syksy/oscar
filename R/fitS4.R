@@ -102,6 +102,16 @@ casso <- function(
 	# ...
 	if(verb>=2) print("Sanity checks ready")
 
+	# TODO: Currently Cox assumes that event and time come in certain order in the 2-column y
+	# Flip them depending on which way is expected
+	if(any(class(y) %in% c("matrix", "array", "Surv"))){
+		if(all(y[,1] %in% c(0,1))){
+
+		}else if(all(y[,2] %in% c(0,1))){
+
+		}
+	}
+
 	# If kit matrix is missing as input, assume that each variable is alone
 	if(missing(k)){
 		k <- matrix(0, nrow=ncol(x), ncol=ncol(x))
@@ -109,11 +119,16 @@ casso <- function(
 	}
 	## -> Intercept is an independent variable that is not subjected to penalization
 	# If family is not Cox, (Intercept) requires its own row/column in K
-	#if(!family == "cox" & ncol(k) == ncol(x)){
-	#	k <- rbind(0, cbind(0, k))
-	#	k[1,1] <- 1
-	#	if(!is.null(rownames(k)) & !is.null(colnames(k))) rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
-	#}
+	if(!family == "cox" & ncol(k) == ncol(x)){
+		k <- rbind(0, cbind(0, k))
+		k[1,1] <- 1
+		if(!is.null(rownames(k)) & !is.null(colnames(k))) rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
+	}
+	# Checking k structure
+	if(verb>=2){
+		print("Input k:")
+		print(k)
+	}
 	if(verb>=2) print("Preprocessing k ready")
 
 	# If kit weights are missing, assume them to be unit cost
@@ -123,6 +138,11 @@ casso <- function(
 	# If cost for intercept has not been incorporated, add that as 0
 	if(!family == "cox" & length(w) == ncol(x)){
 		w <- c(0, w)
+	}
+	# Checking k structure
+	if(verb>=2){
+		print("Input w:")
+		print(w)
 	}
 	if(verb>=2) print("Preprocessing w ready")
 

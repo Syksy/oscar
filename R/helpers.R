@@ -65,7 +65,12 @@ cv.casso <- function(
 	# Loop over the CV folds, make a list of predictions and the real values
 	cvs <- lapply(1:fold, FUN=function(z){
 		if(verb>=1) print(paste("CV fold", z))
-		fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=family, k=fit@k)
+		ifelse(family == "cox", 
+			# Cox model is 2-column in y-response
+			fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=family, k=fit@k, verb=verb),
+			# All other models have a y-vector
+			fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=c(fit@y)[cvsets$train[[z]]], family=family, k=fit@k, verb=verb)
+		)
 		if(verb>=1) print("CV fit, predicting...")
 		# Perform predictions over all k-value fits
 		# Model specificity in predictions (?)
@@ -78,38 +83,21 @@ cv.casso <- function(
 				as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))
 			# Logistic placeholder	
 			}else if(fit@family %in% c("logistic")){
-				
+				as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))
 			# Cox placeholder
 			}else if(fit@family %in% c("cox")){
-				
+				as.vector(unlist(survival:::predict.coxph(f, type="risk", newdata=x)))
 			}
 		})
-		#if(fit@family %in% c("mse", "gaussian", "logistic")){
-		#	pred <- lapply(fittmp@fits, FUN=function(f){
-				# Structure the prediction test data
-				#x <- as.data.frame(fit@x[cvsets$test[[z]],])
-				#if(verb>=2) print(head(newx))
-				# Add x-prefix
-				#colnames(newx) <- paste("x", colnames(newx), sep="")
-				# Rename intercept
-				#if("x(Intercept)" %in% colnames(newx)) colnames(newx)[which(colnames(newx)=="x(Intercept)")] <- "(Intercept)"
-				#colnames(newx) <- colnames(fit@x)
-				#stats::predict.glm(f, type="response", newdata=x)
-				#stats::predict.glm(f, type="response", newdata=data.frame(fit@x[cvsets$test[[z]],]))
-				# Note: predict.glm throws warnings for having different variable names; thus adding 'x' that is automatically added otherwise:
-				# https://stackoverflow.com/questions/27464893/getting-warning-newdata-had-1-row-but-variables-found-have-32-rows-on-pred
-		#	})
-		#}else if(fit@family %in% c("cox")){
-		#	pred <- lapply(fittmp@fits, FUN=function(f){
-		#		survival::predict(f, type="response", newdata=as.data.frame(fit@x[cvsets$test[[z]],]))
-		#	})
-		#}
-		# Check predictions vs. real y-values
+		# Return predictions vs. real y-values
 		list(
 			# Predicted values
 			pred = pred, 
-			# True values
-			true = fit@y[cvsets$test[[z]],]
+			# True values; vectorization if not Cox ph model
+			ifelse(fit@family == "cox", 
+				true = fit@y[cvsets$test[[z]],],
+				true = c(fit@y)[cvsets$test[[z]]]
+			)
 		)
 	})
 	
@@ -121,15 +109,15 @@ cv.casso <- function(
 	# $true slot holds the real answer
 	cvs <- lapply(cvs, FUN=function(z){
 		lapply(z$pred, FUN=function(q){
-			# MSE/Gaussian modeling
+			# MSE/Gaussian, mean squared error
 			if(fit@family %in% c("mse", "gaussian")){
 				mean((q-z$true)^2)
-			# Logistic placeholder
+			# Logistic placeholder; correct classification rate
 			}else if(fit@family %in% c()){
-				
-			# Cox placeholder
+				sum(q==z$true)/length(q)
+			# Cox proportional hazards model; concordance-index
 			}else if(fit@family %in% c()){
-				
+				survival::coxph(z$true ~ q)$concordance["concordance"]
 			}
 		})
 	})
