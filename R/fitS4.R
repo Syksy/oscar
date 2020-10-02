@@ -294,6 +294,10 @@ casso <- function(
 		## Additional
 		family=as.character(family)
 	)
+
+	if(verb>=2){
+		print("obj template created successfully")
+	}
 	
 	# Fit lm/glm/coxph/... models per each estimated set of beta coefs (function call depends on 'family')
 	try({
@@ -323,7 +327,11 @@ casso <- function(
 			}
 		})
 	})
-	
+
+	if(verb>=2){
+		print("fits-slot created successfully")
+	}
+		
 	# Calculate/extract model goodness metric at each k
 	try({
 		# Cox regression

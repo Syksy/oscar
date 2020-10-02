@@ -59,18 +59,22 @@ cv.casso <- function(
 	if(verb>=1) print(str(cvsets))
 	
 	# Fit family to use
-	family <- fit@family
+	#family <- fit@family
 	# K-steps
 	ks <- 1:nrow(fit@k)
 	# Loop over the CV folds, make a list of predictions and the real values
 	cvs <- lapply(1:fold, FUN=function(z){
 		if(verb>=1) print(paste("CV fold", z))
-		ifelse(family == "cox", 
+		# Constructing appropriate model object
+		if(fit@family == "cox"){
 			# Cox model is 2-column in y-response
-			fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=family, k=fit@k, verb=verb),
+			fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=fit@family, k=fit@k, w=fit@w, verb=verb)
+		}else if(fit@family %in% c("mse", "gaussian", "logistic")){
 			# All other models have a y-vector
-			fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=c(fit@y)[cvsets$train[[z]]], family=family, k=fit@k, verb=verb)
-		)
+			fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=c(fit@y)[cvsets$train[[z]]], family=fit@family, k=fit@k, w=fit@w, verb=verb)
+		}else{
+			stop(paste("Incorrect family-parameter fit@family:", fit@family))
+		}
 		if(verb>=1) print("CV fit, predicting...")
 		# Perform predictions over all k-value fits
 		# Model specificity in predictions (?)
@@ -89,19 +93,28 @@ cv.casso <- function(
 				as.vector(unlist(survival:::predict.coxph(f, type="risk", newdata=x)))
 			}
 		})
+		# True values; vectorization if not Cox ph model
+		if(fit@family=="cox"){
+			true <- fit@y[cvsets$test[[z]],]
+		}else if(fit@family %in% c("mse", "gaussian", "logistic")){
+			true <- c(fit@y)[cvsets$test[[z]]]
+		}else{
+			stop(paste("Incorrect family-parameter fit@family:", fit@family))
+		}
 		# Return predictions vs. real y-values
 		list(
 			# Predicted values
 			pred = pred, 
 			# True values; vectorization if not Cox ph model
-			ifelse(fit@family == "cox", 
-				true = fit@y[cvsets$test[[z]],],
-				true = c(fit@y)[cvsets$test[[z]]]
-			)
+			true = true
 		)
 	})
 	
-	if(verb>=2) print(cvs)
+	if(verb>=2){
+		print("cvs prior to goodness measure")
+		print(class(cvs))
+		print(cvs)
+	}
 	
 	# Construct goodness as a function of k
 	# Loop over cv folds
@@ -113,15 +126,21 @@ cv.casso <- function(
 			if(fit@family %in% c("mse", "gaussian")){
 				mean((q-z$true)^2)
 			# Logistic placeholder; correct classification rate
-			}else if(fit@family %in% c()){
-				sum(q==z$true)/length(q)
+			}else if(fit@family %in% c("logistic")){
+				sum(as.integer(q>0.5)==z$true)/length(q)
 			# Cox proportional hazards model; concordance-index
-			}else if(fit@family %in% c()){
+			}else if(fit@family %in% c("cox")){
 				survival::coxph(z$true ~ q)$concordance["concordance"]
 			}
 		})
 	})
-	
+
+	if(verb>=2){
+		print("cvs prior to wrapping up")	
+		print(class(cvs))
+		print(cvs)
+	}
+		
 	# Rows: cv-folds, cols: k-values
 	cvs <- do.call("rbind", lapply(cvs, FUN=function(z) do.call("c", z)))
 	rownames(cvs) <- paste("cv_", 1:nrow(cvs), sep="")
