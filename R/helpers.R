@@ -130,7 +130,7 @@ cv.casso <- function(
 				sum(as.integer(q>0.5)==z$true)/length(q)
 			# Cox proportional hazards model; concordance-index
 			}else if(fit@family %in% c("cox")){
-				survival::coxph(z$true ~ q)$concordance["concordance"]
+				survival::coxph(survival::Surv(z$true) ~ q)$concordance["concordance"]
 			}
 		})
 	})
