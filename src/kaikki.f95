@@ -6323,7 +6323,8 @@
     !--------------------------------------------------------------------------
     ! ^^^^ START: IF Fortran code is used with R-C-interface ^^^^
     !--------------------------------------------------------------------------        
-          SUBROUTINE casso_cox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, in_print, in_start) &
+          SUBROUTINE casso_cox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
+		& in_print, in_start, in_k_max ) &
         & BIND(C, name = "casso_cox_f_")               
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -6351,8 +6352,9 @@
             ! * 'problem = 3'        : the used objective function is Cox's proportional hazards model with L0-norm for kits
             !                          (parametric approach since the number of nonzero elements is fixed) 
             !
-            !   Solves in a loop all L0-norm problems with the fixed number of k=1,...,nkits of kits
-            !
+            !   Solves in a loop all L0-norm problems with the fixed number of k=1,...,in_k_max of kits    (if in_start > 0)
+			!                                                OR
+            !   Solves in a loop all L0-norm problems with the fixed number of k=nkits,....nkits-in_k_max+1 of kits    (if in_start < 0)
             ! 
             ! Solves the unconstrained nonsmooth DC minimization problem
             !
@@ -6363,6 +6365,7 @@
             !         * 'in_print'    : specifies the print, INTEGER
             !         * 'in_start'    : specifies how starting points are selected when the L0-norm problem is solved for  
             !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
+            !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
             !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
             !
@@ -6406,6 +6409,7 @@
                
                INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start    ! Starting point procedure used
                INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print    ! Print used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_k_max    ! The maximum number of kits in the loop
         
         
             !--------------------------------------------------------------------------
@@ -6443,6 +6447,7 @@
                INTEGER(KIND=c_int) :: nft                     ! the dimension of the problem = the number of features in a predictor
                INTEGER(KIND=c_int) :: nrecord                 ! the number of records (data points)
                INTEGER(KIND=c_int) :: nk                      ! the number of kits 
+               INTEGER(KIND=c_int) :: nk_max                  ! the maximum number of kits in the loop 
    
                REAL(KIND=c_double), DIMENSION(ncol) :: beta_solution    ! the solution vector beta obtained for the problem
                REAL(KIND=c_double) :: f_solution                        ! the objective function value at the solution 'beta_solution'
@@ -6594,6 +6599,10 @@
                nrecord = nrow
                nft = ncol
                nk = nkits
+			   
+			   ! The maximum number of kits in the loop
+			   nk_max = min(nk,in_k_max)         ! Cannot be greater than nk
+			   nk_max = max(1,nk_max)            ! Cannot be smaller than 1
               
                start = in_start       ! Starting point generation procedure
                iprint = in_print      ! Print option
@@ -6835,6 +6844,9 @@
               IF (scale_in_use) THEN
                  CALL scaling_cox()
               END IF               
+			  
+			  ! The initialization of beta vector
+			  beta = 0.0_c_double
               
               ! The best beta_solution for Cox's proportional hazard model without regularization/penalization                    
                       
@@ -6885,7 +6897,8 @@
                     nstart = start_max        ! The number of random starting points
                  END IF 
                
-                 DO k = 1, nk                 ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
+                 !DO k = 1, nk                 ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
+                 DO k = 1, nk_max              ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to nk_max
                   
                   IF (iprint>=2 .OR. iprint == -1) THEN
                        WRITE(*,*) '-------------------------------------' 
@@ -7181,7 +7194,8 @@
                     nstart = start_max
                  END IF 
                
-                 DO k = nk, 1, -1            ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
+                 !DO k = nk, 1, -1                     ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from k to 1
+                 DO k = nk, (nk-nk_max+1), -1          ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from k to k-nk_max+1
                   
                   IF ((iprint>=2) .OR. (iprint==-1)) THEN
                        WRITE(*,*)
@@ -7582,7 +7596,8 @@
     !--------------------------------------------------------------------------
     ! ^^^^ START: IF Fortran code is used with R-C-interface ^^^^
     !--------------------------------------------------------------------------        
-          SUBROUTINE casso_mse(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, in_print, in_start) &
+          SUBROUTINE casso_mse(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
+		&  in_print, in_start, in_k_max) &
         & BIND(C, name = "casso_mse_f_")               
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -7610,8 +7625,10 @@
             ! * 'problem = 4'        : the used objective function is mean square error with L0-norm for kits
             !                          (parametric approach since the number of nonzero elements is fixed) 
             !
-            !   Solves in a loop all L0-norm problems with the fixed number of k=1,...,nkits of kits
             !
+            !   Solves in a loop all L0-norm problems with the fixed number of k=1,...,in_k_max of kits    (if in_start > 0)
+			!                                                OR
+            !   Solves in a loop all L0-norm problems with the fixed number of k=nkits,....nkits-in_k_max+1 of kits    (if in_start < 0)
             ! 
             ! Solves the unconstrained nonsmooth DC minimization problem
             !
@@ -7622,6 +7639,7 @@
             !         * 'in_print'    : specifies the print, INTEGER
             !         * 'in_start'    : specifies how starting points are selected when the L0-norm problem is solved for  
             !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
+            !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
             !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
             !
@@ -7665,6 +7683,7 @@
                
                INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start    ! Starting point procedure used
                INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print    ! Print used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_k_max    ! The maximum number of kits in the loop
         
         
             !--------------------------------------------------------------------------
@@ -7702,6 +7721,7 @@
                INTEGER(KIND=c_int) :: nft                     ! the dimension of the problem = the number of features in a predictor
                INTEGER(KIND=c_int) :: nrecord                 ! the number of records (data points)
                INTEGER(KIND=c_int) :: nk                      ! the number of kits 
+               INTEGER(KIND=c_int) :: nk_max                  ! the maximum number of kits in the loop 
    
                REAL(KIND=c_double), DIMENSION(ncol+1) :: beta_solution    ! the solution vector beta obtained for the problem
                REAL(KIND=c_double) :: f_solution                          ! the objective function value at the solution 'beta_solution'
@@ -7850,7 +7870,11 @@
                nrecord = nrow
                nft = ncol
                nk = nkits
-              
+			   
+			   ! The maximum number of kits in the loop
+			   nk_max = min(nk,in_k_max)         ! Cannot be greater than nk
+			   nk_max = max(1,nk_max)            ! Cannot be smaller than 1
+			   
                start = in_start       ! Starting point generation procedure
                iprint = in_print      ! Print option
               
@@ -8076,6 +8100,9 @@
               IF (scale_in_use) THEN
                  CALL scaling_mse()
               END IF               
+
+			  ! The initialization of beta vector
+			  beta = 0.0_c_double
               
               ! The best beta_solution for Cox's proportional hazard model without regularization/penalization    
               
@@ -8128,7 +8155,8 @@
                     nstart = start_max           ! The number of random starting points
                  END IF 
                
-                 DO k = 1, nk                 ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
+                 !DO k = 1, nk                    ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
+                 DO k = 1, nk_max                 ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to nk_max
                   
                   IF (iprint>=2 .OR. iprint == -1) THEN
                        WRITE(*,*) '-------------------------------------' 
@@ -8424,7 +8452,8 @@
                     nstart = start_max
                  END IF 
                
-                 DO k = nk, 1, -1            ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
+                 !DO k = nk, 1, -1                     ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from k to 1
+                 DO k = nk, nk-nk_max+1, -1            ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from k to k-nk_max+1
                   
                   IF ((iprint>=2) .OR. (iprint==-1)) THEN
                        WRITE(*,*)
@@ -8825,7 +8854,8 @@
     !--------------------------------------------------------------------------
     ! ^^^^ START: IF Fortran code is used with R-C-interface ^^^^
     !--------------------------------------------------------------------------        
-          SUBROUTINE casso_logistic(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, in_print, in_start) &
+          SUBROUTINE casso_logistic(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
+		& in_print, in_start, in_k_max) &
         & BIND(C, name = "casso_logistic_f_")              
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -8853,8 +8883,10 @@
             ! * 'problem = 5'        : the used objective function is the logistic regression model with L0-norm for kits
             !                          (parametric approach since the number of nonzero elements is fixed) 
             !
-            !   Solves in a loop all L0-norm problems with the fixed number of k=1,...,nkits of kits
             !
+            !   Solves in a loop all L0-norm problems with the fixed number of k=1,...,in_k_max of kits    (if in_start > 0)
+			!                                                OR
+            !   Solves in a loop all L0-norm problems with the fixed number of k=nkits,....nkits-in_k_max+1 of kits    (if in_start < 0)
             ! 
             ! Solves the unconstrained nonsmooth DC minimization problem
             !
@@ -8865,6 +8897,7 @@
             !         * 'in_print'    : specifies the print, INTEGER
             !         * 'in_start'    : specifies how starting points are selected when the L0-norm problem is solved for  
             !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
+            !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
             !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
             !
@@ -8908,6 +8941,7 @@
                
                INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start    ! Starting point procedure used
                INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print    ! Print used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_k_max    ! The maximum number of kits in the loop
         
         
             !--------------------------------------------------------------------------
@@ -8945,6 +8979,7 @@
                INTEGER(KIND=c_int) :: nft                     ! the dimension of the problem = the number of features in a predictor
                INTEGER(KIND=c_int) :: nrecord                 ! the number of records (data points)
                INTEGER(KIND=c_int) :: nk                      ! the number of kits 
+               INTEGER(KIND=c_int) :: nk_max                  ! the maximum number of kits in the loop
    
                REAL(KIND=c_double), DIMENSION(ncol+1) :: beta_solution    ! the solution vector beta obtained for the problem
                REAL(KIND=c_double) :: f_solution                          ! the objective function value at the solution 'beta_solution'
@@ -9093,6 +9128,10 @@
                nrecord = nrow
                nft = ncol
                nk = nkits
+			   
+			   ! The maximum number of kits in the loop
+			   nk_max = min(nk,in_k_max)         ! Cannot be greater than nk
+			   nk_max = max(1,nk_max)            ! Cannot be smaller than 1
               
                start = in_start       ! Starting point generation procedure
                iprint = in_print      ! Print option
@@ -9319,6 +9358,9 @@
               IF (scale_in_use) THEN
                  CALL scaling_log()
               END IF               
+
+			  ! The initialization of beta vector
+			  beta = 0.0_c_double
               
               ! The best beta_solution for Cox's proportional hazard model without regularization/penalization    
               
@@ -9371,7 +9413,8 @@
                     nstart = start_max           ! The number of random starting points
                  END IF 
                
-                 DO k = 1, nk                 ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
+                 !DO k = 1, nk                 ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
+                 DO k = 1, nk_max              ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to nk_max
                   
                   IF (iprint>=2 .OR. iprint == -1) THEN
                        WRITE(*,*) '-------------------------------------' 
@@ -9665,8 +9708,9 @@
                  ELSE IF (start == -4) THEN     
                     nstart = start_max
                  END IF 
-               
-                 DO k = nk, 1, -1            ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
+
+                 !DO k = nk, 1, -1                        ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from k to 1               
+                 DO k = nk, (nk-nk_max+1), -1             ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from k to k-nk_max+1
                   
                   IF ((iprint>=2) .OR. (iprint==-1)) THEN
                        WRITE(*,*)

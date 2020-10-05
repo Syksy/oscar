@@ -30,7 +30,9 @@ setClass("casso", # abbreviation
 		family = "character",	# Utilized model family, in early versions only 'cox' supported (to be added: normal/gaussian, logistic, ...
 		goodness = "numeric",	# Goodness metric at each k based on model fit; dependent on 'family': cox is concordance-index, ...
 		fits = "list",		# Pre-fitted model objects, where each model fit only allows the optimal subset of features to be incorporated into the model; length should be equal to k sequence
-		info = "character"	# Additional error messages, warnings or such reported e.g. during model fitting
+		info = "character",	# Additional error messages, warnings or such reported e.g. during model fitting
+		kmax = "integer",	# Number of maximum k tested
+		metric = "character"	# Name of the goodness-of-fit metric used
 	),	
 	prototype(
 		# Prototype base model object
@@ -50,13 +52,17 @@ setClass("casso", # abbreviation
 		family = NA_character_,
 		goodness = NA_real_,
 		fits = list(),
-		info = NA_character_
+		info = NA_character_,
+		kmax = NA_integer_,
+		metric = NA_character_
 	),
 	# Function for testing whether all S4-slots are legitimate for the S4 object 
+	# TODO
 	validity = function(
 		object
 	){
-		# Return TRUE only if all slots fulfill the validity criteria (could be a list of if-statements that return FALSE prior to this if discrepancies are detected)
+		# Return TRUE only if all slots fulfill the validity criteria 
+		# (could be a list of if-statements that return FALSE prior to this if discrepancies are detected)
 		TRUE
 	}
 )
@@ -95,7 +101,8 @@ casso <- function(
 	## Tuning parameters
 	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
 	start=2,# Deterministic start point 
-	verb=1  # Level of R verbosity (1 = standard, 2 = debug level, 3 = excessive debugging, 0<= none)
+	verb=1, # Level of R verbosity (1 = standard, 2 = debug level, 3 = excessive debugging, 0<= none)
+	kmax    # Maximum tested k-values
 ){
 	# TODO: Sanity checks for input here
 	x <- as.matrix(x)
@@ -111,6 +118,7 @@ casso <- function(
 
 		}
 	}
+	
 
 	# If kit matrix is missing as input, assume that each variable is alone
 	if(missing(k)){
@@ -128,6 +136,15 @@ casso <- function(
 	if(verb>=2){
 		print("Input k:")
 		print(k)
+	}
+	# If user has defined kmax, use it to pass to the Fortran function; otherwise kmax is the maximum number of kits in the input data
+	if(missing(kmax)){
+		kmax <- nrow(k)
+	# Sanity checking for user provided parameter
+	}else if(class(kmax) %in% "numeric"){
+		kmax <- as.integer(kmax)
+	}else if(!any(class(kmax) %in% c("integer", "numeric"))){
+		stop("Provided kmax parameter ought to be of type 'integer' or 'numeric' cast to an integer")
 	}
 	if(verb>=2) print("Preprocessing k ready")
 
@@ -158,7 +175,8 @@ casso <- function(
 			as.integer(ncol(x)), # Number of variables (columns in x)
 			as.integer(nrow(k)), # Number of kits
 			as.integer(print), # Tuning parameter for verbosity
-			as.integer(start) # Tuning parameter for starting values
+			as.integer(start), # Tuning parameter for starting values
+			as.integer(kmax) # Tuning parameter for max k run
 		)
 		if(verb>=2){
 			print(res)
@@ -180,7 +198,8 @@ casso <- function(
 			as.integer(ncol(x)), # Number of variables (columns in x)
 			as.integer(nrow(k)), # Number of kits
 			as.integer(print), # Tuning parameter for verbosity
-			as.integer(start) # Tuning parameter for starting values
+			as.integer(start), # Tuning parameter for starting values
+			as.integer(kmax) # Tuning parameter for max k run
 		)
 		# Beta per k steps
 		# Add row for intercept
@@ -200,7 +219,8 @@ casso <- function(
 			as.integer(ncol(x)), # Number of variables (columns in x)
 			as.integer(nrow(k)), # Number of kits
 			as.integer(print), # Tuning parameter for verbosity
-			as.integer(start) # Tuning parameter for starting values
+			as.integer(start), # Tuning parameter for starting values
+			as.integer(kmax) # Tuning parameter for max k run
 		)
 		# Beta per k steps
 		# Add row for intercept
@@ -286,6 +306,7 @@ casso <- function(
 		kperk = kperk, # Chosen kits per k-steps
 		cperk = cperk, # Total kit costs per each k-step
 		start = start, # Method for generating starting points
+		kmax = kmax,   # Number of max run k
 		## Data slots
 		x=as.matrix(x), 
 		y=as.matrix(y), 
