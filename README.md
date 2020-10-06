@@ -30,7 +30,8 @@ Version plan:
 * 0.x - Roxygenize R package documentation
 * 0.x - Use omp_lib for parallelization in Fortran (or a similar approach)
 * 0.x - Testing for final modeling procedure (Ideally R unit testing folder)
-* 0.x - k_max-type cutoff in Fortran as not to iterate all the way to the maximum possible k
+* 0.x - Optimal k suggestion
+* 0.x - Variants allowed for goodness measures for the three model families
 * ...
 
 Compiling the code and running examples:

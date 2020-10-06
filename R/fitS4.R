@@ -333,14 +333,12 @@ casso <- function(
 				)
 			}else if(family %in% c("mse", "gaussian")){
 				## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
-				#stats::glm(y ~ x, start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod)
 				stats::glm(
 					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
 					, data = data.frame(obj@x), start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod
 				)
 			}else if(family=="logistic"){
 				## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
-				#stats::glm(y ~ x, start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod)
 				stats::glm(
 					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
 					, data = data.frame(obj@x),, start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod
@@ -359,12 +357,15 @@ casso <- function(
 		if(family=="cox"){
 			# Use c-index as the goodness measure
 			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { z$concordance["concordance"] }))
+			obj@metric <- "cindex"
 		}else if(family %in% c("mse", "gaussian")){
 			# Use mean squared error as the goodness measure
 			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { mean((y - predict.glm(z, type="response"))^2) }))
+			obj@metric <- "mse"
 		}else if(family=="logistic"){
 			# Use correct classification percent as the goodness measure
 			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { sum(as.numeric(y == (predict.glm(z, type="response")>0.5)))/length(y) }))
+			obj@metric <- "accuracy"
 		}
 	})
 	
