@@ -301,19 +301,19 @@ casso <- function(
 	# Return the freshly built S4 model object
 	obj <- new("casso", 
 		## Model fit results
-		bperk = bperk, # Beta coef per k-steps
-		fperk = fperk, # Target function values per k-steps
-		kperk = kperk, # Chosen kits per k-steps
-		cperk = cperk, # Total kit costs per each k-step
-		start = start, # Method for generating starting points
-		kmax = kmax,   # Number of max run k
+		bperk = bperk[1:kmax,,drop=FALSE], # Beta coef per k-steps up to kmax
+		fperk = fperk[1:kmax], # Target function values per k-steps up to kmax
+		kperk = kperk[1:kmax], # Chosen kits per k-steps up to kmax
+		cperk = cperk[1:kmax], # Total kit costs per each k-step up to kmax
 		## Data slots
-		x=as.matrix(x), 
-		y=as.matrix(y), 
-		k=as.matrix(k), 
-		w=as.numeric(w), 
-		## Additional
-		family=as.character(family)
+		x=as.matrix(x),	# Data matrix X
+		y=as.matrix(y), # Response Y
+		k=as.matrix(k), # Kit matrix K
+		w=as.numeric(w),	# Vector of weights/costs for kits
+		## Additional parameters
+		family=as.character(family),	# Model family as a character string
+		start = start,	# Method for generating starting points
+		kmax = kmax	# Max run k-step
 	)
 
 	if(verb>=2){
@@ -322,7 +322,7 @@ casso <- function(
 	
 	# Fit lm/glm/coxph/... models per each estimated set of beta coefs (function call depends on 'family')
 	try({
-		obj@fits <- apply(bperk, MARGIN=1, FUN=function(bs){
+		obj@fits <- apply(obj@bperk, MARGIN=1, FUN=function(bs){
 			if(family=="cox"){
 				## Prefit a coxph-object
 				survival::coxph(
@@ -381,7 +381,7 @@ setMethod("show", "casso",
 	function(object){
 	cat("Cardinality-constrained Absolute Subset Selection Optimized model object\n")
 	cat(paste("Model family: ", object@family,"\n", sep=""))
-	cat(paste("k steps: ", nrow(object@k),"\n", sep=""))
+	cat(paste("k steps: ", object@kmax,"\n", sep=""))
 	cat(paste("dim(x): [", paste(dim(object@x),collapse=","),"]\n", sep=""))
 	cat(paste("dim(y): [", paste(dim(object@y),collapse=","),"]\n", sep=""))
 })
