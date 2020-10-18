@@ -5,4 +5,7 @@ export("bs.visu")
 export("bs.casso")
 export("cv.casso")
 export("cv.visu")
+# Generics
+export("show")
+export("coef")
 

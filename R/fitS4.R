@@ -372,18 +372,3 @@ casso <- function(
 	# Return the new model object
 	obj
 }
-
-
-#' Showing casso-objects
-#'
-#' @export
-setMethod("show", "casso",
-	function(object){
-	cat("Cardinality-constrained Absolute Subset Selection Optimized model object\n")
-	cat(paste("Model family: ", object@family,"\n", sep=""))
-	cat(paste("k steps: ", object@kmax,"\n", sep=""))
-	cat(paste("dim(x): [", paste(dim(object@x),collapse=","),"]\n", sep=""))
-	cat(paste("dim(y): [", paste(dim(object@y),collapse=","),"]\n", sep=""))
-})
-
-
