@@ -5,7 +5,9 @@ export("bs.visu")
 export("bs.casso")
 export("cv.casso")
 export("cv.visu")
-# Generics
+# Generics for 'casso' S4-class
 export("show")
 export("coef")
-
+# Methods for 'casso' S4-class
+export("feat")
+export("kits")
