@@ -85,10 +85,10 @@ cv.casso <- function(
 			# MSE/Gaussian
 			if(fit@family %in% c("mse", "gaussian")){
 				as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))
-			# Logistic placeholder	
+			# Logistic	
 			}else if(fit@family %in% c("logistic")){
 				as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))
-			# Cox placeholder
+			# Cox
 			}else if(fit@family %in% c("cox")){
 				as.vector(unlist(survival:::predict.coxph(f, type="risk", newdata=x)))
 			}
@@ -121,6 +121,12 @@ cv.casso <- function(
 	# $pred slot holds k-iterations
 	# $true slot holds the real answer
 	cvs <- lapply(cvs, FUN=function(z){
+		if(verb>=2){
+			print("true:")
+			print(z$true)
+			print("z$pred:")
+			print(z$pred)
+		}
 		lapply(z$pred, FUN=function(q){
 			# MSE/Gaussian, mean squared error
 			if(fit@family %in% c("mse", "gaussian")){
@@ -130,16 +136,17 @@ cv.casso <- function(
 				sum(as.integer(q>0.5)==z$true)/length(q)
 			# Cox proportional hazards model; concordance-index
 			}else if(fit@family %in% c("cox")){
-				survival::coxph(survival::Surv(z$true) ~ q)$concordance["concordance"]
+				# NOTE: Assuming first colmn is the survival time, second is the observed event status
+				survival::coxph(survival::Surv(time = z$true[,1], event = z$true[,2]) ~ q)$concordance["concordance"]
 			}
 		})
 	})
 
-	if(verb>=2){
-		print("cvs prior to wrapping up")	
-		print(class(cvs))
-		print(cvs)
-	}
+	#if(verb>=2){
+	#	print("cvs prior to wrapping up")	
+	#	print(class(cvs))
+	#	print(cvs)
+	#}
 		
 	# Rows: cv-folds, cols: k-values
 	cvs <- do.call("rbind", lapply(cvs, FUN=function(z) do.call("c", z)))
@@ -147,7 +154,7 @@ cv.casso <- function(
 	# Return cv results
 	cvs
 }
-
+cv.tmp <- cv.casso(fit, verb=3, fold=3)
 
 
 #' Bootstrapping for casso-fitted model objects
