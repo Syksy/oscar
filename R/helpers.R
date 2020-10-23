@@ -154,8 +154,6 @@ cv.casso <- function(
 	# Return cv results
 	cvs
 }
-cv.tmp <- cv.casso(fit, verb=3, fold=3)
-
 
 #' Bootstrapping for casso-fitted model objects
 #'
