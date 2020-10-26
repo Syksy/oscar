@@ -40,6 +40,41 @@ setMethod("coef", "casso",
 	}
 )
 
+#' Plot casso-coefficients as a function of k and override default plot generic
+#'
+#' @export
+setMethod("plot", "casso",
+	function(x, y, k=1:x@kmax, add=FALSE, intercept=FALSE, ...){
+		# Should intercept be omitted from the plot
+		if(!intercept & "(Intercept)" %in% colnames(x@bperk)){
+			bperk <- x@bperk[,-which(colnames(x@bperk)=="(Intercept)")]
+		}else{
+			bperk <- x@bperk
+		}
+		# Not adding to an existing plot, making a fresh frame
+		if(!add){
+			plot.new() 
+			plot.window(xlim=extendrange(k), ylim=extendrange(bperk))
+			box()
+			axis(1)
+			axis(2)
+			title(xlab="Cardinality 'k'", ylab="Beta coefficient")
+			abline(h=0, col="grey", lwd=2)
+		}
+		# Plot each coefficient as its own line with a different colour
+		ret <- lapply(1:ncol(bperk), FUN=function(i){
+			vec <- bperk[,i]
+			names(vec) <- paste("k_", k, sep="")
+			points(x=k, y=vec, col=i, type="l")
+			vec
+		})
+		names(ret) <- colnames(bperk)
+		# Return a bperk coefficients list which is plotted
+		ret
+	}
+)
+
+
 ###
 #
 # casso-specific S4-functions
