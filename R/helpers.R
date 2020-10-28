@@ -166,7 +166,7 @@ bs.casso <- function(
 	# RNG seed (integer) that can be set for exact reproducibility
 	seed = NULL,
 	# Level of verbosity (<1 supresses everything in R; parameter also passed to Fortran subroutine)
-	verb = 3,
+	verb = 0,
 	...
 ){
 	# Seed number for RNG reproducibility
@@ -180,7 +180,7 @@ bs.casso <- function(
 		ytemp <- fit@y[samps,]
 		# Wrap expression inside try for catching errors
 		try({
-			ftemp <- casso::casso(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, print = verb, start = fit@start, verb = verb)		
+			ftemp <- casso::casso(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, kmax = fit@kmax, print = verb, start = fit@start, verb = verb)		
 		})
 		# Return successfully fitted model
 		if(!class(ftemp)=="try-error"){
@@ -189,8 +189,13 @@ bs.casso <- function(
 			NA # Model fitting issues, return NA-bperk
 		}
 	})
-	# Return bootstrapped beta per ks
-	bperks
+	# Extract bootstrapped beta coefficient values and create a 3-dim array of regular size
+	dat <- array(as.numeric(unlist(lapply(bperks, FUN=c))), 
+		dim=c(fit@kmax, ncol(bperks[[1]]), bootstrap), 
+		dimnames=list(paste0("k_",1:fit@kmax), colnames(bperks[[1]]), paste0("bs_",1:bootstrap))
+	)	
+	# Return 3-dim array with first dim as k, second as beta coef, third as bootstrap runs
+	dat
 }
 	
 
