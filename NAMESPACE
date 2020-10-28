@@ -1,13 +1,16 @@
 useDynLib(casso, .registration=TRUE)
 export("casso")
 export("visu")
+# Bootstrap functions
 export("bs.visu")
 export("bs.casso")
+# Cross-validation functions
 export("cv.casso")
 export("cv.visu")
 # Generics for 'casso' S4-class
 export("show")
 export("coef")
+export("plot")
 # Methods for 'casso' S4-class
 export("feat")
 export("kits")

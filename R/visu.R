@@ -105,9 +105,37 @@ visu <- function(
 	}
 }
 
-
-# Visualize bootstrap coefficient paths for a casso model object
+#' Visualize bootstrapping of a fit casso object
 bs.visu <- function(
+	bs, # Bootstrap array as produced by bs.casso
+	intercept = FALSE # Whether intercept coefficient ought to be plotted as well
+){
+	# Sanity checking
+	if(!length(dim(bs))==3) stop("Parameter 'bs' ought to be a 3-dim array as produced by bs.casso")
+	# Remove intercept if needed
+	if(!intercept & "(Intercept)" %in% dimnames(bs)[[2]]){
+		bs <- bs[,-which("(Intercept)" == dimnames(bs)[[2]]),]
+	}
+	
+	# Plot bootstrapped runs
+	plot.new()
+	plot.window(xlim=range(1:dim(bs)[1]), ylim=extendrange(bs))
+	box(); axis(1); axis(2)
+	abline(h=0, lwd=2, col="grey")
+	title(xlab="Cardinality 'k'", ylab="Beta coefficients", main="Bootstrapped coefficients")
+	# Iterate over coefficients
+	for(i in 1:dim(bs)[2]){
+		# Iterate over bootstraps
+		for(b in 1:dim(bs)[3]){
+			points(x=1:dim(bs)[1], y=bs[,i,b], col=i, lwd=2, type="l")
+		}
+	}
+}
+
+#' Visualize bootstrap coefficient paths for a casso model object as a function of, ignoring coef value
+#'
+#'
+bs.visu.k <- function(
 	bs	# Bootstrapped list from bs.casso
 ){
 	# Omit entries with try-errors
@@ -173,7 +201,7 @@ cv.visu <- function(
 	# x-coordinates
 	x <- 1:ncol(cvs)
 	# Plotting
-	plot(x, means, type="l", xlab="k-step", ylab="CV prediction error", ylim=extendrange(c(means+sds, means-sds)))
+	plot(x, means, type="l", xlab="k-step", ylab="CV performance", ylim=extendrange(c(means+sds, means-sds)), main="Cross-validation over k")
 	# Means as a function of k
 	points(x, means, pch=16, col="red")
 	# Standard errors as a function of k
