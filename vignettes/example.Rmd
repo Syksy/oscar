@@ -1,0 +1,55 @@
+---
+title: "Example use of the CASSO package"
+author: "Teemu Daniel Laajala"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Example use of the CASSO package}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+Example use of CASSO and fine-tuning parameters
+
+```{Example use in swiss-data with gaussian family}
+
+# Use example swiss-data for quickness
+library(casso)
+data(swiss)
+fit <- casso(x=swiss[,-1], y=swiss[,1], family="mse")
+
+# Plot model coefficients as a function of cardinality k
+plot(fit) 
+
+```
+
+Fit model object can be inspected based on visual diagnostics such as cross-validation and bootstrapping:
+
+```{Cross-validation}
+
+# Perform 10-fold cross-validation to find out optimal k
+cv <- cv.casso(fit, fold=10, seed=0)
+# Visualize model generalization performance as a function of k
+cv.visu(cv)
+
+```
+
+Appears that k-values 3 or 4 saturate the model, with no further coefficients contributing to the model's generalization capability. Further, there is some uncertainty as to what order the coefficients should be non-zero, based on bootstrapping:
+
+```{Bootstrapping}
+
+# Bootstrap original data 25 times (sampling with replacement and refitting)
+bs <- bs.casso(fit, bootstrap=25, seed=0)
+# Visualize trajectories of bootstrapped coefficients
+bs.visu(bs)
+
+```
+
+Useful commands for understanding the model and the casso object:
+
+```{Tools}
+
+coef(fit, k=3) # All potential coefficients at cardinality k=3
+feat(fit, k=3) # All features chosen at cardinality k=3
+
+```
