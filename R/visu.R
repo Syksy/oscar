@@ -4,20 +4,23 @@
 #
 ####
 
-#' Target function value and total kit cost as a function of number of kits included
-#'
-#' @param y
-#' @param cols
-#' @param legend
-#' @param mtexts
-#' @param ...
-#'
-#' @examples
-#' data(ex)
-#' fit <- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c)
-#' visu(fit, y=c("goodness", "cost") # Goodness-of-fit vs. cost of kits
-#' visu(fit, y=c("target", "cost") # Target function value vs. cost of kits
-#'
+#' @title Target function value and total kit cost as a function of number of kits included
+#' @description FUNCTION_DESCRIPTION
+#' @param object PARAM_DESCRIPTION
+#' @param y PARAM_DESCRIPTION, Default: c("target", "cost", "goodness", "cv")
+#' @param cols PARAM_DESCRIPTION, Default: c("red", "blue")
+#' @param legend PARAM_DESCRIPTION, Default: 'top'
+#' @param mtexts PARAM_DESCRIPTION, Default: TRUE
+#' @param ... PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @rdname visu
 #' @export
 visu <- function(
 	object,	# casso-object (with corresponding slots available)
@@ -105,7 +108,20 @@ visu <- function(
 	}
 }
 
-#' Visualize bootstrapping of a fit casso object
+#' @title Visualize bootstrapping of a fit casso object
+#' @description FUNCTION_DESCRIPTION
+#' @param bs PARAM_DESCRIPTION
+#' @param intercept PARAM_DESCRIPTION, Default: FALSE
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @rdname bs.visu
+#' @export
 bs.visu <- function(
 	bs, # Bootstrap array as produced by bs.casso
 	intercept = FALSE # Whether intercept coefficient ought to be plotted as well
@@ -132,65 +148,20 @@ bs.visu <- function(
 	}
 }
 
-#' Visualize bootstrap coefficient paths for a casso model object as a function of, ignoring coef value
-#'
-#'
-bs.visu.k <- function(
-	bs	# Bootstrapped list from bs.casso
-){
-	# Omit entries with try-errors
-	if(any(unlist(lapply(bs, FUN=class))=="try-error")){
-		bs <- bs[-which(unlist(lapply(bs, FUN=class))=="try-error")]
-	}
-	
-	# Choices of variables as a function of k
-	bs <- lapply(bs, FUN=function(z){
-		apply(z, MARGIN=1, FUN=function(q){
-			colnames(z)[which(!q==0)]
-		})
-	})
-	# Order at which variables are selected, vector of variable names
-	#bs <- lapply(bs, FUN=function(z){
-	#	tmp <- z[[1]]
-	#	for(i in 2:length(z)){
-	#		tmp <- c(tmp, c(setdiff(z[[i]], z[[i-1]]), setdiff(z[[i-1]], z[[i]])))
-	#	}
-	#	tmp
-	#})
-	## -> Breaks if variable selection goes back and forth
-	
-	# Concatenate all together into a data.frame
-	bs <- as.data.frame(
-		do.call("rbind", 
-			lapply(1:length(bs), FUN=function(z){
-				do.call("rbind", lapply(1:length(bs[[z]]), FUN=function(q){
-					cbind(
-						kth = rep(paste("k_", q, sep=""), times=length(bs[[z]][[q]])), # k:th var
-						bsn = z, # z:th bootstrap run
-						var = bs[[z]][[q]] # The variables in order
-					)
-				}))
-			})
-		)
-	)
-	
-	#print(is_alluvial_form(bs))
-	
-	# Try to plot Sankey-like diagram of variable over of k:th choice
-	#ggplot(bs,
-	#	aes(x = kth, stratum = var, alluvium = bsn,
-	#		fill = var, label = var)) +
-	#	scale_fill_brewer(type = "qual", palette = "Set2") +
-	#	geom_flow(stat = "alluvium", lode.guidance = "frontback",
-	#		color = "darkgray") +
-	#	geom_stratum() +
-	#	theme(legend.position = "bottom") +
-	#	ggtitle("Variable choices as function of k over boostrap runs")
-	
-	bs
-}
-
-#' Visualize cross-validation as a function of k
+#' @title Visualize cross-validation as a function of k
+#' @description FUNCTION_DESCRIPTION
+#' @param cvs PARAM_DESCRIPTION
+#' @param ... PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @rdname cv.visu
+#' @export
 cv.visu <- function(
 	cvs, # Matrix produced by cv.casso; rows are cv-folds, cols are k-values
 	...

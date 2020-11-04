@@ -4,9 +4,30 @@
 #
 ####
 
-#' Cross-validation for casso-fitted model objects over k-range
-#'
-#' TODO
+#' @title Cross-validation for casso-fitted model objects over k-range
+#' @description FUNCTION_DESCRIPTION
+#' @param fit PARAM_DESCRIPTION
+#' @param fold PARAM_DESCRIPTION, Default: 10
+#' @param seed PARAM_DESCRIPTION, Default: NULL
+#' @param verb PARAM_DESCRIPTION, Default: 0
+#' @param ... PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso 
+#'  \code{\link[casso]{character(0)}}
+#'  \code{\link[stats]{predict.glm}}
+#'  \code{\link[survival]{predict.coxph}},\code{\link[survival]{coxph}},\code{\link[survival]{Surv}}
+#' @rdname cv.casso
+#' @export 
+#' @importFrom casso casso
+#' @importFrom stats predict.glm
+#' @importFrom survival predict.coxph coxph Surv
 cv.casso <- function(
 	# casso-object
 	fit,
@@ -155,9 +176,26 @@ cv.casso <- function(
 	cvs
 }
 
-#' Bootstrapping for casso-fitted model objects
-#'
-#' TODO
+#' @title Bootstrapping for casso-fitted model objects
+#' @description FUNCTION_DESCRIPTION
+#' @param fit PARAM_DESCRIPTION
+#' @param bootstrap PARAM_DESCRIPTION, Default: 100
+#' @param seed PARAM_DESCRIPTION, Default: NULL
+#' @param verb PARAM_DESCRIPTION, Default: 0
+#' @param ... PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso 
+#'  \code{\link[casso]{character(0)}}
+#' @rdname bs.casso
+#' @export 
+#' @importFrom casso casso
 bs.casso <- function(
 	# casso-object
 	fit,
@@ -199,7 +237,31 @@ bs.casso <- function(
 }
 	
 
-#' Modified glm.control allowing 0 in maxit
+#' @title Modified glm.control allowing 0 in maxit
+#' @description FUNCTION_DESCRIPTION
+#' @param x PARAM_DESCRIPTION
+#' @param y PARAM_DESCRIPTION
+#' @param weights PARAM_DESCRIPTION, Default: rep.int(1, nobs)
+#' @param start PARAM_DESCRIPTION, Default: NULL
+#' @param etastart PARAM_DESCRIPTION, Default: NULL
+#' @param mustart PARAM_DESCRIPTION, Default: NULL
+#' @param offset PARAM_DESCRIPTION, Default: rep.int(0, nobs)
+#' @param family PARAM_DESCRIPTION, Default: gaussian()
+#' @param control PARAM_DESCRIPTION, Default: list()
+#' @param intercept PARAM_DESCRIPTION, Default: TRUE
+#' @param singular.ok PARAM_DESCRIPTION, Default: TRUE
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso 
+#'  \code{\link[stats]{character(0)}}
+#' @rdname casso:::.glm.fit.mod
+#' @importFrom stats C_Cdqrls
 .glm.control.mod <- function (epsilon = 1e-08, maxit = 25, trace = FALSE) 
 {
     if (!is.numeric(epsilon) || epsilon <= 0) 
@@ -469,3 +531,49 @@ bs.casso <- function(
         iter = iter, weights = wt, prior.weights = weights, df.residual = resdf, 
         df.null = nulldf, y = y, converged = conv, boundary = boundary)
 }	
+
+#' @title FUNCTION_TITLE
+#' @description FUNCTION_DESCRIPTION
+#' @param bs PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @rdname bs.k
+#' @export
+bs.k <- function(
+	bs	# Bootstrapped list from bs.casso
+){
+	# Omit entries with try-errors
+	if(any(unlist(lapply(bs, FUN=class))=="try-error")){
+		bs <- bs[-which(unlist(lapply(bs, FUN=class))=="try-error")]
+	}
+	
+	# Choices of variables as a function of k
+	bs <- lapply(bs, FUN=function(z){
+		apply(z, MARGIN=1, FUN=function(q){
+			colnames(z)[which(!q==0)]
+		})
+	})
+	
+	# Concatenate all together into a data.frame
+	bs <- as.data.frame(
+		do.call("rbind", 
+			lapply(1:length(bs), FUN=function(z){
+				do.call("rbind", lapply(1:length(bs[[z]]), FUN=function(q){
+					cbind(
+						kth = rep(paste("k_", q, sep=""), times=length(bs[[z]][[q]])), # k:th var
+						bsn = z, # z:th bootstrap run
+						var = bs[[z]][[q]] # The variables in order
+					)
+				}))
+			})
+		)
+	)
+	
+	bs
+}

@@ -67,26 +67,37 @@ setClass("casso", # abbreviation
 	}
 )
 
-#' Function for conveniently creating new model objects
-#'
-#' TODO: Extended explanation of the casso S4-class here.
-#'
+
+#' @title FUNCTION_TITLE
+#' @description FUNCTION_DESCRIPTION
 #' @param x Data matrix 'x'
 #' @param y Response vector/two-column matrix 'y' (see: family); number of rows equal to nrow(x)
 #' @param k Integer (0/1) kit indicator matrix; number of columns equal to ncol(x)
 #' @param w Kit cost weight vector w of length nrow(k)
-#' @param family Model family, should be one of: 'cox'
-#' @param print Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}
-#' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}
-#'
-#' @return casso S4-object fit using 
-#'
-#' @examples
-#' data(ex)
-#' fit <- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c)
-#' fit
-#'
-#' @export
+#' @param family Model family, should be one of: 'cox', 'mse'/'gaussian', or 'logistic, Default: 'gaussian'
+#' @param print Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}, Default: 3
+#' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2
+#' @param verb Integer with additional integer values giving verbal feedback, Default: 1
+#' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality
+#' @return Fitted casso-object
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'   data(ex)
+#'   fit <- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit
+#'  }
+#' }
+#' @seealso 
+#'  \code{\link[survival]{coxph}},\code{\link[survival]{coxph.control}}
+#'  \code{\link[stats]{glm}}
+#'  \code{\link[casso]{character(0)}}
+#' @rdname casso
+#' @export 
+#' @importFrom survival coxph coxph.control
+#' @importFrom stats glm
+#' @importFrom casso .glm.fit.mod
 casso <- function(
 	# Data matrix x
 	x, 
@@ -97,7 +108,7 @@ casso <- function(
 	# Kit cost weight vector w
 	w, 
 	# Model family (defines the likelihood function)
-	family = "cox",
+	family = "gaussian",
 	## Tuning parameters
 	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
 	start=2,# Deterministic start point 

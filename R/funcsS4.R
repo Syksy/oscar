@@ -24,7 +24,7 @@ setMethod("show", "casso",
 	}
 )
 
-#' Taking coefficients of casso-objects
+#' Extract coefficients of casso-objects
 #'
 #' @export
 setMethod("coef", "casso",
