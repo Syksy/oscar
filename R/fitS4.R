@@ -116,7 +116,21 @@ casso <- function(
 	kmax    # Maximum tested k-values
 ){
 	# TODO: Sanity checks for input here
-	x <- as.matrix(x)
+	
+	# Sanity checks: Are input matrices x and y available
+	if(missing(x)){
+		stop(paste("Input matrix x missing."))
+	}
+	if(missing(y)){
+		stop(paste("Input matrix y missing."))
+	}
+	
+	# Sanity checks: Are input x is a matrix. If not, try to convert into a matrix.
+	if(!is.matrix(x)){
+		try(x <- as.matrix(x))
+	}
+
+	
 	# ...
 	if(verb>=2) print("Sanity checks ready")
 
@@ -130,11 +144,26 @@ casso <- function(
 		}
 	}
 	
-
+	# Sanity checks: Check that imput matrices x and y hav equal number of rows
+	if(nrow(y)!=nrow(x)){
+		stop(paste("Number of observations in the response matrix y (",nrow(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
+	}
+	
+	###############################
+	#### CHECKING kit matrix k ####
 	# If kit matrix is missing as input, assume that each variable is alone
 	if(missing(k)){
 		k <- matrix(0, nrow=ncol(x), ncol=ncol(x))
 		diag(k) <- 1
+	}
+	# Check that input k is a matrix
+	if(!is.matrix(k)){
+		try(k <- as.matrix(k))
+	}
+	
+	# Check that kit matrix k and predictor matrix x have equal number of columns (features)
+	if(ncol(k)!=ncol(x)){
+		stop(paste("Number of columns in kit matrix k (",ncol(k),") should be equal to the amount of features (number of columns in x, ",ncol(x),"). Check that correct features are included."))
 	}
 	## -> Intercept is an independent variable that is not subjected to penalization
 	# If family is not Cox, (Intercept) requires its own row/column in K
@@ -143,11 +172,31 @@ casso <- function(
 		k[1,1] <- 1
 		if(!is.null(rownames(k)) & !is.null(colnames(k))) rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
 	}
+	# Check that the kit matrix has only 0 or 1
+	if(!all(k %in% c(0,1))){
+		stop(paste("Values in the kit matrix k should be 0 or 1. Please check the kit matrix."))
+	}
+	# Check that there are no zero-columns in the kit matrix
+	if(any(apply(k,MARGIN=2,FUN=sum)==0)){
+		stop(paste("Zero column in the kit matrix k. Please check that each feature is exactly in one kit.")))  ## For now only one kit per feature allowed.
+	}
+	# Check that each feature is only in one kit
+	if(any(apply(k,MARGIN=2,FUN=sum)>1)){
+		stop(paste("Some feature(s) are in multiple kits. Please check that each feature is exactly in one kit.")))  ## For now only one kit per feature allowed.
+	}
+	# Check that each kit has at least one feature (not sure if necessary?))
+	if(any(apply(k,MARGIN=1,FUN=sum)<1)){
+		stop(paste("Some kit(s)) don't have any features. Please check that each kit has at least one feature.")))
+	}
+	
 	# Checking k structure
 	if(verb>=2){
 		print("Input k:")
 		print(k)
 	}
+
+	########################
+	#### CHECKING kmax  ####
 	# If user has defined kmax, use it to pass to the Fortran function; otherwise kmax is the maximum number of kits in the input data
 	if(missing(kmax)){
 		kmax <- nrow(k)
@@ -159,21 +208,32 @@ casso <- function(
 	}
 	if(verb>=2) print("Preprocessing k ready")
 
+
+	############################
+	#### CHECKING weights w ####
 	# If kit weights are missing, assume them to be unit cost
 	if(missing(w)){
 		w <- rep(1, times=nrow(k))
 	}
+	
+	# Check that w length is equal to number of rows in the kit matrix k (number of kits)
+	if(length(w))!=nrow(k)){
+		stop(paste("Number of kit costs (",length(w),") is not equal to number of kits (number of rows in the kit matrix k, ",nrow(k),"). Check that correct kits are included."))
+	}
+	
 	# If cost for intercept has not been incorporated, add that as 0
 	if(!family == "cox" & length(w) == ncol(x)){
 		w <- c(0, w)
 	}
-	# Checking k structure
+	# Checking w structure
 	if(verb>=2){
 		print("Input w:")
 		print(w)
 	}
 	if(verb>=2) print("Preprocessing w ready")
 
+	###############################
+	#### Calling C and Fortran ####
 	# Call correct internal function based on the specified model family
 	if(family=="cox"){
 		# Call C function for Cox regression
