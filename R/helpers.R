@@ -4,9 +4,30 @@
 #
 ####
 
-#' Cross-validation for casso-fitted model objects over k-range
-#'
-#' TODO
+#' @title Cross-validation for casso-fitted model objects over k-range
+#' @description FUNCTION_DESCRIPTION
+#' @param fit PARAM_DESCRIPTION
+#' @param fold PARAM_DESCRIPTION, Default: 10
+#' @param seed PARAM_DESCRIPTION, Default: NULL
+#' @param verb PARAM_DESCRIPTION, Default: 0
+#' @param ... PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso 
+#'  \code{\link[casso]{character(0)}}
+#'  \code{\link[stats]{predict.glm}}
+#'  \code{\link[survival]{predict.coxph}},\code{\link[survival]{coxph}},\code{\link[survival]{Surv}}
+#' @rdname cv.casso
+#' @export 
+#' @importFrom casso casso
+#' @importFrom stats predict.glm
+#' @importFrom survival predict.coxph coxph Surv
 cv.casso <- function(
 	# casso-object
 	fit,
@@ -14,6 +35,8 @@ cv.casso <- function(
 	fold = 10,
 	# RNG seed (integer) that can be set for exact reproducibility
 	seed = NULL,
+	# Level of verbosity mainly for debugging
+	verb = 0,
 	...
 ){
 	# Internal cv-sample allocation function, modified from the ePCR-package
@@ -21,7 +44,7 @@ cv.casso <- function(
 		# Original x data frame
 		x,
 		# Number of CV-folds
-		fold = 10,
+		fold = fold,
 		# Should some strata be balanced over the bins? By default no, should be a vector equal to the number of rows in x
 		strata = rep(1, times=nrow(x)),
 		# Should data be randomized when creating cv-folds in addition to allocating to bins
@@ -53,13 +76,126 @@ cv.casso <- function(
 	# Generate cv-folds
 	cvsets <- cv(fit@x, fold = fold, seed = seed)
 	cvsets
+	# Verbose
+	if(verb>=1) print(str(cvsets))
+	
+	# Fit family to use
+	#family <- fit@family
+	# K-steps
+	ks <- 1:nrow(fit@k)
+	# Loop over the CV folds, make a list of predictions and the real values
+	cvs <- lapply(1:fold, FUN=function(z){
+		if(verb>=1) print(paste("CV fold", z))
+		# Constructing appropriate model object
+		if(fit@family == "cox"){
+			# Cox model is 2-column in y-response
+			fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=fit@family, k=fit@k, w=fit@w, verb=verb)
+		}else if(fit@family %in% c("mse", "gaussian", "logistic")){
+			# All other models have a y-vector
+			fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=c(fit@y)[cvsets$train[[z]]], family=fit@family, k=fit@k, w=fit@w, verb=verb)
+		}else{
+			stop(paste("Incorrect family-parameter fit@family:", fit@family))
+		}
+		if(verb>=1) print("CV fit, predicting...")
+		# Perform predictions over all k-value fits
+		# Model specificity in predictions (?)
+		pred <- lapply(fittmp@fits, FUN=function(f){
+			#if(verb>=2) print(f)
+			x <- as.data.frame(fit@x[cvsets$test[[z]],])
+			colnames(x) <- colnames(fit@x)
+			# MSE/Gaussian
+			if(fit@family %in% c("mse", "gaussian")){
+				as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))
+			# Logistic	
+			}else if(fit@family %in% c("logistic")){
+				as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))
+			# Cox
+			}else if(fit@family %in% c("cox")){
+				as.vector(unlist(survival:::predict.coxph(f, type="risk", newdata=x)))
+			}
+		})
+		# True values; vectorization if not Cox ph model
+		if(fit@family=="cox"){
+			true <- fit@y[cvsets$test[[z]],]
+		}else if(fit@family %in% c("mse", "gaussian", "logistic")){
+			true <- c(fit@y)[cvsets$test[[z]]]
+		}else{
+			stop(paste("Incorrect family-parameter fit@family:", fit@family))
+		}
+		# Return predictions vs. real y-values
+		list(
+			# Predicted values
+			pred = pred, 
+			# True values; vectorization if not Cox ph model
+			true = true
+		)
+	})
+	
+	if(verb>=2){
+		print("cvs prior to goodness measure")
+		print(class(cvs))
+		print(cvs)
+	}
+	
+	# Construct goodness as a function of k
+	# Loop over cv folds
+	# $pred slot holds k-iterations
+	# $true slot holds the real answer
+	cvs <- lapply(cvs, FUN=function(z){
+		if(verb>=2){
+			print("true:")
+			print(z$true)
+			print("z$pred:")
+			print(z$pred)
+		}
+		lapply(z$pred, FUN=function(q){
+			# MSE/Gaussian, mean squared error
+			if(fit@family %in% c("mse", "gaussian")){
+				mean((q-z$true)^2)
+			# Logistic placeholder; correct classification rate
+			}else if(fit@family %in% c("logistic")){
+				sum(as.integer(q>0.5)==z$true)/length(q)
+			# Cox proportional hazards model; concordance-index
+			}else if(fit@family %in% c("cox")){
+				# NOTE: Assuming first colmn is the survival time, second is the observed event status
+				survival::coxph(survival::Surv(time = z$true[,1], event = z$true[,2]) ~ q)$concordance["concordance"]
+			}
+		})
+	})
+
+	#if(verb>=2){
+	#	print("cvs prior to wrapping up")	
+	#	print(class(cvs))
+	#	print(cvs)
+	#}
+		
+	# Rows: cv-folds, cols: k-values
+	cvs <- do.call("rbind", lapply(cvs, FUN=function(z) do.call("c", z)))
+	rownames(cvs) <- paste("cv_", 1:nrow(cvs), sep="")
+	# Return cv results
+	cvs
 }
 
-
-
-#' Bootstrapping for casso-fitted model objects
-#'
-#' TODO
+#' @title Bootstrapping for casso-fitted model objects
+#' @description FUNCTION_DESCRIPTION
+#' @param fit PARAM_DESCRIPTION
+#' @param bootstrap PARAM_DESCRIPTION, Default: 100
+#' @param seed PARAM_DESCRIPTION, Default: NULL
+#' @param verb PARAM_DESCRIPTION, Default: 0
+#' @param ... PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso 
+#'  \code{\link[casso]{character(0)}}
+#' @rdname bs.casso
+#' @export 
+#' @importFrom casso casso
 bs.casso <- function(
 	# casso-object
 	fit,
@@ -68,7 +204,7 @@ bs.casso <- function(
 	# RNG seed (integer) that can be set for exact reproducibility
 	seed = NULL,
 	# Level of verbosity (<1 supresses everything in R; parameter also passed to Fortran subroutine)
-	verb = 3,
+	verb = 0,
 	...
 ){
 	# Seed number for RNG reproducibility
@@ -80,16 +216,52 @@ bs.casso <- function(
 		samps <- sample(1:nrow(fit@x), replace=TRUE)
 		xtemp <- fit@x[samps,]
 		ytemp <- fit@y[samps,]
-		ftemp <- casso(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, print = verb, start = fit@start, verb = verb)
-		
-		ftemp@bperk # Return bootstrapped beta per ks
+		# Wrap expression inside try for catching errors
+		try({
+			ftemp <- casso::casso(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, kmax = fit@kmax, print = verb, start = fit@start, verb = verb)		
+		})
+		# Return successfully fitted model
+		if(!class(ftemp)=="try-error"){
+			ftemp@bperk # Return bootstrapped beta per ks
+		}else{
+			NA # Model fitting issues, return NA-bperk
+		}
 	})
-	# Return bootstrapped beta per ks
-	bperks
+	# Extract bootstrapped beta coefficient values and create a 3-dim array of regular size
+	dat <- array(as.numeric(unlist(lapply(bperks, FUN=c))), 
+		dim=c(fit@kmax, ncol(bperks[[1]]), bootstrap), 
+		dimnames=list(paste0("k_",1:fit@kmax), colnames(bperks[[1]]), paste0("bs_",1:bootstrap))
+	)	
+	# Return 3-dim array with first dim as k, second as beta coef, third as bootstrap runs
+	dat
 }
 	
 
-#' Modified glm.control allowing 0 in maxit
+#' @title Modified glm.control allowing 0 in maxit
+#' @description FUNCTION_DESCRIPTION
+#' @param x PARAM_DESCRIPTION
+#' @param y PARAM_DESCRIPTION
+#' @param weights PARAM_DESCRIPTION, Default: rep.int(1, nobs)
+#' @param start PARAM_DESCRIPTION, Default: NULL
+#' @param etastart PARAM_DESCRIPTION, Default: NULL
+#' @param mustart PARAM_DESCRIPTION, Default: NULL
+#' @param offset PARAM_DESCRIPTION, Default: rep.int(0, nobs)
+#' @param family PARAM_DESCRIPTION, Default: gaussian()
+#' @param control PARAM_DESCRIPTION, Default: list()
+#' @param intercept PARAM_DESCRIPTION, Default: TRUE
+#' @param singular.ok PARAM_DESCRIPTION, Default: TRUE
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @seealso 
+#'  \code{\link[stats]{character(0)}}
+#' @rdname casso:::.glm.fit.mod
+#' @importFrom stats C_Cdqrls
 .glm.control.mod <- function (epsilon = 1e-08, maxit = 25, trace = FALSE) 
 {
     if (!is.numeric(epsilon) || epsilon <= 0) 
@@ -359,3 +531,49 @@ bs.casso <- function(
         iter = iter, weights = wt, prior.weights = weights, df.residual = resdf, 
         df.null = nulldf, y = y, converged = conv, boundary = boundary)
 }	
+
+#' @title FUNCTION_TITLE
+#' @description FUNCTION_DESCRIPTION
+#' @param bs PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @rdname bs.k
+#' @export
+bs.k <- function(
+	bs	# Bootstrapped list from bs.casso
+){
+	# Omit entries with try-errors
+	if(any(unlist(lapply(bs, FUN=class))=="try-error")){
+		bs <- bs[-which(unlist(lapply(bs, FUN=class))=="try-error")]
+	}
+	
+	# Choices of variables as a function of k
+	bs <- lapply(bs, FUN=function(z){
+		apply(z, MARGIN=1, FUN=function(q){
+			colnames(z)[which(!q==0)]
+		})
+	})
+	
+	# Concatenate all together into a data.frame
+	bs <- as.data.frame(
+		do.call("rbind", 
+			lapply(1:length(bs), FUN=function(z){
+				do.call("rbind", lapply(1:length(bs[[z]]), FUN=function(q){
+					cbind(
+						kth = rep(paste("k_", q, sep=""), times=length(bs[[z]][[q]])), # k:th var
+						bsn = z, # z:th bootstrap run
+						var = bs[[z]][[q]] # The variables in order
+					)
+				}))
+			})
+		)
+	)
+	
+	bs
+}

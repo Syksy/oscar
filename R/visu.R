@@ -4,20 +4,23 @@
 #
 ####
 
-#' Target function value and total kit cost as a function of number of kits included
-#'
-#' @param y
-#' @param cols
-#' @param legend
-#' @param mtexts
-#' @param ...
-#'
-#' @examples
-#' data(ex)
-#' fit <- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c)
-#' visu(fit, y=c("goodness", "cost") # Goodness-of-fit vs. cost of kits
-#' visu(fit, y=c("target", "cost") # Target function value vs. cost of kits
-#'
+#' @title Target function value and total kit cost as a function of number of kits included
+#' @description FUNCTION_DESCRIPTION
+#' @param object PARAM_DESCRIPTION
+#' @param y PARAM_DESCRIPTION, Default: c("target", "cost", "goodness", "cv")
+#' @param cols PARAM_DESCRIPTION, Default: c("red", "blue")
+#' @param legend PARAM_DESCRIPTION, Default: 'top'
+#' @param mtexts PARAM_DESCRIPTION, Default: TRUE
+#' @param ... PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @rdname visu
 #' @export
 visu <- function(
 	object,	# casso-object (with corresponding slots available)
@@ -38,7 +41,9 @@ visu <- function(
 	par(las=2,  # All labels orthogonally to axes
 		mar=c(7,4,1,4), # Inner margins
 		oma=c(ifelse(mtexts, 2, 0), ifelse(mtexts, 2, 0), 0, ifelse(mtexts, 2, 0))) # Outer margins depend on additional labels with mtext
-	x <- 1:nrow(object@k)
+	#x <- 1:nrow(object@k)
+	# Use kmax to truncate k-path
+	x <- 1:object@kmax
 	# Maximum of two y-axes overlayed in a single graphics device
 	plot.new()
 
@@ -52,7 +57,7 @@ visu <- function(
 		leg <- c(leg, "Total kit cost")		
 	}else if(y[1]=="goodness"){
 		y1 <- object@goodness
-		leg <- c(leg, "Model goodness-of-fit")		
+		leg <- c(leg, paste("Model goodness-of-fit (", object@metric, ")"))		
 	}else if(y[1]=="cv"){
 		# TODO
 		leg <- c(leg, "Cross-validated goodness-of-fit")		
@@ -75,10 +80,10 @@ visu <- function(
 			leg <- c(leg, "Total kit cost")		
 		}else if(y[2]=="goodness"){
 			y2 <- object@goodness
-			leg <- c(leg, "Model goodness-of-fit")		
+			leg <- c(leg, paste("Model goodness-of-fit", object@metric, ")"))		
 		}else if(y[2]=="cv"){
 			# TODO
-			leg <- c(leg, "Cross-validated goodness-of-fit")		
+			leg <- c(leg, paste("Cross-validated goodness-of-fit", object@metric, ")"))		
 		}else{
 			stop(paste("Invalid y[2] parameter (", y[2],"), should be one of: 'target', 'cost', 'goodness', 'cv'", sep=""))
 		}
@@ -103,7 +108,73 @@ visu <- function(
 	}
 }
 
+#' @title Visualize bootstrapping of a fit casso object
+#' @description FUNCTION_DESCRIPTION
+#' @param bs PARAM_DESCRIPTION
+#' @param intercept PARAM_DESCRIPTION, Default: FALSE
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @rdname bs.visu
+#' @export
+bs.visu <- function(
+	bs, # Bootstrap array as produced by bs.casso
+	intercept = FALSE # Whether intercept coefficient ought to be plotted as well
+){
+	# Sanity checking
+	if(!length(dim(bs))==3) stop("Parameter 'bs' ought to be a 3-dim array as produced by bs.casso")
+	# Remove intercept if needed
+	if(!intercept & "(Intercept)" %in% dimnames(bs)[[2]]){
+		bs <- bs[,-which("(Intercept)" == dimnames(bs)[[2]]),]
+	}
+	
+	# Plot bootstrapped runs
+	plot.new()
+	plot.window(xlim=range(1:dim(bs)[1]), ylim=extendrange(bs))
+	box(); axis(1); axis(2)
+	abline(h=0, lwd=2, col="grey")
+	title(xlab="Cardinality 'k'", ylab="Beta coefficients", main="Bootstrapped coefficients")
+	# Iterate over coefficients
+	for(i in 1:dim(bs)[2]){
+		# Iterate over bootstraps
+		for(b in 1:dim(bs)[3]){
+			points(x=1:dim(bs)[1], y=bs[,i,b], col=i, lwd=2, type="l")
+		}
+	}
+}
 
-
-
-
+#' @title Visualize cross-validation as a function of k
+#' @description FUNCTION_DESCRIPTION
+#' @param cvs PARAM_DESCRIPTION
+#' @param ... PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#' @rdname cv.visu
+#' @export
+cv.visu <- function(
+	cvs, # Matrix produced by cv.casso; rows are cv-folds, cols are k-values
+	...
+){
+	# Compute statistics for the CV-curve
+	means <- apply(cvs, MARGIN=2, FUN=mean)
+	sds <- apply(cvs, MARGIN=2, FUN=sd)
+	# x-coordinates
+	x <- 1:ncol(cvs)
+	# Plotting
+	plot(x, means, type="l", xlab="k-step", ylab="CV performance", ylim=extendrange(c(means+sds, means-sds)), main="Cross-validation over k")
+	# Means as a function of k
+	points(x, means, pch=16, col="red")
+	# Standard errors as a function of k
+	arrows(x0=x, y0=means-sds, x1=x, y1=means+sds, code=3, angle=90, length=0.1)
+}

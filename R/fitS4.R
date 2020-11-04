@@ -30,7 +30,9 @@ setClass("casso", # abbreviation
 		family = "character",	# Utilized model family, in early versions only 'cox' supported (to be added: normal/gaussian, logistic, ...
 		goodness = "numeric",	# Goodness metric at each k based on model fit; dependent on 'family': cox is concordance-index, ...
 		fits = "list",		# Pre-fitted model objects, where each model fit only allows the optimal subset of features to be incorporated into the model; length should be equal to k sequence
-		info = "character"	# Additional error messages, warnings or such reported e.g. during model fitting
+		info = "character",	# Additional error messages, warnings or such reported e.g. during model fitting
+		kmax = "integer",	# Number of maximum k tested
+		metric = "character"	# Name of the goodness-of-fit metric used
 	),	
 	prototype(
 		# Prototype base model object
@@ -50,37 +52,52 @@ setClass("casso", # abbreviation
 		family = NA_character_,
 		goodness = NA_real_,
 		fits = list(),
-		info = NA_character_
+		info = NA_character_,
+		kmax = NA_integer_,
+		metric = NA_character_
 	),
 	# Function for testing whether all S4-slots are legitimate for the S4 object 
+	# TODO
 	validity = function(
 		object
 	){
-		# Return TRUE only if all slots fulfill the validity criteria (could be a list of if-statements that return FALSE prior to this if discrepancies are detected)
+		# Return TRUE only if all slots fulfill the validity criteria 
+		# (could be a list of if-statements that return FALSE prior to this if discrepancies are detected)
 		TRUE
 	}
 )
 
-#' Function for conveniently creating new model objects
-#'
-#' TODO: Extended explanation of the casso S4-class here.
-#'
+
+#' @title FUNCTION_TITLE
+#' @description FUNCTION_DESCRIPTION
 #' @param x Data matrix 'x'
 #' @param y Response vector/two-column matrix 'y' (see: family); number of rows equal to nrow(x)
 #' @param k Integer (0/1) kit indicator matrix; number of columns equal to ncol(x)
 #' @param w Kit cost weight vector w of length nrow(k)
-#' @param family Model family, should be one of: 'cox'
-#' @param print Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}
-#' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}
-#'
-#' @return casso S4-object fit using 
-#'
-#' @examples
-#' data(ex)
-#' fit <- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c)
-#' fit
-#'
-#' @export
+#' @param family Model family, should be one of: 'cox', 'mse'/'gaussian', or 'logistic, Default: 'gaussian'
+#' @param print Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}, Default: 3
+#' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2
+#' @param verb Integer with additional integer values giving verbal feedback, Default: 1
+#' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality
+#' @return Fitted casso-object
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'   data(ex)
+#'   fit <- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit
+#'  }
+#' }
+#' @seealso 
+#'  \code{\link[survival]{coxph}},\code{\link[survival]{coxph.control}}
+#'  \code{\link[stats]{glm}}
+#'  \code{\link[casso]{character(0)}}
+#' @rdname casso
+#' @export 
+#' @importFrom survival coxph coxph.control
+#' @importFrom stats glm
+#' @importFrom casso .glm.fit.mod
 casso <- function(
 	# Data matrix x
 	x, 
@@ -91,27 +108,54 @@ casso <- function(
 	# Kit cost weight vector w
 	w, 
 	# Model family (defines the likelihood function)
-	family = "cox",
+	family = "gaussian",
 	## Tuning parameters
 	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
 	start=2,# Deterministic start point 
-	verb=1  # Level of R verbosity (1 = standard, 2 = debug level, 3 = excessive debugging, 0<= none)
+	verb=1, # Level of R verbosity (1 = standard, 2 = debug level, 3 = excessive debugging, 0<= none)
+	kmax    # Maximum tested k-values
 ){
 	# TODO: Sanity checks for input here
 	x <- as.matrix(x)
 	# ...
 	if(verb>=2) print("Sanity checks ready")
 
+	# TODO: Currently Cox assumes that event and time come in certain order in the 2-column y
+	# Flip them depending on which way is expected
+	if(any(class(y) %in% c("matrix", "array", "Surv"))){
+		if(all(y[,1] %in% c(0,1))){
+
+		}else if(all(y[,2] %in% c(0,1))){
+
+		}
+	}
+	
+
 	# If kit matrix is missing as input, assume that each variable is alone
 	if(missing(k)){
 		k <- matrix(0, nrow=ncol(x), ncol=ncol(x))
 		diag(k) <- 1
 	}
+	## -> Intercept is an independent variable that is not subjected to penalization
 	# If family is not Cox, (Intercept) requires its own row/column in K
 	if(!family == "cox" & ncol(k) == ncol(x)){
 		k <- rbind(0, cbind(0, k))
 		k[1,1] <- 1
 		if(!is.null(rownames(k)) & !is.null(colnames(k))) rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
+	}
+	# Checking k structure
+	if(verb>=2){
+		print("Input k:")
+		print(k)
+	}
+	# If user has defined kmax, use it to pass to the Fortran function; otherwise kmax is the maximum number of kits in the input data
+	if(missing(kmax)){
+		kmax <- nrow(k)
+	# Sanity checking for user provided parameter
+	}else if(class(kmax) %in% "numeric"){
+		kmax <- as.integer(kmax)
+	}else if(!any(class(kmax) %in% c("integer", "numeric"))){
+		stop("Provided kmax parameter ought to be of type 'integer' or 'numeric' cast to an integer")
 	}
 	if(verb>=2) print("Preprocessing k ready")
 
@@ -122,6 +166,11 @@ casso <- function(
 	# If cost for intercept has not been incorporated, add that as 0
 	if(!family == "cox" & length(w) == ncol(x)){
 		w <- c(0, w)
+	}
+	# Checking k structure
+	if(verb>=2){
+		print("Input w:")
+		print(w)
 	}
 	if(verb>=2) print("Preprocessing w ready")
 
@@ -137,7 +186,8 @@ casso <- function(
 			as.integer(ncol(x)), # Number of variables (columns in x)
 			as.integer(nrow(k)), # Number of kits
 			as.integer(print), # Tuning parameter for verbosity
-			as.integer(start) # Tuning parameter for starting values
+			as.integer(start), # Tuning parameter for starting values
+			as.integer(kmax) # Tuning parameter for max k run
 		)
 		if(verb>=2){
 			print(res)
@@ -159,7 +209,8 @@ casso <- function(
 			as.integer(ncol(x)), # Number of variables (columns in x)
 			as.integer(nrow(k)), # Number of kits
 			as.integer(print), # Tuning parameter for verbosity
-			as.integer(start) # Tuning parameter for starting values
+			as.integer(start), # Tuning parameter for starting values
+			as.integer(kmax) # Tuning parameter for max k run
 		)
 		# Beta per k steps
 		# Add row for intercept
@@ -179,7 +230,8 @@ casso <- function(
 			as.integer(ncol(x)), # Number of variables (columns in x)
 			as.integer(nrow(k)), # Number of kits
 			as.integer(print), # Tuning parameter for verbosity
-			as.integer(start) # Tuning parameter for starting values
+			as.integer(start), # Tuning parameter for starting values
+			as.integer(kmax) # Tuning parameter for max k run
 		)
 		# Beta per k steps
 		# Add row for intercept
@@ -236,6 +288,11 @@ casso <- function(
 		print(dim(kperk))
 		print(kperk)
 	}
+	# If dealing with non-Cox regression, omit (Intercept) from indicator matrix
+	if(!family == "cox" & ncol(k) == ncol(x)){
+		kperk <- kperk[,-1]
+	}
+	
 	# Indices as a named vector
 	kperk <- as.list(apply(kperk %*% t(k), MARGIN=1, FUN=function(z) { which(!z==0) }))
 	if(verb>=3){
@@ -255,23 +312,28 @@ casso <- function(
 	# Return the freshly built S4 model object
 	obj <- new("casso", 
 		## Model fit results
-		bperk = bperk, # Beta coef per k-steps
-		fperk = fperk, # Target function values per k-steps
-		kperk = kperk, # Chosen kits per k-steps
-		cperk = cperk, # Total kit costs per each k-step
-		start = start, # Method for generating starting points
+		bperk = bperk[1:kmax,,drop=FALSE], # Beta coef per k-steps up to kmax
+		fperk = fperk[1:kmax], # Target function values per k-steps up to kmax
+		kperk = kperk[1:kmax], # Chosen kits per k-steps up to kmax
+		cperk = cperk[1:kmax], # Total kit costs per each k-step up to kmax
 		## Data slots
-		x=as.matrix(x), 
-		y=as.matrix(y), 
-		k=as.matrix(k), 
-		w=as.numeric(w), 
-		## Additional
-		family=as.character(family)
+		x=as.matrix(x),	# Data matrix X
+		y=as.matrix(y), # Response Y
+		k=as.matrix(k), # Kit matrix K
+		w=as.numeric(w),	# Vector of weights/costs for kits
+		## Additional parameters
+		family=as.character(family),	# Model family as a character string
+		start = start,	# Method for generating starting points
+		kmax = kmax	# Max run k-step
 	)
+
+	if(verb>=2){
+		print("obj template created successfully")
+	}
 	
 	# Fit lm/glm/coxph/... models per each estimated set of beta coefs (function call depends on 'family')
 	try({
-		obj@fits <- apply(bperk, MARGIN=1, FUN=function(bs){
+		obj@fits <- apply(obj@bperk, MARGIN=1, FUN=function(bs){
 			if(family=="cox"){
 				## Prefit a coxph-object
 				survival::coxph(
@@ -282,44 +344,42 @@ casso <- function(
 				)
 			}else if(family %in% c("mse", "gaussian")){
 				## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
-				stats::glm(y ~ x, start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod)
+				stats::glm(
+					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
+					, data = data.frame(obj@x), start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod
+				)
 			}else if(family=="logistic"){
 				## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
-				stats::glm(y ~ x, start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod)
+				stats::glm(
+					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
+					, data = data.frame(obj@x),, start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod
+				)
 			}
 		})
 	})
-	
+
+	if(verb>=2){
+		print("fits-slot created successfully")
+	}
+		
 	# Calculate/extract model goodness metric at each k
 	try({
 		# Cox regression
 		if(family=="cox"){
 			# Use c-index as the goodness measure
 			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { z$concordance["concordance"] }))
+			obj@metric <- "cindex"
 		}else if(family %in% c("mse", "gaussian")){
 			# Use mean squared error as the goodness measure
 			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { mean((y - predict.glm(z, type="response"))^2) }))
+			obj@metric <- "mse"
 		}else if(family=="logistic"){
 			# Use correct classification percent as the goodness measure
 			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { sum(as.numeric(y == (predict.glm(z, type="response")>0.5)))/length(y) }))
+			obj@metric <- "accuracy"
 		}
 	})
 	
 	# Return the new model object
 	obj
 }
-
-
-#' Showing casso-objects
-#'
-#' @export
-setMethod("show", "casso",
-	function(object){
-	cat("Cardinality-constrained Absolute Subset Selection Optimized model object\n")
-	cat(paste("Model family: ", object@family,"\n", sep=""))
-	cat(paste("k steps: ", nrow(object@k),"\n", sep=""))
-	cat(paste("dim(x): [", paste(dim(object@x),collapse=","),"]\n", sep=""))
-	cat(paste("dim(y): [", paste(dim(object@y),collapse=","),"]\n", sep=""))
-})
-
-

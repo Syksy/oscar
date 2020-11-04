@@ -5,18 +5,19 @@
 #include <R_ext/Rdynload.h>
 
 // family Cox
-void F77_NAME(casso_cox_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start);
+void F77_NAME(casso_cox_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax);
 // family Gaussian (MSE)
-void F77_NAME(casso_mse_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start);
+void F77_NAME(casso_mse_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax);
 // family Logistic
-void F77_NAME(casso_logistic_f)(double *x, int *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start);
+void F77_NAME(casso_logistic_f)(double *x, int *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax);
 
 // Define the C wrapper function for Cox regression
-extern SEXP c_casso_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start){
+extern SEXP c_casso_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start, SEXP kmax){
 	// Define constants (dimensions in data / features)
 	const int nr = asInteger(nrow);
 	const int nc = asInteger(ncol);
 	const int nk = asInteger(nkits);
+	const int inkmax = asInteger(kmax);
 	const int inprint = asInteger(print);
 	const int instart = asInteger(start);
 	SEXP beta;
@@ -26,7 +27,7 @@ extern SEXP c_casso_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	PROTECT(fperk = allocVector(REALSXP, nk));
 
 	// Call Fortran subroutine
-	F77_CALL(casso_cox_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart);
+	F77_CALL(casso_cox_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart, inkmax);
 
 	// Create result structure
 	SEXP res = PROTECT(allocVector(VECSXP,2));
@@ -43,11 +44,12 @@ extern SEXP c_casso_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 }
 
 // Define the C wrapper function for Gaussian family
-extern SEXP c_casso_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start){
+extern SEXP c_casso_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start, SEXP kmax){
 	// Define constants (dimensions in data / features)
 	const int nr = asInteger(nrow);
 	const int nc = asInteger(ncol);
 	const int nk = asInteger(nkits);
+	const int inkmax = asInteger(kmax);
 	const int inprint = asInteger(print);
 	const int instart = asInteger(start);
 	SEXP beta;
@@ -57,7 +59,7 @@ extern SEXP c_casso_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	PROTECT(fperk = allocVector(REALSXP, nk));
 
 	// Call Fortran subroutine
-	F77_CALL(casso_mse_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart);
+	F77_CALL(casso_mse_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart, inkmax);
 
 	// Create result structure
 	SEXP res = PROTECT(allocVector(VECSXP,2));
@@ -74,11 +76,12 @@ extern SEXP c_casso_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 }
 
 // Define the C wrapper function for logistic family
-extern SEXP c_casso_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start){
+extern SEXP c_casso_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start, SEXP kmax){
 	// Define constants (dimensions in data / features)
 	const int nr = asInteger(nrow);
 	const int nc = asInteger(ncol);
 	const int nk = asInteger(nkits);
+	const int inkmax = asInteger(kmax);
 	const int inprint = asInteger(print);
 	const int instart = asInteger(start);
 	SEXP beta;
@@ -89,7 +92,7 @@ extern SEXP c_casso_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, 
 
 	// Call Fortran subroutine
 	// Here y in {0,1}, thus INTEGER
-	F77_CALL(casso_logistic_f)(REAL(x), INTEGER(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart);
+	F77_CALL(casso_logistic_f)(REAL(x), INTEGER(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart, inkmax);
 
 	// Create result structure
 	SEXP res = PROTECT(allocVector(VECSXP,2));
@@ -107,9 +110,9 @@ extern SEXP c_casso_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, 
 
 // Tell R of our available Fortran functions
 static const R_CallMethodDef CallEntries[] = {
-  {"c_casso_cox_f",	(DL_FUNC) &c_casso_cox_f,		9},
-  {"c_casso_mse_f",	(DL_FUNC) &c_casso_mse_f,		9},
-  {"c_casso_logistic_f",	(DL_FUNC) &c_casso_logistic_f,		9},
+  {"c_casso_cox_f",	(DL_FUNC) &c_casso_cox_f,		10},
+  {"c_casso_mse_f",	(DL_FUNC) &c_casso_mse_f,		10},
+  {"c_casso_logistic_f",	(DL_FUNC) &c_casso_logistic_f,		10},
   {NULL,				NULL,						0}
 };
 
