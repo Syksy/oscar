@@ -178,15 +178,15 @@ casso <- function(
 	}
 	# Check that there are no zero-columns in the kit matrix
 	if(any(apply(k,MARGIN=2,FUN=sum)==0)){
-		stop(paste("Zero column in the kit matrix k. Please check that each feature is exactly in one kit.")))  ## For now only one kit per feature allowed.
+		stop(paste("Zero column in the kit matrix k. Please check that each feature is exactly in one kit."))  ## For now only one kit per feature allowed.
 	}
 	# Check that each feature is only in one kit
 	if(any(apply(k,MARGIN=2,FUN=sum)>1)){
-		stop(paste("Some feature(s) are in multiple kits. Please check that each feature is exactly in one kit.")))  ## For now only one kit per feature allowed.
+		stop(paste("Some feature(s) are in multiple kits. Please check that each feature is exactly in one kit."))  ## For now only one kit per feature allowed.
 	}
 	# Check that each kit has at least one feature (not sure if necessary?))
 	if(any(apply(k,MARGIN=1,FUN=sum)<1)){
-		stop(paste("Some kit(s)) don't have any features. Please check that each kit has at least one feature.")))
+		stop(paste("Some kit(s)) don't have any features. Please check that each kit has at least one feature."))
 	}
 	
 	# Checking k structure
