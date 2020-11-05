@@ -25,9 +25,8 @@
 #'  \code{\link[survival]{predict.coxph}},\code{\link[survival]{coxph}},\code{\link[survival]{Surv}}
 #' @rdname cv.casso
 #' @export 
-#' @importFrom casso casso
 #' @importFrom stats predict.glm
-#' @importFrom survival predict.coxph coxph Surv
+#' @importFrom survival coxph Surv
 cv.casso <- function(
 	# casso-object
 	fit,
@@ -195,7 +194,6 @@ cv.casso <- function(
 #'  \code{\link[casso]{character(0)}}
 #' @rdname bs.casso
 #' @export 
-#' @importFrom casso casso
 bs.casso <- function(
 	# casso-object
 	fit,
@@ -258,10 +256,6 @@ bs.casso <- function(
 #'  #EXAMPLE1
 #'  }
 #' }
-#' @seealso 
-#'  \code{\link[stats]{character(0)}}
-#' @rdname casso:::.glm.fit.mod
-#' @importFrom stats C_Cdqrls
 .glm.control.mod <- function (epsilon = 1e-08, maxit = 25, trace = FALSE) 
 {
     if (!is.numeric(epsilon) || epsilon <= 0) 
@@ -273,7 +267,27 @@ bs.casso <- function(
     list(epsilon = epsilon, maxit = maxit, trace = trace)
 }
 	
-#' Modified function from stats::glm.fit, allowing 0 maxit in control
+#' @title Modified function from stats::glm.fit, allowing 0 maxit in control
+#' @description FUNCTION_DESCRIPTION
+#' @param x PARAM_DESCRIPTION
+#' @param y PARAM_DESCRIPTION
+#' @param weights PARAM_DESCRIPTION, Default: rep.int(1, nobs)
+#' @param start PARAM_DESCRIPTION, Default: NULL
+#' @param etastart PARAM_DESCRIPTION, Default: NULL
+#' @param mustart PARAM_DESCRIPTION, Default: NULL
+#' @param offset PARAM_DESCRIPTION, Default: rep.int(0, nobs)
+#' @param family PARAM_DESCRIPTION, Default: gaussian()
+#' @param control PARAM_DESCRIPTION, Default: list()
+#' @param intercept PARAM_DESCRIPTION, Default: TRUE
+#' @param singular.ok PARAM_DESCRIPTION, Default: TRUE
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
 .glm.fit.mod <- function (x, y, weights = rep.int(1, nobs), start = NULL, etastart = NULL, 
     mustart = NULL, offset = rep.int(0, nobs), family = gaussian(), 
     control = list(), intercept = TRUE, singular.ok = TRUE) 

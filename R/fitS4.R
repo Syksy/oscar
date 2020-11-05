@@ -97,7 +97,6 @@ setClass("casso", # abbreviation
 #' @export 
 #' @importFrom survival coxph coxph.control
 #' @importFrom stats glm
-#' @importFrom casso .glm.fit.mod
 casso <- function(
 	# Data matrix x
 	x, 
