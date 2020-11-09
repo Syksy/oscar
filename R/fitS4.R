@@ -162,9 +162,9 @@ casso <- function(
 	}
 	
 	# Check that kit matrix k and predictor matrix x have equal number of columns (features)
-	#if(ncol(k)!=ncol(x)){
-	#	stop(paste("Number of columns in kit matrix k (",ncol(k),") should be equal to the amount of features (number of columns in x, ",ncol(x),"). Check that correct features are included."))
-	#}
+	if(family=="cox" & ncol(k)!=ncol(x)){
+		stop(paste("Number of columns in kit matrix k (",ncol(k),") should be equal to the amount of features (number of columns in x, ",ncol(x),"). Check that correct features are included."))
+	}
 	## -> Intercept is an independent variable that is not subjected to penalization
 	# If family is not Cox, (Intercept) requires its own row/column in K
 	if(!family == "cox" & ncol(k) == ncol(x)){
