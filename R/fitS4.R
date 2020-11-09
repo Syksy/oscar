@@ -144,7 +144,7 @@ casso <- function(
 		}
 	}
 	
-	# Sanity checks: Check that imput matrices x and y hav equal number of rows
+	# Sanity checks: Check that input matrices x and y hav equal number of rows
 	if(nrow(y)!=nrow(x)){
 		stop(paste("Number of observations in the response matrix y (",nrow(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
 	}
@@ -162,9 +162,9 @@ casso <- function(
 	}
 	
 	# Check that kit matrix k and predictor matrix x have equal number of columns (features)
-	if(ncol(k)!=ncol(x)){
-		stop(paste("Number of columns in kit matrix k (",ncol(k),") should be equal to the amount of features (number of columns in x, ",ncol(x),"). Check that correct features are included."))
-	}
+	#if(ncol(k)!=ncol(x)){
+	#	stop(paste("Number of columns in kit matrix k (",ncol(k),") should be equal to the amount of features (number of columns in x, ",ncol(x),"). Check that correct features are included."))
+	#}
 	## -> Intercept is an independent variable that is not subjected to penalization
 	# If family is not Cox, (Intercept) requires its own row/column in K
 	if(!family == "cox" & ncol(k) == ncol(x)){
