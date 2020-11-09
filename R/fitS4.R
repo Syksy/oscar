@@ -217,7 +217,7 @@ casso <- function(
 	}
 	
 	# Check that w length is equal to number of rows in the kit matrix k (number of kits)
-	if(length(w)!=nrow(k)){
+	if(family=="cox" & length(w)!=nrow(k)){
 		stop(paste("Number of kit costs (",length(w),") is not equal to number of kits (number of rows in the kit matrix k, ",nrow(k),"). Check that correct kits are included."))
 	}
 	
