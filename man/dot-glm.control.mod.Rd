@@ -36,7 +36,7 @@ OUTPUT_DESCRIPTION
 FUNCTION_DESCRIPTION
 }
 \details{
-DETAILS
+DETAILS TODO
 }
 \examples{
 \dontrun{

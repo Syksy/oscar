@@ -92,7 +92,6 @@ setClass("casso", # abbreviation
 #' @seealso 
 #'  \code{\link[survival]{coxph}},\code{\link[survival]{coxph.control}}
 #'  \code{\link[stats]{glm}}
-#'  \code{\link[casso]{character(0)}}
 #' @rdname casso
 #' @export 
 #' @importFrom survival coxph coxph.control

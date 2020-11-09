@@ -5,14 +5,13 @@
 ####
 
 #' @title Cross-validation for casso-fitted model objects over k-range
-#' @description FUNCTION_DESCRIPTION
-#' @param fit PARAM_DESCRIPTION
-#' @param fold PARAM_DESCRIPTION, Default: 10
-#' @param seed PARAM_DESCRIPTION, Default: NULL
-#' @param verb PARAM_DESCRIPTION, Default: 0
-#' @param ... PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @description Create a cross-validation matrix with the chosen goodness metric with n-folds. Based on the goodness metric, one ought to pick optimal cardinality (parameter 'k').
+#' @param fit casso-model object
+#' @param fold Number of cross-validation folds, Default: 10
+#' @param seed Random seed for reproducibility with NULL indicating that it is not set, Default: NULL
+#' @param verb Level of verbosity with higher integer giving more information, Default: 0
+#' @return A matrix with goodness of fit over folds and k-values
+#' @details TODO
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
@@ -20,10 +19,9 @@
 #'  }
 #' }
 #' @seealso 
-#'  \code{\link[casso]{character(0)}}
 #'  \code{\link[stats]{predict.glm}}
 #'  \code{\link[survival]{predict.coxph}},\code{\link[survival]{coxph}},\code{\link[survival]{Surv}}
-#' @rdname cv.casso
+#' @rdname cv
 #' @export 
 #' @importFrom stats predict.glm
 #' @importFrom survival coxph Surv
@@ -35,8 +33,7 @@ cv.casso <- function(
 	# RNG seed (integer) that can be set for exact reproducibility
 	seed = NULL,
 	# Level of verbosity mainly for debugging
-	verb = 0,
-	...
+	verb = 0
 ){
 	# Internal cv-sample allocation function, modified from the ePCR-package
 	cv <- function(
@@ -176,23 +173,20 @@ cv.casso <- function(
 }
 
 #' @title Bootstrapping for casso-fitted model objects
-#' @description FUNCTION_DESCRIPTION
-#' @param fit PARAM_DESCRIPTION
-#' @param bootstrap PARAM_DESCRIPTION, Default: 100
-#' @param seed PARAM_DESCRIPTION, Default: NULL
-#' @param verb PARAM_DESCRIPTION, Default: 0
-#' @param ... PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @description This model bootstraps the fitting of a given casso object (re-fits the model for data that is equal in size but sampled with replacement). The output objects give insight into robustness of the casso-coefficient path, as well as relative importance of model objects.
+#' @param fit casso-model object
+#' @param bootstrap Number of bootstrapped datasets, Default: 100
+#' @param seed Random seed for reproducibility with NULL indicating that it is not set, Default: NULL
+#' @param verb Level of verbosity with higher integer giving more information, Default: 0
+#' @return 3-dimensional array with dimensions corresponding to k-steps, beta coefficients, and bootstrap runs
+#' @details TODO
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
 #'  #EXAMPLE1
 #'  }
 #' }
-#' @seealso 
-#'  \code{\link[casso]{character(0)}}
-#' @rdname bs.casso
+#' @rdname bs
 #' @export 
 bs.casso <- function(
 	# casso-object
@@ -202,8 +196,7 @@ bs.casso <- function(
 	# RNG seed (integer) that can be set for exact reproducibility
 	seed = NULL,
 	# Level of verbosity (<1 supresses everything in R; parameter also passed to Fortran subroutine)
-	verb = 0,
-	...
+	verb = 0
 ){
 	# Seed number for RNG reproducibility
 	if(!is.null(seed)) set.seed(seed)
@@ -249,7 +242,7 @@ bs.casso <- function(
 #' @param intercept PARAM_DESCRIPTION, Default: TRUE
 #' @param singular.ok PARAM_DESCRIPTION, Default: TRUE
 #' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @details DETAILS TODO
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
@@ -281,7 +274,7 @@ bs.casso <- function(
 #' @param intercept PARAM_DESCRIPTION, Default: TRUE
 #' @param singular.ok PARAM_DESCRIPTION, Default: TRUE
 #' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @details DETAILS TODO
 #' @examples 
 #' \dontrun{
 #' if(interactive()){

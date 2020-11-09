@@ -120,7 +120,7 @@ visu <- function(
 #'  #EXAMPLE1
 #'  }
 #' }
-#' @rdname bs.visu
+#' @rdname bs
 #' @export
 bs.visu <- function(
 	bs, # Bootstrap array as produced by bs.casso
@@ -160,7 +160,7 @@ bs.visu <- function(
 #'  #EXAMPLE1
 #'  }
 #' }
-#' @rdname cv.visu
+#' @rdname cv
 #' @export
 cv.visu <- function(
 	cvs, # Matrix produced by cv.casso; rows are cv-folds, cols are k-values
