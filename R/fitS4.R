@@ -143,8 +143,14 @@ casso <- function(
 	}
 	
 	# Sanity checks: Check that imput matrices x and y hav equal number of rows
-	if(nrow(y)!=nrow(x)){
-		stop(paste("Number of observations in the response matrix y (",nrow(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
+	if(family=="cox"){
+		if(nrow(y)!=nrow(x)){
+			stop(paste("Number of observations in the response matrix y (",nrow(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
+		}
+	}else{
+		if(length(y)!=nrow(x)){
+			stop(paste("Number of observations in the response matrix y (",length(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
+		}
 	}
 	
 	###############################
