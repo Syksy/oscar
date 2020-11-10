@@ -16,7 +16,7 @@ Example use of CASSO and fine-tuning parameters
 # Use example swiss-data for quickness
 library(casso)
 data(swiss)
-fit <- casso(x=swiss[,-1], y=swiss[,1], family="mse")
+fit <- casso(x=swiss[,-1], y=swiss[,1], family="mse", print=0)
 
 # Plot model coefficients as a function of cardinality k
 plot(fit) 
