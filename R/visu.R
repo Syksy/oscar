@@ -11,7 +11,7 @@
 #' @param cols PARAM_DESCRIPTION, Default: c("red", "blue")
 #' @param legend PARAM_DESCRIPTION, Default: 'top'
 #' @param mtexts PARAM_DESCRIPTION, Default: TRUE
-#' @param ... PARAM_DESCRIPTION
+#' @param add PARAM_DESCRIPTION
 #' @return OUTPUT_DESCRIPTION
 #' @details DETAILS
 #' @examples 
@@ -35,7 +35,7 @@ visu <- function(
 	cols = c("red", "blue"),
 	legend = "top", # Legend on top, FALSE/NA omits legend, otherwise it's used for placing the legend
 	mtexts = TRUE, # Outer margin texts
-	...
+	add = FALSE # Should plot be added into an existing frame / plot
 ){
 	if(!class(object) %in% "casso") stop("'object' should be of class 'casso'")
 	par(las=2,  # All labels orthogonally to axes
@@ -64,10 +64,12 @@ visu <- function(
 	}else{
 		stop(paste("Invalid y[1] parameter (", y[1],"), should be one of: 'target', 'cost', 'goodness', 'cv'", sep=""))
 	}
-	plot.window(xlim=c(1,length(x)), ylim=range(y1))
-	axis(1, at=1:length(x), labels=x)
-	axis(2, col.axis=cols[1])
-	box()
+	if(!add){
+		plot.window(xlim=c(1,length(x)), ylim=range(y1))
+		axis(1, at=1:length(x), labels=x)
+		axis(2, col.axis=cols[1])
+		box()
+	}
 	points(1:length(x), y1, pch=16, col=cols[1])
 	points(1:length(x), y1, type="l", col=cols[1])
 	# If length(y)>1, then plot a second y-axis
@@ -87,11 +89,13 @@ visu <- function(
 		}else{
 			stop(paste("Invalid y[2] parameter (", y[2],"), should be one of: 'target', 'cost', 'goodness', 'cv'", sep=""))
 		}
-		plot.window(xlim=c(1,length(x)), ylim=range(y2))
-		axis(4, col.axis=cols[2])
-		box()
-		points(1:length(x), y2, pch=16, col=cols[2])
-		points(1:length(x), y2, type="l", col=cols[2])
+		if(!add){
+			plot.window(xlim=c(1,length(x)), ylim=range(y2))
+			axis(4, col.axis=cols[2])
+			box()
+			points(1:length(x), y2, pch=16, col=cols[2])
+			points(1:length(x), y2, type="l", col=cols[2])
+		}
 	}
 	# Plot legend according to desired y
 	if(!is.na(legend) & !legend==""){ # If model is included (NA or FALSE omits it)
@@ -112,6 +116,7 @@ visu <- function(
 #' @description FUNCTION_DESCRIPTION
 #' @param bs PARAM_DESCRIPTION
 #' @param intercept PARAM_DESCRIPTION, Default: FALSE
+#' @param add PARAM_DESCRIPTION
 #' @return OUTPUT_DESCRIPTION
 #' @details DETAILS
 #' @examples 
@@ -124,7 +129,8 @@ visu <- function(
 #' @export
 bs.visu <- function(
 	bs, # Bootstrap array as produced by bs.casso
-	intercept = FALSE # Whether intercept coefficient ought to be plotted as well
+	intercept = FALSE, # Whether intercept coefficient ought to be plotted as well
+	add = FALSE # Should plot be added into an existing frame / plot
 ){
 	# Sanity checking
 	if(!length(dim(bs))==3) stop("Parameter 'bs' ought to be a 3-dim array as produced by bs.casso")
@@ -134,11 +140,15 @@ bs.visu <- function(
 	}
 	
 	# Plot bootstrapped runs
-	plot.new()
-	plot.window(xlim=range(1:dim(bs)[1]), ylim=extendrange(bs))
-	box(); axis(1); axis(2)
-	abline(h=0, lwd=2, col="grey")
-	title(xlab="Cardinality 'k'", ylab="Beta coefficients", main="Bootstrapped coefficients")
+	# Plot new or add
+	if(!add){
+		# If not adding to an existing plot, setup the graphics device
+		plot.new()
+		plot.window(xlim=range(1:dim(bs)[1]), ylim=extendrange(bs))
+		box(); axis(1); axis(2)
+		abline(h=0, lwd=2, col="grey")
+		title(xlab="Cardinality 'k'", ylab="Beta coefficients", main="Bootstrapped coefficients")
+	}
 	# Iterate over coefficients
 	for(i in 1:dim(bs)[2]){
 		# Iterate over bootstraps
@@ -151,7 +161,7 @@ bs.visu <- function(
 #' @title Visualize cross-validation as a function of k
 #' @description FUNCTION_DESCRIPTION
 #' @param cvs PARAM_DESCRIPTION
-#' @param ... PARAM_DESCRIPTION
+#' @param add PARAM_DESCRIPTION
 #' @return OUTPUT_DESCRIPTION
 #' @details DETAILS
 #' @examples 
@@ -164,15 +174,22 @@ bs.visu <- function(
 #' @export
 cv.visu <- function(
 	cvs, # Matrix produced by cv.casso; rows are cv-folds, cols are k-values
-	...
+	add = FALSE # Should plot be added into an existing frame / plot
 ){
 	# Compute statistics for the CV-curve
 	means <- apply(cvs, MARGIN=2, FUN=mean)
 	sds <- apply(cvs, MARGIN=2, FUN=sd)
 	# x-coordinates
 	x <- 1:ncol(cvs)
+	# Plot new or add
+	if(!add){
+		# If not adding to an existing plot, setup the graphics device
+		plot.new()
+		plot.window(xlim=range(x), ylim=extendrange(means-sds))
+		box(); axis(1); axis(2)
+	}
 	# Plotting
-	plot(x, means, type="l", xlab="k-step", ylab="CV performance", ylim=extendrange(c(means+sds, means-sds)), main="Cross-validation over k")
+	points(x, means, type="l", xlab="k-step", ylab="CV performance", ylim=extendrange(c(means+sds, means-sds)), main="Cross-validation over k")
 	# Means as a function of k
 	points(x, means, pch=16, col="red")
 	# Standard errors as a function of k

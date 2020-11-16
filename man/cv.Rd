@@ -7,7 +7,7 @@
 \usage{
 cv.casso(fit, fold = 10, seed = NULL, verb = 0)
 
-cv.visu(cvs, ...)
+cv.visu(cvs, add = FALSE)
 }
 \arguments{
 \item{fit}{casso-model object}
@@ -20,7 +20,7 @@ cv.visu(cvs, ...)
 
 \item{cvs}{PARAM_DESCRIPTION}
 
-\item{...}{PARAM_DESCRIPTION}
+\item{add}{PARAM_DESCRIPTION}
 }
 \value{
 A matrix with goodness of fit over folds and k-values

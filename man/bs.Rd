@@ -7,7 +7,7 @@
 \usage{
 bs.casso(fit, bootstrap = 100, seed = NULL, verb = 0)
 
-bs.visu(bs, intercept = FALSE)
+bs.visu(bs, intercept = FALSE, add = FALSE)
 }
 \arguments{
 \item{fit}{casso-model object}
@@ -21,6 +21,8 @@ bs.visu(bs, intercept = FALSE)
 \item{bs}{PARAM_DESCRIPTION}
 
 \item{intercept}{PARAM_DESCRIPTION, Default: FALSE}
+
+\item{add}{PARAM_DESCRIPTION}
 }
 \value{
 3-dimensional array with dimensions corresponding to k-steps, beta coefficients, and bootstrap runs

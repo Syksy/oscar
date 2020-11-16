@@ -10,7 +10,7 @@ visu(
   cols = c("red", "blue"),
   legend = "top",
   mtexts = TRUE,
-  ...
+  add = FALSE
 )
 }
 \arguments{
@@ -24,7 +24,7 @@ visu(
 
 \item{mtexts}{PARAM_DESCRIPTION, Default: TRUE}
 
-\item{...}{PARAM_DESCRIPTION}
+\item{add}{PARAM_DESCRIPTION}
 }
 \value{
 OUTPUT_DESCRIPTION

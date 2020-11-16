@@ -5,7 +5,7 @@
 \alias{casso}
 \title{FUNCTION_TITLE}
 \usage{
-casso(x, y, k, w, family = "gaussian", print = 3, start = 2, verb = 1, kmax)
+casso(x, y, k, w, family = "gaussian", print = -1, start = 2, verb = 0, kmax)
 }
 \arguments{
 \item{x}{Data matrix 'x'}
