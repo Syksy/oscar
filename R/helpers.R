@@ -5,14 +5,13 @@
 ####
 
 #' @title Cross-validation for casso-fitted model objects over k-range
-#' @description FUNCTION_DESCRIPTION
-#' @param fit PARAM_DESCRIPTION
-#' @param fold PARAM_DESCRIPTION, Default: 10
-#' @param seed PARAM_DESCRIPTION, Default: NULL
-#' @param verb PARAM_DESCRIPTION, Default: 0
-#' @param ... PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @description Create a cross-validation matrix with the chosen goodness metric with n-folds. Based on the goodness metric, one ought to pick optimal cardinality (parameter 'k').
+#' @param fit casso-model object
+#' @param fold Number of cross-validation folds, Default: 10
+#' @param seed Random seed for reproducibility with NULL indicating that it is not set, Default: NULL
+#' @param verb Level of verbosity with higher integer giving more information, Default: 0
+#' @return A matrix with goodness of fit over folds and k-values
+#' @details TODO
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
@@ -20,14 +19,12 @@
 #'  }
 #' }
 #' @seealso 
-#'  \code{\link[casso]{character(0)}}
 #'  \code{\link[stats]{predict.glm}}
 #'  \code{\link[survival]{predict.coxph}},\code{\link[survival]{coxph}},\code{\link[survival]{Surv}}
-#' @rdname cv.casso
+#' @rdname cv
 #' @export 
-#' @importFrom casso casso
 #' @importFrom stats predict.glm
-#' @importFrom survival predict.coxph coxph Surv
+#' @importFrom survival coxph Surv
 cv.casso <- function(
 	# casso-object
 	fit,
@@ -36,8 +33,7 @@ cv.casso <- function(
 	# RNG seed (integer) that can be set for exact reproducibility
 	seed = NULL,
 	# Level of verbosity mainly for debugging
-	verb = 0,
-	...
+	verb = 0
 ){
 	# Internal cv-sample allocation function, modified from the ePCR-package
 	cv <- function(
@@ -177,25 +173,21 @@ cv.casso <- function(
 }
 
 #' @title Bootstrapping for casso-fitted model objects
-#' @description FUNCTION_DESCRIPTION
-#' @param fit PARAM_DESCRIPTION
-#' @param bootstrap PARAM_DESCRIPTION, Default: 100
-#' @param seed PARAM_DESCRIPTION, Default: NULL
-#' @param verb PARAM_DESCRIPTION, Default: 0
-#' @param ... PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @description This model bootstraps the fitting of a given casso object (re-fits the model for data that is equal in size but sampled with replacement). The output objects give insight into robustness of the casso-coefficient path, as well as relative importance of model objects.
+#' @param fit casso-model object
+#' @param bootstrap Number of bootstrapped datasets, Default: 100
+#' @param seed Random seed for reproducibility with NULL indicating that it is not set, Default: NULL
+#' @param verb Level of verbosity with higher integer giving more information, Default: 0
+#' @return 3-dimensional array with dimensions corresponding to k-steps, beta coefficients, and bootstrap runs
+#' @details TODO
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
 #'  #EXAMPLE1
 #'  }
 #' }
-#' @seealso 
-#'  \code{\link[casso]{character(0)}}
-#' @rdname bs.casso
+#' @rdname bs
 #' @export 
-#' @importFrom casso casso
 bs.casso <- function(
 	# casso-object
 	fit,
@@ -204,8 +196,7 @@ bs.casso <- function(
 	# RNG seed (integer) that can be set for exact reproducibility
 	seed = NULL,
 	# Level of verbosity (<1 supresses everything in R; parameter also passed to Fortran subroutine)
-	verb = 0,
-	...
+	verb = 0
 ){
 	# Seed number for RNG reproducibility
 	if(!is.null(seed)) set.seed(seed)
@@ -251,17 +242,13 @@ bs.casso <- function(
 #' @param intercept PARAM_DESCRIPTION, Default: TRUE
 #' @param singular.ok PARAM_DESCRIPTION, Default: TRUE
 #' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @details DETAILS TODO
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
 #'  #EXAMPLE1
 #'  }
 #' }
-#' @seealso 
-#'  \code{\link[stats]{character(0)}}
-#' @rdname casso:::.glm.fit.mod
-#' @importFrom stats C_Cdqrls
 .glm.control.mod <- function (epsilon = 1e-08, maxit = 25, trace = FALSE) 
 {
     if (!is.numeric(epsilon) || epsilon <= 0) 
@@ -273,7 +260,27 @@ bs.casso <- function(
     list(epsilon = epsilon, maxit = maxit, trace = trace)
 }
 	
-#' Modified function from stats::glm.fit, allowing 0 maxit in control
+#' @title Modified function from stats::glm.fit, allowing 0 maxit in control
+#' @description FUNCTION_DESCRIPTION
+#' @param x PARAM_DESCRIPTION
+#' @param y PARAM_DESCRIPTION
+#' @param weights PARAM_DESCRIPTION, Default: rep.int(1, nobs)
+#' @param start PARAM_DESCRIPTION, Default: NULL
+#' @param etastart PARAM_DESCRIPTION, Default: NULL
+#' @param mustart PARAM_DESCRIPTION, Default: NULL
+#' @param offset PARAM_DESCRIPTION, Default: rep.int(0, nobs)
+#' @param family PARAM_DESCRIPTION, Default: gaussian()
+#' @param control PARAM_DESCRIPTION, Default: list()
+#' @param intercept PARAM_DESCRIPTION, Default: TRUE
+#' @param singular.ok PARAM_DESCRIPTION, Default: TRUE
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS TODO
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
 .glm.fit.mod <- function (x, y, weights = rep.int(1, nobs), start = NULL, etastart = NULL, 
     mustart = NULL, offset = rep.int(0, nobs), family = gaussian(), 
     control = list(), intercept = TRUE, singular.ok = TRUE) 

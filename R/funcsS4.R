@@ -13,6 +13,8 @@
 
 #' Showing casso-objects
 #'
+#' @rdname generics
+#'
 #' @export
 setMethod("show", "casso",
 	function(object){
@@ -25,6 +27,8 @@ setMethod("show", "casso",
 )
 
 #' Extract coefficients of casso-objects
+#'
+#' @rdname generics
 #'
 #' @export
 setMethod("coef", "casso",
@@ -41,6 +45,8 @@ setMethod("coef", "casso",
 )
 
 #' Plot casso-coefficients as a function of k and override default plot generic
+#'
+#' @rdname generics
 #'
 #' @export
 setMethod("plot", "casso",
@@ -84,6 +90,8 @@ setMethod("plot", "casso",
 
 #' Return named vector of feature indices with a given k that are non-zero
 #'
+#' @rdname generics
+#'
 #' @export
 setGeneric("feat",
 	function(object, k){
@@ -106,6 +114,8 @@ setMethod("feat", "casso",
 )
 
 #' Return named vector of kits indices with a given k that are non-zero
+#'
+#' @rdname generics
 #'
 #' @export
 setGeneric("kits",

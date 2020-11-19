@@ -1,6 +1,11 @@
 ---
 title: "Vignette casso"
-output: html_document
+output: rmarkdown::html_vignette
+date: "`r Sys.Date()`"
+vignette: >
+  %\VignetteIndexEntry{CASSO vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 ---
 \newcommand{\vertiii}[1]{{\left\vert\kern-0.25ex\left\vert\kern-0.25ex\left\vert #1 
     \right\vert\kern-0.25ex\right\vert\kern-0.25ex\right\vert}}
@@ -78,7 +83,7 @@ data(ex)
 
 As a default, the model uses Cox model and generates the solutions starting with one allowed kit and finishing with all kits in the fit. We fit the model:
 ```{r}
-tmp <- casso(x=ex_X,y=ex_Y,k=ex_K,w=ex_c)
+tmp <- casso(x=ex_X,y=ex_Y,k=ex_K,w=ex_c,family="cox")
 ```
 
 Now "tmp" is a casso object that contains the relevant information, such as the model coefficients and target function values. The casso object "tmp" can be used further to, for example, plot and predict. We visualize the target function value with the `visu` function:

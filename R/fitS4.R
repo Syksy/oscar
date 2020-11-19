@@ -92,12 +92,10 @@ setClass("casso", # abbreviation
 #' @seealso 
 #'  \code{\link[survival]{coxph}},\code{\link[survival]{coxph.control}}
 #'  \code{\link[stats]{glm}}
-#'  \code{\link[casso]{character(0)}}
 #' @rdname casso
 #' @export 
 #' @importFrom survival coxph coxph.control
 #' @importFrom stats glm
-#' @importFrom casso .glm.fit.mod
 casso <- function(
 	# Data matrix x
 	x, 
@@ -110,24 +108,25 @@ casso <- function(
 	# Model family (defines the likelihood function)
 	family = "gaussian",
 	## Tuning parameters
-	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
+	print=-1,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
 	start=2,# Deterministic start point 
-	verb=1, # Level of R verbosity (1 = standard, 2 = debug level, 3 = excessive debugging, 0<= none)
+	verb=0, # Level of R verbosity (1 = standard, 2 = debug level, 3 = excessive debugging, 0<= none)
 	kmax    # Maximum tested k-values
 ){
 	# TODO: Sanity checks for input here
 	
 	# Sanity checks: Are input matrices x and y available
 	if(missing(x)){
-		stop(paste("Input matrix x missing."))
+		stop("Input matrix x missing.")
 	}
 	if(missing(y)){
-		stop(paste("Input matrix y missing."))
+		stop("Input matrix y missing.")
 	}
 	
-	# Sanity checks: Are input x is a matrix. If not, try to convert into a matrix.
+	# Sanity checks: Input x is a matrix. If not, try to convert into a matrix.
 	if(!is.matrix(x)){
 		try(x <- as.matrix(x))
+		if(class(x)=="try-error") stop("Error casting x into a matrix")
 	}
 
 	
@@ -144,9 +143,15 @@ casso <- function(
 		}
 	}
 	
-	# Sanity checks: Check that input matrices x and y hav equal number of rows
-	if(nrow(y)!=nrow(x)){
-		stop(paste("Number of observations in the response matrix y (",nrow(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
+	# Sanity checks: Check that input matrices x and y hav equal number of rows or length
+	if(family=="cox"){
+		if(nrow(y)!=nrow(x)){
+			stop(paste("Number of observations in the response matrix y (",nrow(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
+		}
+	}else{
+		if(length(y)!=nrow(x)){
+			stop(paste("Number of observations in the response matrix y (",length(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
+		}
 	}
 	
 	###############################
@@ -159,6 +164,7 @@ casso <- function(
 	# Check that input k is a matrix
 	if(!is.matrix(k)){
 		try(k <- as.matrix(k))
+		if(class(k)=="try-error") stop("Error casting k into a matrix")
 	}
 	
 	# Check that kit matrix k and predictor matrix x have equal number of columns (features)
@@ -188,6 +194,11 @@ casso <- function(
 	if(any(apply(k,MARGIN=1,FUN=sum)<1)){
 		stop(paste("Some kit(s)) don't have any features. Please check that each kit has at least one feature."))
 	}
+	# Check that kit matrix k and predictor matrix x have equal number of columns (features) (valid only for coxph)
+	if(ncol(k)!=ncol(x) & family=="cox"){
+		stop(paste("Number of columns in kit matrix k (",ncol(k),") should be equal to the amount of features (number of columns in x, ",ncol(x),"). Check that correct features are included."))
+	}
+	## -> Intercept is an independent variable that is not subjected to penalization
 	
 	# Checking k structure
 	if(verb>=2){
