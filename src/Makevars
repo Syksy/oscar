@@ -11,6 +11,8 @@ clean:
 	$(RM) *.mod *.o  
 	echo Clean done
 
+PKG_FCFLAGS = -fopenmp
+PKG_LIBS = -fopenmp
 $(SHLIB): $(FT_OBJS) $(C_OBJS)
 
 cassoc.c: kaikki.o
