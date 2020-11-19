@@ -37,7 +37,7 @@
       MODULE bundle1  
       
         USE, INTRINSIC :: iso_c_binding
-        !USE omp_lib
+        USE omp_lib
         IMPLICIT NONE 
         
         !*..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..*
@@ -4333,7 +4333,7 @@
                 
         USE, INTRINSIC :: iso_c_binding
         
-        !USE omp_lib
+        USE omp_lib
         
         USE bundle1                    ! The BUNDLE of the DC component f_1
         USE bundle2                    ! The BUNDLE of the DC component f_2
@@ -4548,9 +4548,9 @@
                                                 ! 5 - the biggest possible number of rounds executed in the 'Clarke stationary' algorithm
                
                ! Needed in parallellization
-               !INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
-               !INTEGER(KIND=c_int) :: threads               ! the number of threads used in parallellization
-               !INTEGER(KIND=c_int) :: max_sub_prob          ! the maximum number of subproblems solved at the same time
+               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
+               INTEGER(KIND=c_int) :: threads               ! the number of threads used in parallellization
+               INTEGER(KIND=c_int) :: max_sub_prob          ! the maximum number of subproblems solved at the same time
                
                INTEGER(KIND=c_int) :: i                     ! help variables 
                                                     
@@ -4815,10 +4815,10 @@
                delta = 0.0_c_double              
                
 ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
-!               max_threads = omp_get_max_threads()
-!               max_sub_prob = give_max_size_b2(B2)+1
-!               threads = MIN(max_threads, max_sub_prob)
-!               CALL omp_set_num_threads(threads)    
+               max_threads = omp_get_max_threads()
+               max_sub_prob = give_max_size_b2(B2)+1
+               threads = MIN(max_threads, max_sub_prob)
+               CALL omp_set_num_threads(threads)    
 ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
               
@@ -6226,7 +6226,7 @@
                         alpha_b2 = give_linerr_b2(B2, i)   ! linearization error of B_2 in the subproblem i
 
                         
-                        !$OMP CRITICAL  
+                        !$OMP CRITICAL (do1)
                         DO j = 1, NA
                            k = (j-1)*NF
                            DO l = 1, NF
@@ -6234,7 +6234,7 @@
                            END DO
                            AF(j) = - alpha_m_b1(j) + alpha_b2 
                         END DO
-                        !$OMP END CRITICAL  
+                        !$OMP END CRITICAL (do1)
                         
                         !Calls PLQDF1 by Ladislav Luksan
                         CALL PLQDF1(NF,NA,NC,X,IX,XL,XU,AF,AFD,IA,IAA, &
@@ -6250,9 +6250,9 @@
                         a = DOT_PRODUCT(direction, direction)           
 
                         obj =   XNORM + (a * u) / 2
-                        !$OMP CRITICAL
+                        !$OMP CRITICAL (call1)
                         CALL add_solution(B2, i , direction, XNORM, obj )   
-                        !$OMP END CRITICAL
+                        !$OMP END CRITICAL (call1)
                     
                     END DO subproblems1
                !->->->->->->->->->->->->->-> EACH SUBPROBLEM SOLVED END <-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-                      
