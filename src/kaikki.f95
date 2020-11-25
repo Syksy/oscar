@@ -6256,7 +6256,7 @@
                     
                     END DO subproblems1
                !->->->->->->->->->->->->->-> EACH SUBPROBLEM SOLVED END <-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-                      
-               !$OPM END PARALLEL DO
+               !$OMP END PARALLEL DO
 
                subprob_counter = subprob_counter + 1 
                
