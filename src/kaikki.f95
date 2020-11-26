@@ -10,7 +10,7 @@
         !| |                       2) Mean square error model                                 | |
         !| |                       3) Logistic regression model                               | |
         !| |                                                                                  | |
-        !| |                       by Kaisa Joki (last modified  July 2020)                   | |
+        !| |                       by Kaisa Joki (last modified  November 2020)               | |
         !| |                                                                                  | |
         !| |      Features :                                                                  | |
         !| |                                                                                  | |
@@ -1539,21 +1539,20 @@
         !>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>>
         !****************** PARAMETRES NEEDED ONLY IN MAIN ITERATION AlGORITHM ********************
         
-        INTEGER(KIND=c_int), PARAMETER :: user_size_b1 = -3                    ! The biggest possible size of the bundle B_1 
-        !INTEGER(KIND=c_int), PARAMETER :: user_size_b1 = MIN(user_n + 5,1000) ! The biggest possible size of the bundle B_1   HUOM! in this version of code user_n cannot be used here
-                                                                              ! If user_size_b1 <= 0 then DEFAULT value MIN(user_n+5,1000) is used 
+        INTEGER(KIND=c_int), SAVE :: user_size_b1                     ! The biggest possible size of the bundle B_1 
+                                                                      ! If user_size_b1 <= 0 then DEFAULT value MIN(user_n+5,1000) is used 
                                                                    
-        INTEGER(KIND=c_int), PARAMETER :: user_size_b2 = 3            ! The biggest possible size of the bundle B_2 
+        INTEGER(KIND=c_int), SAVE :: user_size_b2                     ! The biggest possible size of the bundle B_2 
                                                                       ! If user_size_b2 <= 0 then DEFAULT value 3 is used  
               
-        REAL(KIND=c_double), PARAMETER :: user_m = 0.01_c_double               ! The descent parameter  If user_m <= 0.0_c_double .OR. user_m >= 1.0_c_double 
-                                                                               !                        then DEFAULT value 0.2_c_double is used
+        REAL(KIND=c_double), SAVE :: user_m                           ! The descent parameter  If user_m <= 0.0_c_double .OR. user_m >= 1.0_c_double 
+                                                                               !               then DEFAULT value 0.2_c_double is used
 
-        REAL(KIND=c_double), PARAMETER :: user_c = -0.1_c_double               ! The decrease parameter c in DBDC  
-                                                                               ! If user_c <= 0.0_c_double or user_c > 1.0_c_double then DEFAULT value 0.1_c_double is used 
+        REAL(KIND=c_double), SAVE :: user_c                           ! The decrease parameter c in DBDC  
+                                                                      ! If user_c <= 0.0_c_double or user_c > 1.0_c_double then DEFAULT value 0.1_c_double is used 
 
                                                                  
-        REAL(KIND=c_double), PARAMETER :: user_r_dec = -0.99_c_double          ! The decrease parameter r in DBDC 
+        REAL(KIND=c_double), SAVE :: user_r_dec                       ! The decrease parameter r in DBDC 
         
         !If user_r_dec <= 0.0_c_double .OR. user_r_dec >= 1.0_c_double then DEFAULT value is used.
         !                               
@@ -1573,11 +1572,11 @@
         !     If user_n=250:    user_r_dec = 0.98_c_double    
         !
         
-        REAL(KIND=c_double), PARAMETER :: user_r_inc = (10.0_c_double)**(4)       ! The increase parameter R: If user_r_inc <= 1.0_c_double 
+        REAL(KIND=c_double), SAVE :: user_r_inc                       ! The increase parameter R: If user_r_inc <= 1.0_c_double 
                                                                       !                           then DEFAULT value (10.0_c_double)**7 is used
  
-        REAL(KIND=c_double), PARAMETER :: user_eps_1 = 5*(10.0_c_double)**(-5)    ! The enlargement parameter: If user_eps_1 <= 0.0_c_double .OR. user_eps_1 > 1.0_c_double 
-                                                                      !                   then DEFAULT value 5*(10.0_c_double)**(-5) is used
+        REAL(KIND=c_double), SAVE :: user_eps_1                       ! The enlargement parameter: If user_eps_1 <= 0.0_c_double .OR. user_eps_1 > 1.0_c_double 
+                                                                      !                            then DEFAULT value 5*(10.0_c_double)**(-5) is used
 
  
         !____________________________________________________________________________________________                                                       
@@ -1585,13 +1584,13 @@
         !****************** PARAMETRES NEEDED ONLY IN CLARKE STATIONARY AlGORITHM *******************
         
         
-         INTEGER(KIND=c_int), PARAMETER :: user_size = - 2            ! The biggest possible bundle size for the bundle used in 'Clarke stationary' algorithm
+         INTEGER(KIND=c_int), SAVE :: user_size                    ! The biggest possible bundle size for the bundle used in 'Clarke stationary' algorithm
 
-         REAL(KIND=c_double), PARAMETER :: user_m_clarke = 0.01_c_double       ! The descent parameter: If user_m_clarke <= 0.0_c_double .OR. user_m_clarke >= 1.0_c_double 
+         REAL(KIND=c_double), SAVE :: user_m_clarke                ! The descent parameter: If user_m_clarke <= 0.0_c_double .OR. user_m_clarke >= 1.0_c_double 
                                                                    !                                    then DEFAULT value 0.01_c_double is used
                                                                     
           
-         REAL(KIND=c_double), PARAMETER :: user_eps = (10.0_c_double)**(-10)   ! The proximity measure: If user_eps <= 0.0_c_double 
+         REAL(KIND=c_double), SAVE :: user_eps                                 ! The proximity measure: If user_eps <= 0.0_c_double 
                                                                                !                        then DEFAULT value (10.0_c_double)**(-6) is used when n <= 50
                                                                                !                                           (10.0_c_double)**(-5) is used when n > 50
                                                                     
@@ -1600,7 +1599,7 @@
         !****************** PARAMETER NEEDED IN STOPPING CONDITIONS ********************
               
         ! ** The stopping tolerance **      
-        REAL(KIND=c_double), PARAMETER :: user_crit_tol = (10.0_c_double)**(-5)     ! If user_crit_tol <= 0.0_c_double then DEFAULT value (10.0_c_double)**(-5) is used when n <=200
+        REAL(KIND=c_double), SAVE :: user_crit_tol                                  ! If user_crit_tol <= 0.0_c_double then DEFAULT value (10.0_c_double)**(-5) is used when n <=200
                                                                                     !                                                     (10.0_c_double)**(-4) is used when n > 20     
        
         !________________________________________________________________________________
@@ -1656,6 +1655,9 @@
         !| |                                                                                  | |
         !| |    SUBROUTINES:                                                                  | |
         !| |                                                                                  | |
+        !| |       allocate_parameters((in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc,  &      | |
+		!| |                           & in_eps1, in_b, in_m_clarke, in_eps, in_crit_tol)     | |
+        !| |                                                                                  | |
         !| |       allocate_data_cox(nft,nrecord,nkits,nk)  - allocates data matrices         | |
         !| |       deallocate_data_cox()                    - deallocates data matrices       | |
         !| |                                                                                  | |
@@ -1697,6 +1699,46 @@
         
         CONTAINS
         
+		
+           !------------------------------------------------------------------------------------------
+           SUBROUTINE allocate_parameters(in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+		                                   & in_b, in_m_clarke, in_eps, in_crit_tol)
+               !
+               ! Allocates the parameters use in DBDC method
+               !       
+               !
+               IMPLICIT NONE
+               !**************************** NEEDED FROM USER *************************************
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+			   
+               REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance 
+			   
+               !**************************** OTHER VARIABLES **************************************
+               
+               user_size_b1 = in_b1
+               user_size_b2 = in_b2
+               user_size = in_b
+               user_m = in_m
+               user_m_clarke = in_m_clarke
+               user_c = in_c
+               user_r_dec = in_r_dec				   
+               user_r_inc = in_r_inc	
+			   user_eps_1 = in_eps1
+			   user_eps = in_eps
+			   user_crit_tol = in_crit_tol
+           
+           END SUBROUTINE allocate_parameters
+           !------------------------------------------------------------------------------------------		
+		
            !------------------------------------------------------------------------------------------
            SUBROUTINE allocate_data_cox(nft, nrecord, nkits, nk)
                !
@@ -4134,169 +4176,169 @@
            !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -      
            
            
-        ! Orders the table a in increasing order
-        subroutine heapsort(a)
+          ! Orders the table a in increasing order
+           SUBROUTINE heapsort(a)
  
-        REAL(KIND=c_double), intent(in out) :: a(0:)
-        INTEGER(KIND=c_int) :: start, n, bottom
-        REAL(KIND=c_double) :: temp
+                REAL(KIND=c_double), INTENT(INOUT) :: a(0:)
+                INTEGER(KIND=c_int) :: start, n, bottom
+                REAL(KIND=c_double) :: temp
  
-        n = size(a)
-        do start = (n - 2) / 2, 0, -1
-            call siftdown(a, start, n)
-        end do
+                n = size(a)
+                DO start = (n - 2) / 2, 0, -1
+                   call siftdown(a, start, n)
+                END DO
  
-        do bottom = n - 1, 1, -1
-            temp = a(0)
-            a(0) = a(bottom)
-            a(bottom) = temp
-            call siftdown(a, 0, bottom)
-        end do
+                DO bottom = n - 1, 1, -1
+                   temp = a(0)
+                   a(0) = a(bottom)
+                   a(bottom) = temp
+                   call siftdown(a, 0, bottom)
+                END DO
  
-        end subroutine heapsort
+           END SUBROUTINE heapsort
  
-        subroutine siftdown(a, start, bottom)
+           SUBROUTINE siftdown(a, start, bottom)
  
-        REAL(KIND=c_double), intent(in out) :: a(0:)
-        INTEGER(KIND=c_int), intent(in) :: start, bottom
-        INTEGER(KIND=c_int) :: child, root
-        REAL(KIND=c_double) :: temp
+                REAL(KIND=c_double), INTENT(INOUT) :: a(0:)
+                INTEGER(KIND=c_int), INTENT(IN) :: start, bottom
+                INTEGER(KIND=c_int) :: child, root
+                REAL(KIND=c_double) :: temp
  
-        root = start
-        do while(root*2 + 1 < bottom)
-            child = root * 2 + 1
+                root = start
+                DO WHILE(root*2 + 1 < bottom)
+                   child = root * 2 + 1
+    
+                   IF (child + 1 < bottom) THEN
+                      IF (a(child) < a(child+1)) child = child + 1
+                   END IF
  
-            if (child + 1 < bottom) then
-                if (a(child) < a(child+1)) child = child + 1
-            end if
+                   IF (a(root) < a(child)) THEN
+                      temp = a(child)
+                      a(child) = a(root)
+                      a(root) = temp
+                      root = child
+                   ELSE
+                      RETURN
+                   END IF
+                END DO      
  
-            if (a(root) < a(child)) then
-                temp = a(child)
-                a(child) = a(root)
-                a(root) = temp
-                root = child
-            else
-                return
-            end if  
-        end do      
- 
-        end subroutine siftdown
+           END SUBROUTINE siftdown
 
-        ! Orders the whole table a in increasing order.
-        ! Table b will give the original indices of elements in the ordered table a.
-        subroutine heapsort_ind(a,b)
+           ! Orders the whole table a in increasing order.
+           ! Table b will give the original indices of elements in the ordered table a.
+           SUBROUTINE heapsort_ind(a,b)
  
-        REAL(KIND=c_double), intent(in out) :: a(0:)
-        INTEGER(KIND=c_int), intent(in out) :: b(0:)
-        INTEGER(KIND=c_int) :: start, n, bottom
-        REAL(KIND=c_double) :: temp
-        INTEGER(KIND=c_int) :: apu
+                REAL(KIND=c_double), INTENT(INOUT) :: a(0:)
+                INTEGER(KIND=c_int), INTENT(INOUT) :: b(0:)
+                INTEGER(KIND=c_int) :: start, n, bottom
+                REAL(KIND=c_double) :: temp
+                INTEGER(KIND=c_int) :: apu
  
-        n = size(a)
-        do start = (n - 2) / 2, 0, -1
-            call siftdown_ind(a, b, start, n)
-        end do
+                n = size(a)
+                DO start = (n - 2) / 2, 0, -1
+                   CALL siftdown_ind(a, b, start, n)
+                END DO
  
-        do bottom = n - 1, 1, -1
-            !swap in a
-            temp = a(0)
-            a(0) = a(bottom)
-            a(bottom) = temp
-            !swap in b 
-            apu = b(0)
-            b(0) = b(bottom)
-            b(bottom) = apu  
-            call siftdown_ind(a, b, 0, bottom)
-        end do
+                DO bottom = n - 1, 1, -1
+                   !swap in a
+                   temp = a(0)
+                   a(0) = a(bottom)
+                   a(bottom) = temp
+                   !swap in b 
+                   apu = b(0)
+                   b(0) = b(bottom)
+                   b(bottom) = apu  
+                   CALL siftdown_ind(a, b, 0, bottom)
+                END DO
  
-        end subroutine heapsort_ind
+           END SUBROUTINE heapsort_ind
  
-        subroutine siftdown_ind(a, b, start, bottom)
+           SUBROUTINE siftdown_ind(a, b, start, bottom)
  
-        REAL(KIND=c_double), intent(in out) :: a(0:)
-        INTEGER(KIND=c_int), intent(in out) :: b(0:)
-        INTEGER(KIND=c_int), intent(in) :: start, bottom
-        INTEGER(KIND=c_int) :: child, root
-        REAL(KIND=c_double) :: temp
-        INTEGER(KIND=c_int) :: apu
+                REAL(KIND=c_double), INTENT(INOUT) :: a(0:)
+                INTEGER(KIND=c_int), INTENT(INOUT) :: b(0:)
+                INTEGER(KIND=c_int), INTENT(IN) :: start, bottom
+                INTEGER(KIND=c_int) :: child, root
+                REAL(KIND=c_double) :: temp
+                INTEGER(KIND=c_int) :: apu
  
-        root = start
-        do while(root*2 + 1 < bottom)
-            child = root * 2 + 1
+                root = start
+                DO WHILE(root*2 + 1 < bottom)
+                    child = root * 2 + 1
+  
+                    IF (child + 1 < bottom) THEN
+                       IF (a(child) < a(child+1)) child = child + 1
+                    END IF
  
-            if (child + 1 < bottom) then
-                if (a(child) < a(child+1)) child = child + 1
-            end if
- 
-            if (a(root) < a(child)) then
-                ! swap in a 
-                temp = a(child)
-                a(child) = a(root)
-                a(root) = temp
-                ! swap in b
-                apu = b(child)
-                b(child) = b(root)
-                b(root) = apu
+                    IF (a(root) < a(child)) THEN
+                        ! swap in a 
+                        temp = a(child)
+                        a(child) = a(root)
+                        a(root) = temp
+                        ! swap in b
+                        apu = b(child)
+                        b(child) = b(root)
+                        b(root) = apu
 
-                root = child
-            else
-                return
-            end if  
-        end do      
+                        root = child
+                    ELSE
+                        RETURN
+                    END IF  
+                END DO      
  
-        end subroutine siftdown_ind
+           END SUBROUTINE siftdown_ind
 
-        ! Orders the table a in increasing order such that only k largest values are calculated. 
-        ! They can be found from positions n-k+1, ... , n of table a (they are in incresing order). 
-        ! This means that the beginning of table a is not ordered, i.e. positions from 1 to n-k.
-        ! Table b will give the original indices of elements of table a after it is ordered. 
-        subroutine heapsort_k(a,b,k)
+           ! Orders the table a in increasing order such that only k largest values are calculated. 
+           ! They can be found from positions n-k+1, ... , n of table a (they are in incresing order). 
+           ! This means that the beginning of table a is not ordered, i.e. positions from 1 to n-k.
+           ! Table b will give the original indices of elements of table a after it is ordered. 
+           SUBROUTINE heapsort_k(a,b,k)
  
-        REAL(KIND=c_double), intent(in out) :: a(0:)
-        INTEGER(KIND=c_int), intent(in out) :: b(0:)
-        INTEGER(KIND=c_int), intent(in) :: k 
-        INTEGER(KIND=c_int) :: start, n, bottom, pituus
-        REAL(KIND=c_double) :: temp
-        INTEGER(KIND=c_int) :: apu
+                REAL(KIND=c_double), INTENT(INOUT) :: a(0:)
+                INTEGER(KIND=c_int), INTENT(INOUT) :: b(0:)
+                INTEGER(KIND=c_int), INTENT(IN) :: k 
+                INTEGER(KIND=c_int) :: start, n, bottom, pituus
+                REAL(KIND=c_double) :: temp
+                INTEGER(KIND=c_int) :: apu
  
-        n = size(a)
+                n = size(a)
    
-        IF (k > n) THEN 
-            WRITE(*,*) 'WARNING: k is larger than the dimension in heapsort -> k is reduced'   
-            pituus = n
-        ELSE
-            pituus = k   
-        END IF 
+                IF (k > n) THEN 
+                    WRITE(*,*) 'WARNING: k is larger than the dimension in heapsort -> k is reduced'   
+                    pituus = n
+                ELSE
+                    pituus = k   
+                END IF 
    
-        do start = (n - 2) / 2, 0, -1
-            call siftdown_ind(a, b, start, n)
-        end do
+                DO start = (n - 2) / 2, 0, -1
+                    CALL siftdown_ind(a, b, start, n)
+                END DO
  
-        do bottom = n - 1, n-pituus+1, -1
-            !swap in a
-            temp = a(0)
-            a(0) = a(bottom)
-            a(bottom) = temp
-            !swap in b 
-            apu = b(0)
-            b(0) = b(bottom)
-            b(bottom) = apu  
-            call siftdown_ind(a, b, 0, bottom)
-        end do
+                DO bottom = n - 1, n-pituus+1, -1
+                    !swap in a
+                    temp = a(0)
+                    a(0) = a(bottom)
+                    a(bottom) = temp
+                    !swap in b 
+                    apu = b(0)
+                    b(0) = b(bottom)
+                    b(bottom) = apu  
+                    CALL siftdown_ind(a, b, 0, bottom)
+                END DO
    
-        IF (pituus < n) THEN 
-            bottom = n-pituus
-            !swap in a
-            temp = a(0)
-            a(0) = a(bottom)
-            a(bottom) = temp
-            !swap in b 
-            apu = b(0)
-            b(0) = b(bottom)
-            b(bottom) = apu    
-        END IF
+                IF (pituus < n) THEN 
+                    bottom = n-pituus
+                    !swap in a
+                    temp = a(0)
+                    a(0) = a(bottom)
+                    a(bottom) = temp
+                    !swap in b 
+                    apu = b(0)
+                    b(0) = b(bottom)
+                    b(bottom) = apu    
+                END IF
  
-        end subroutine heapsort_k          
+           END SUBROUTINE heapsort_k          
 
            
       END MODULE functions     
@@ -4389,7 +4431,8 @@
         
            SUBROUTINE DBDC_algorithm( f_solution, x_solution, x_0, rho, lambda, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUTime,  &
-                            & agg_used, stepsize_used, iprint, problem1, problem2, user_n)
+                            & agg_used, stepsize_used, iprint, problem1, problem2, user_n, &
+							& max_threads)
             ! 
             ! Solves the unconstrained nonsmooth DC minimization problem
             !
@@ -4474,6 +4517,8 @@
                                                 !   iprint = -3: basic print of intermediate results and extended print of final results (without the solution vector)
                                                 !   iprint = 4 : extended print of intermediate results and extended print of final results 
                                                 !   iprint = -4: extended print of intermediate results and extended print of final results (without the solution vectors)
+              
+			  INTEGER(KIND=c_int), INTENT(IN) :: max_threads           ! the maximum number of threads that can be used in parallellization
            
            
                !LOGICAL, INTENT(IN) ::  scale_in_use  ! If .TRUE. data is scaled
@@ -4548,6 +4593,7 @@
                                                 ! 5 - the biggest possible number of rounds executed in the 'Clarke stationary' algorithm
                
                ! Needed in parallellization
+
                INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
                INTEGER(KIND=c_int) :: threads               ! the number of threads used in parallellization
                INTEGER(KIND=c_int) :: max_sub_prob          ! the maximum number of subproblems solved at the same time
@@ -4815,10 +4861,11 @@
                delta = 0.0_c_double              
                
 ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
-               max_threads = omp_get_max_threads()
+
+               !max_threads = omp_get_max_threads()
                max_sub_prob = give_max_size_b2(B2)+1
                threads = MIN(max_threads, max_sub_prob)
-               CALL omp_set_num_threads(threads)    
+               CALL omp_set_num_threads(threads)   
 ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
               
@@ -6275,6 +6322,7 @@
 
   MODULE casso
      USE, INTRINSIC :: iso_c_binding
+	 USE omp_lib
  
      USE functions                 ! INFORMATION from the USER
      USE bundle1                   ! Bundle 1
@@ -6324,7 +6372,9 @@
     ! ^^^^ START: IF Fortran code is used with R-C-interface ^^^^
     !--------------------------------------------------------------------------        
           SUBROUTINE casso_cox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
-		& in_print, in_start, in_k_max ) &
+		& in_print, in_start, in_k_max, &
+		& in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+		& in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol ) &
         & BIND(C, name = "casso_cox_f_")               
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -6366,8 +6416,27 @@
             !         * 'in_start'    : specifies how starting points are selected when the L0-norm problem is solved for  
             !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
             !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
+			!         
+			!         PARAMETERS in DBDC method:
+			!
+            !         * in_mrounds     : the maximum number of rounds in one main iteratioin
+            !         * in_mit         : the maximum number of main iterations
+            !         * in_mrounds_esc : the maximum number of rounds in escape procedure
+			!
+            !         * in_b1          : the size of bundle B1
+            !         * in_b2          : the size of bundle B2
+            !         * in_b           : the size of bundle in escape procedure
+			!
+            !         * in_m           : the descent parameter in main iteration
+            !         * in_m_clarke    : the descent parameter in escape procedure
+            !         * in_c           : the extra decrease parameter in main iteration
+            !         * in_r_dec       : the decrease parameter in main iteration
+            !         * in_r_inc       : the increase parameter in main iteration
+            !         * in_eps1        : the enlargement parameter
+            !         * in_eps         : the stopping tolerance: proximity measure  
+            !         * in_crit_tol    : the stopping tolerance: criticality tolerance 			
             !
-            !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
+            !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vectors one after another
             !
             !         * 'x'          : the matrix X of input variables in vector form --> will be stored to in_mX (each row is one observation)
             !                               REAL, DIMENSION(nrow*ncol)  
@@ -6403,13 +6472,30 @@
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow     !Number of rows in x (i.e. records)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol     !Number of cols in x (i.e. features)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits    !Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow       ! Number of rows in x (i.e. records)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol       ! Number of cols in x (i.e. features)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits      ! Number of kits for features
                
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start    ! Starting point procedure used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print    ! Print used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_k_max    ! The maximum number of kits in the loop
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start   ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print   ! Print used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_k_max   ! The maximum number of kits in the loop
+			   
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds              ! the maximum number of rounds in one main iteration
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mit                  ! the maximum number of main iterations
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds_esc      ! the maximum number of rounds in one escape procedure
+			   
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b                    ! the size of bundle in escape procedure
+			   
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance 			   
         
         
             !--------------------------------------------------------------------------
@@ -6592,11 +6678,26 @@
                INTEGER(KIND=c_int) :: nremoved
                INTEGER(KIND=c_int) :: kit_num, kit_num_ed   ! The number of kits in the current and previous solutions
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
+               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
+
+               REAL(KIND=c_double) :: elapsed_time                  ! elapsed 'clock' time in seconds
+               INTEGER(KIND=c_int) :: clock_start, clock_end, clock_rate  ! start and finish 'clock' time 
                 
-               CALL cpu_time(s_time)   ! Start CPU timing     
+               CALL cpu_time(s_time)   ! Start CPU timing
+               CALL SYSTEM_CLOCK(COUNT_RATE=clock_rate) ! Find the rate
+               CALL SYSTEM_CLOCK(COUNT=clock_start)     ! Start timing 'clock' time     
+ 
+ 
+               ! Maximum number of possible treads in parallellization
+               max_threads = omp_get_max_threads()
+			   !max_threads = 1
                
-               ! Set the number of rows and columns inside Fortran  + kits           
-               nrecord = nrow
+			   ! The initialization of parametrs used in DBDC methods
+			   CALL allocate_parameters(in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+		                                   & in_b, in_m_clarke, in_eps, in_crit_tol)
+               
+			   ! Set the number of rows and columns inside Fortran  + kits           
+			   nrecord = nrow
                nft = ncol
                nk = nkits
 			   
@@ -6620,9 +6721,9 @@
                ! If start = 5 then start_max is the number of starting points in each L0-norm problem
                start_max = 5_c_int
                
-               mrounds = 5000_c_int            ! maximum number of rounds during one 'main iterations'
-               mit = 5000_c_int                ! maximum number of 'main iteration'
-               mrounds_clarke = 500_c_int      ! maximum number of rounds during one 'Clarke stationary' algorithm
+               mrounds = in_mrounds            ! maximum number of rounds during one 'main iterations'
+               mit = in_mit                    ! maximum number of 'main iteration'
+               mrounds_clarke = in_mrounds_esc ! maximum number of rounds during one 'Clarke stationary' algorithm
           
                iprint_DBDC = 0_c_int           ! basic print of intermediate results and extended print of final results
           
@@ -6854,7 +6955,8 @@
                       
               CALL DBDC_algorithm( f_solution, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, 3_c_int, 3_c_int, user_n)            
+                            & agg_used, stepsize_used, iprint_DBDC, 3_c_int, 3_c_int, user_n, &
+							& max_threads)            
                             
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
               !         * x_koe is utilized in formation of starting points   
@@ -7005,7 +7107,8 @@
      
                     CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n) 
+                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
+							& max_threads) 
             
                     IF (ed_sol_in_pen) THEN 
                       x_0 = beta_solution   ! Starting point for the next round
@@ -7336,7 +7439,8 @@
      
                     CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n) 
+                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
+							& max_threads) 
             
                     IF (ed_sol_in_pen) THEN 
                       x_0 = beta_solution   ! Starting point for the next round
@@ -7566,9 +7670,15 @@
                
              CALL cpu_time(f_time)   ! Finish CPU timing    
              cpu = f_time-s_time             
+			 
+             CALL SYSTEM_CLOCK(COUNT=clock_end) ! Stop timing 'clock' time
+           
+             ! Calculate the elapsed 'clock' time in seconds:
+             elapsed_time=(1.0_c_double*clock_end-clock_start)/clock_rate   			 
+			 
              
              IF ((iprint >= 1) .OR. (iprint == -1)) THEN               
-                 WRITE(*,*) 'Used CPU:', cpu                 
+                 WRITE(*,*) 'Used CPU:', cpu   , 'Elapsed time:', elapsed_time             
              END IF
        
              CALL deallocate_data_cox() 
@@ -7597,7 +7707,9 @@
     ! ^^^^ START: IF Fortran code is used with R-C-interface ^^^^
     !--------------------------------------------------------------------------        
           SUBROUTINE casso_mse(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
-		&  in_print, in_start, in_k_max) &
+		& in_print, in_start, in_k_max, &
+		& in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+		& in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol ) &		
         & BIND(C, name = "casso_mse_f_")               
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -7641,6 +7753,25 @@
             !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
             !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
             !
+			!         PARAMETERS in DBDC method:
+			!
+            !         * in_mrounds     : the maximum number of rounds in one main iteratioin
+            !         * in_mit         : the maximum number of main iterations
+            !         * in_mrounds_esc : the maximum number of rounds in escape procedure
+			!
+            !         * in_b1          : the size of bundle B1
+            !         * in_b2          : the size of bundle B2
+            !         * in_b           : the size of bundle in escape procedure
+			!
+            !         * in_m           : the descent parameter in main iteration
+            !         * in_m_clarke    : the descent parameter in escape procedure
+            !         * in_c           : the extra decrease parameter in main iteration
+            !         * in_r_dec       : the decrease parameter in main iteration
+            !         * in_r_inc       : the increase parameter in main iteration
+            !         * in_eps1        : the enlargement parameter
+            !         * in_eps         : the stopping tolerance: proximity measure  
+            !         * in_crit_tol    : the stopping tolerance: criticality tolerance 			
+            !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
             !
             !         * 'x'          : the matrix X of input variables in vector form --> will be stored to in_mX (each row is one observation)
@@ -7677,15 +7808,31 @@
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow     !Number of rows in x (i.e. records)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol     !Number of cols in x (i.e. features)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits    !Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow       ! Number of rows in x (i.e. records)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol       ! Number of cols in x (i.e. features)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits      ! Number of kits for features
                
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start    ! Starting point procedure used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print    ! Print used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_k_max    ! The maximum number of kits in the loop
-        
-        
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start   ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print   ! Print used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_k_max   ! The maximum number of kits in the loop
+			   
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds              ! the maximum number of rounds in one main iteration
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mit                  ! the maximum number of main iterations
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds_esc       ! the maximum number of rounds in one escape procedure
+			   
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b                    ! the size of bundle in escape procedure
+			   
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance 			   
+                
             !--------------------------------------------------------------------------
             ! ^^^^ START: If Fortran code is used with R-C-interface ^^^^
             !--------------------------------------------------------------------------
@@ -7863,9 +8010,23 @@
                INTEGER(KIND=c_int) :: nremoved
                INTEGER(KIND=c_int) :: kit_num, kit_num_ed   ! The number of kits in the current and previous solutions
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
-                
-               CALL cpu_time(s_time)   ! Start CPU timing     
+               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
+
+               REAL(KIND=c_double) :: elapsed_time                  ! elapsed 'clock' time in seconds
+               INTEGER(KIND=c_int) :: clock_start, clock_end, clock_rate  ! start and finish 'clock' time 
                
+               CALL cpu_time(s_time)   ! Start CPU timing    
+               CALL SYSTEM_CLOCK(COUNT_RATE=clock_rate) ! Find the rate
+               CALL SYSTEM_CLOCK(COUNT=clock_start)     ! Start timing 'clock' time     
+ 			   
+               ! Maximum number of possible treads in parallellization
+               max_threads = omp_get_max_threads()
+			   !max_threads = 1
+               
+			   ! The initialization of parametrs used in DBDC methods
+			   CALL allocate_parameters(in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+		                                   & in_b, in_m_clarke, in_eps, in_crit_tol)
+			   
                ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
                nft = ncol
@@ -7891,9 +8052,9 @@
                ! If start = 5 then start_max is the number of starting points in each L0-norm problem
                start_max = 5_c_int
                
-               mrounds = 5000_c_int            ! maximum number of rounds during one 'main iterations'
-               mit = 5000_c_int                ! maximum number of 'main iteration'
-               mrounds_clarke = 500_c_int      ! maximum number of rounds during one 'Clarke stationary' algorithm
+               mrounds = in_mrounds            ! maximum number of rounds during one 'main iterations'
+               mit = in_mit                    ! maximum number of 'main iteration'
+               mrounds_clarke = in_mrounds_esc ! maximum number of rounds during one 'Clarke stationary' algorithm
           
                iprint_DBDC = 0_c_int           ! basic print of intermediate results and extended print of final results
           
@@ -8110,7 +8271,8 @@
               
               CALL DBDC_algorithm( f_solution, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n)            
+                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
+							& max_threads)            
                             
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
               !         * x_koe is utilized in formation of starting points   
@@ -8263,7 +8425,8 @@
      
                     CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n) 
+                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
+							& max_threads) 
                     
                     IF (ed_sol_in_pen) THEN 
                       x_0 = beta_solution   ! Starting point for the next round
@@ -8594,7 +8757,8 @@
      
                     CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n) 
+                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
+							& max_threads) 
             
                     IF (ed_sol_in_pen) THEN 
                       x_0 = beta_solution   ! Starting point for the next round
@@ -8825,8 +8989,14 @@
              CALL cpu_time(f_time)   ! Finish CPU timing    
              cpu = f_time-s_time             
              
+             CALL SYSTEM_CLOCK(COUNT=clock_end) ! Stop timing 'clock' time
+           
+             ! Calculate the elapsed 'clock' time in seconds:
+             elapsed_time=(1.0_c_double*clock_end-clock_start)/clock_rate   			 
+			 
+             
              IF ((iprint >= 1) .OR. (iprint == -1)) THEN               
-                 WRITE(*,*) 'Used CPU:', cpu                 
+                 WRITE(*,*) 'Used CPU:', cpu   , 'Elapsed time:', elapsed_time             
              END IF
        
              CALL deallocate_data_mse() 
@@ -8855,7 +9025,9 @@
     ! ^^^^ START: IF Fortran code is used with R-C-interface ^^^^
     !--------------------------------------------------------------------------        
           SUBROUTINE casso_logistic(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
-		& in_print, in_start, in_k_max) &
+		& in_print, in_start, in_k_max, &
+		& in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+		& in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol ) &		
         & BIND(C, name = "casso_logistic_f_")              
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -8899,6 +9071,25 @@
             !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
             !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
             !
+			!         PARAMETERS in DBDC method:
+			!
+            !         * in_mrounds     : the maximum number of rounds in one main iteratioin
+            !         * in_mit         : the maximum number of main iterations
+            !         * in_mrounds_esc : the maximum number of rounds in escape procedure
+			!
+            !         * in_b1          : the size of bundle B1
+            !         * in_b2          : the size of bundle B2
+            !         * in_b           : the size of bundle in escape procedure
+			!
+            !         * in_m           : the descent parameter in main iteration
+            !         * in_m_clarke    : the descent parameter in escape procedure
+            !         * in_c           : the extra decrease parameter in main iteration
+            !         * in_r_dec       : the decrease parameter in main iteration
+            !         * in_r_inc       : the increase parameter in main iteration
+            !         * in_eps1        : the enlargement parameter
+            !         * in_eps         : the stopping tolerance: proximity measure  
+            !         * in_crit_tol    : the stopping tolerance: criticality tolerance 			
+            !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
             !
             !         * 'x'          : the matrix X of input variables in vector form --> will be stored to in_mX (each row is one observation)
@@ -8935,13 +9126,31 @@
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow     !Number of rows in x (i.e. records)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol     !Number of cols in x (i.e. features)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits    !Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow       ! Number of rows in x (i.e. records)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol       ! Number of cols in x (i.e. features)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits      ! Number of kits for features
                
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start    ! Starting point procedure used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print    ! Print used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_k_max    ! The maximum number of kits in the loop
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start   ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print   ! Print used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_k_max   ! The maximum number of kits in the loop
+			   
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds              ! the maximum number of rounds in one main iteration
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mit                  ! the maximum number of main iterations
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds_esc       ! the maximum number of rounds in one escape procedure
+			   
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b                    ! the size of bundle in escape procedure
+			   
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance 			   
+        
         
         
             !--------------------------------------------------------------------------
@@ -9121,9 +9330,23 @@
                INTEGER(KIND=c_int) :: nremoved
                INTEGER(KIND=c_int) :: kit_num, kit_num_ed   ! The number of kits in the current and previous solutions
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
+               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
+
+               REAL(KIND=c_double) :: elapsed_time                  ! elapsed 'clock' time in seconds
+               INTEGER(KIND=c_int) :: clock_start, clock_end, clock_rate  ! start and finish 'clock' time 
                 
-               CALL cpu_time(s_time)   ! Start CPU timing     
+               CALL cpu_time(s_time)   ! Start CPU timing    
+               CALL SYSTEM_CLOCK(COUNT_RATE=clock_rate) ! Find the rate
+               CALL SYSTEM_CLOCK(COUNT=clock_start)     ! Start timing 'clock' time     
+ 			   
+               ! Maximum number of possible treads in parallellization
+               max_threads = omp_get_max_threads()
+			   !max_threads = 1
                
+			   ! The initialization of parametrs used in DBDC methods
+			   CALL allocate_parameters(in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+		                                   & in_b, in_m_clarke, in_eps, in_crit_tol)
+			   
                ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
                nft = ncol
@@ -9149,9 +9372,9 @@
                ! If start = 5 then start_max is the number of starting points in each L0-norm problem
                start_max = 5_c_int
                
-               mrounds = 5000_c_int            ! maximum number of rounds during one 'main iterations'
-               mit = 5000_c_int                ! maximum number of 'main iteration'
-               mrounds_clarke = 500_c_int      ! maximum number of rounds during one 'Clarke stationary' algorithm
+               mrounds = in_mrounds            ! maximum number of rounds during one 'main iterations'
+               mit = in_mit                    ! maximum number of 'main iteration'
+               mrounds_clarke = in_mrounds_esc ! maximum number of rounds during one 'Clarke stationary' algorithm
           
                iprint_DBDC = 0_c_int           ! basic print of intermediate results and extended print of final results
           
@@ -9368,7 +9591,8 @@
               
               CALL DBDC_algorithm( f_solution, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n)            
+                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n,&
+							& max_threads)            
                             
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
               !         * x_koe is utilized in formation of starting points   
@@ -9378,7 +9602,7 @@
                
                IF ((iprint > 0) .OR. (iprint == -1)) THEN
                  WRITE(*,*) 
-                 WRITE(*,*) 'Value of mean square error model without regularization:', f_solution
+                 WRITE(*,*) 'Value of logistic model without regularization:', f_solution
                  WRITE(*,*) 
                END IF 
                
@@ -9520,7 +9744,8 @@
      
                     CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n) 
+                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
+							& max_threads) 
 
             
                     IF (ed_sol_in_pen) THEN 
@@ -9851,7 +10076,8 @@
      
                     CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n) 
+                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
+							& max_threads) 
             
                     IF (ed_sol_in_pen) THEN 
                       x_0 = beta_solution   ! Starting point for the next round
@@ -10082,8 +10308,14 @@
              CALL cpu_time(f_time)   ! Finish CPU timing    
              cpu = f_time-s_time             
              
+             CALL SYSTEM_CLOCK(COUNT=clock_end) ! Stop timing 'clock' time
+           
+             ! Calculate the elapsed 'clock' time in seconds:
+             elapsed_time=(1.0_c_double*clock_end-clock_start)/clock_rate   			 
+			 
+             
              IF ((iprint >= 1) .OR. (iprint == -1)) THEN               
-                 WRITE(*,*) 'Used CPU:', cpu                 
+                 WRITE(*,*) 'Used CPU:', cpu   , 'Elapsed time:', elapsed_time             
              END IF
        
              CALL deallocate_data_log() 

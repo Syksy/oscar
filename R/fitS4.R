@@ -106,27 +106,40 @@ casso <- function(
 	# Kit cost weight vector w
 	w, 
 	# Model family (defines the likelihood function)
-	family = "gaussian",
+	family = "cox",
 	## Tuning parameters
-	print=-1,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
+	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
 	start=2,# Deterministic start point 
-	verb=0, # Level of R verbosity (1 = standard, 2 = debug level, 3 = excessive debugging, 0<= none)
-	kmax    # Maximum tested k-values
+	verb=1, # Level of R verbosity (1 = standard, 2 = debug level, 3 = excessive debugging, 0<= none)
+	kmax,    # Maximum tested k-values
+	in_mrounds = 5000, # The number of rounds in one main iteration 
+	in_mit = 5000, # The number of main iteration 
+	in_mrounds_esc = 5000, # The number of rounds in escape procedure
+	in_b1, # Bundle B1, default min(n+5,1000) depends on the problem -> defined later
+	in_b2 = 3, # Bundle B2
+	in_b, # Bundle B in escape procedure, default 2n depends on the problem -> defined later
+	in_m = 0.2, # Descent parameter
+	in_m_clarke = 0.01, # Descent parameter in escape procedure
+	in_c = 0.1, # Extra decrease parameter
+	in_r_dec, # Decrease parameter, default depends on the problem -> defined later
+	in_r_inc = 10^7, # Increase parameter
+	in_eps1 = 5*10^(-5), # Enlargement parameter
+	in_eps, # Stopping tolerance: Proximity measure, default depends on the problem -> defined later
+	in_crit_tol # Stopping tolerance: Criticality tolerance, default depends on the problem -> defined later
 ){
 	# TODO: Sanity checks for input here
 	
 	# Sanity checks: Are input matrices x and y available
 	if(missing(x)){
-		stop("Input matrix x missing.")
+		stop(paste("Input matrix x missing."))
 	}
 	if(missing(y)){
-		stop("Input matrix y missing.")
+		stop(paste("Input matrix y missing."))
 	}
 	
-	# Sanity checks: Input x is a matrix. If not, try to convert into a matrix.
+	# Sanity checks: Are input x is a matrix. If not, try to convert into a matrix.
 	if(!is.matrix(x)){
 		try(x <- as.matrix(x))
-		if(class(x)=="try-error") stop("Error casting x into a matrix")
 	}
 
 	
@@ -143,16 +156,13 @@ casso <- function(
 		}
 	}
 	
-	# Sanity checks: Check that input matrices x and y hav equal number of rows or length
-	if(family=="cox"){
-		if(nrow(y)!=nrow(x)){
-			stop(paste("Number of observations in the response matrix y (",nrow(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
-		}
-	}else{
-		if(length(y)!=nrow(x)){
-			stop(paste("Number of observations in the response matrix y (",length(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
-		}
+	# Sanity checks: Check that imput matrices x and y hav equal number of rows
+	if(family=="cox"&&nrow(y)!=nrow(x)){
+		stop(paste("Number of observations in the response matrix y (",nrow(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
 	}
+	#if(family %in% c("mse", "gaussian","logistic")&length(y)!=nrow(x)){
+#		stop(paste("Number of observations in the response vector y (",length(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
+#	}
 	
 	###############################
 	#### CHECKING kit matrix k ####
@@ -164,16 +174,15 @@ casso <- function(
 	# Check that input k is a matrix
 	if(!is.matrix(k)){
 		try(k <- as.matrix(k))
-		if(class(k)=="try-error") stop("Error casting k into a matrix")
 	}
 	
 	# Check that kit matrix k and predictor matrix x have equal number of columns (features)
-	if(family=="cox" & ncol(k)!=ncol(x)){
+	if(family=="cox"&& ncol(k)!=ncol(x)){
 		stop(paste("Number of columns in kit matrix k (",ncol(k),") should be equal to the amount of features (number of columns in x, ",ncol(x),"). Check that correct features are included."))
 	}
 	## -> Intercept is an independent variable that is not subjected to penalization
 	# If family is not Cox, (Intercept) requires its own row/column in K
-	if(!family == "cox" & ncol(k) == ncol(x)){
+	if(!family == "cox" && ncol(k) == ncol(x)){
 		k <- rbind(0, cbind(0, k))
 		k[1,1] <- 1
 		if(!is.null(rownames(k)) & !is.null(colnames(k))) rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
@@ -194,11 +203,6 @@ casso <- function(
 	if(any(apply(k,MARGIN=1,FUN=sum)<1)){
 		stop(paste("Some kit(s)) don't have any features. Please check that each kit has at least one feature."))
 	}
-	# Check that kit matrix k and predictor matrix x have equal number of columns (features) (valid only for coxph)
-	if(ncol(k)!=ncol(x) & family=="cox"){
-		stop(paste("Number of columns in kit matrix k (",ncol(k),") should be equal to the amount of features (number of columns in x, ",ncol(x),"). Check that correct features are included."))
-	}
-	## -> Intercept is an independent variable that is not subjected to penalization
 	
 	# Checking k structure
 	if(verb>=2){
@@ -228,7 +232,7 @@ casso <- function(
 	}
 	
 	# Check that w length is equal to number of rows in the kit matrix k (number of kits)
-	if(family=="cox" & length(w)!=nrow(k)){
+	if(family=="cox"&& length(w)!=nrow(k)){
 		stop(paste("Number of kit costs (",length(w),") is not equal to number of kits (number of rows in the kit matrix k, ",nrow(k),"). Check that correct kits are included."))
 	}
 	
@@ -242,7 +246,135 @@ casso <- function(
 		print(w)
 	}
 	if(verb>=2) print("Preprocessing w ready")
-
+	
+	#########################################################
+	#### CHECKING tuning parameters and setting defaults ####
+	if(in_mrounds <=0){ # The number of rounds in one main iteration 
+		in_mrounds <- 5000
+		warnings("Input in_mrounds should be >0. Default value 5000 is used instead.")
+	}
+	if(!is.integer(in_mrounds)){ warnings("Input in_mrounds should be an integer. The value is rounded to the nearest integer.")
+	}
+	if(in_mit<=0){ # The number of main iteration
+		in_mit <- 5000
+		warnings("Input in_mit should be >0. Default value 5000 is used instead.")
+	}
+	if(!is.integer(in_mit)){ warnings("Input in_mit should be an integer. The value is rounded to the nearest integer.")
+	}
+	if(in_mrounds_esc <=0){ # The number of rounds in escape procedure
+		in_mrounds_esc <- 5000
+		warnings("Input in_mrounds_esc should be >0. Default value 5000 is used instead.")
+	}
+	if(!is.integer(in_mrounds_esc)){ warnings("Input in_mrounds_esc should be an integer. The value is rounded to the nearest integer.")
+	}
+	if(missing(in_b1)){ # Bundle B1
+		user_n <- ncol(x)
+		if(family %in% c("mse","logistic","gaussian","normal")){
+		user_n <- user_n +1}
+		in_b1 <- min(user_n+5,1000)	
+	}
+	if(in_b1 <=0){
+		user_n <- ncol(x)
+		if(family %in% c("mse","logistic","gaussian","normal")){
+		user_n <- user_n +1}
+		in_b1 <- min(user_n+5,1000)
+		warnings(paste("Input in_b1 should be >0. Default value ", in_b1, " is used instead",sep=""))
+	}
+	if(!is.integer(in_b1)){warnings("Input in_b1 should be an integer. The value is rounded to the nearest integer.")
+	} 
+	if(in_b2 <=0){ # Bundle B2
+		in_b2 <- 3
+		warnings("Input in_b2 should be >0. Default value 3 is used instead.")
+	}
+	if(!is.integer(in_b2)){ warnings("Input in_b2 should be an integer. The value is rounded to the nearest integer.")
+	}
+	if(missing(in_b)){ # Bundle B in escape procedure
+		user_n <- ncol(x)
+		if(family %in% c("mse","logistic","gaussian","normal")){
+		user_n <- user_n +1}
+		in_b <- 2*user_n
+	}
+	if(in_b <=1){
+		user_n <- ncol(x)
+		if(family %in% c("mse","logistic","gaussian","normal")){
+		user_n <- user_n +1}
+		in_b <- 2*user_n
+		warnings(paste("Input in_b should be >1. Default value ", in_b," is used instead.",sep=""))
+	}
+	if(!is.integer(in_b)){ warnings("Input in_b should be an integer. The value is rounded to the nearest integer.")
+	}
+	if(in_m <=0 | in_m>=1){ # Descent parameter
+		in_m <-0.2
+		warnings("Input in_m should be in the interval (0,1). Default value 0.2 is used instead.")
+	}
+	if(in_m_clarke <=0 | in_m_clarke>=1){ # Descent parameter in escape procedure
+		in_m_clarke <-0.01
+		warnings("Input in_m_clarke should be in the interval (0,1). Default value 0.01 is used instead.")
+	}
+	if(in_c <=0 | in_c>=1){ # Extra decrease parameter
+		in_c <-0.1
+		warnings("Input in_c should be in the interval (0,1). Default value 0.1 is used instead.")
+	}
+	if(missing(in_r_dec)){ # Decrease parameter
+		user_n <- ncol(x)
+		if(family %in% c("mse","logistic","gaussian","normal")){
+		user_n <- user_n +1}
+		if(user_n <10){in_r_dec <- 0.75
+		}else if(user_n >=300){in_r_dec <- 0.99
+		}else{in_r_dec <- trunc(user_n/(user_n+5)*100)/100  # Default is two first decimal from user_n/(user_n+5)
+		}
+	}
+	if(in_r_dec <=0 | in_r_dec >=1){
+		user_n <- ncol(x)
+		if(family %in% c("mse","logistic","gaussian","normal")){
+		user_n <- user_n +1}
+		if(user_n <10){in_r_dec <- 0.75
+		}else if(user_n >=300){in_r_dec <- 0.99
+		}else{in_r_dec <- trunc(user_n/(user_n+5)*100)/100  # Default is two first decimal from user_n/(user_n+5)
+		}
+		warnings(paste("Input in_r_dec should be in the interval (0,1). Default value ", in_r_dec," is used instead.",sep=""))
+	}
+	if(in_r_inc<=1){ # Increase parameter
+		warnings("Input in_r_inc should be >1. Default value 10^7 is used instead.")
+	}
+	if(in_eps1<=0){ # Enlargement parameter
+		warnings("Input in_eps1 should be >0. Default value 5*10^(-5) is used instead.")
+	}
+	if(missing(in_eps)){# Stopping tolerance: Proximity measure
+		user_n <- ncol(x)
+		if(family %in% c("mse","logistic","gaussian","normal")){
+		user_n <- user_n +1}
+		if(user_n <=50){in_eps <- 10^(-6)
+		}else{in_eps <- 10^(-5)
+		}
+	}
+	if(in_eps<=0){
+		user_n <- ncol(x)
+		if(family %in% c("mse","logistic","gaussian","normal")){
+		user_n <- user_n +1}
+		if(user_n <=50){in_eps <- 10^(-6)
+		}else{in_eps <- 10^(-5)
+		}
+		warnings(paste("Input in_eps should be >0. Default value ", in_eps," is used instead.",sep=""))
+	}
+	if(missing(in_crit_tol)){# Stopping tolerance: Criticality tolerance
+		user_n <- ncol(x)
+		if(family %in% c("mse","logistic","gaussian","normal")){
+		user_n <- user_n +1}
+		if(user_n <=200){in_crit_tol <- 10^(-5)
+		}else{in_crit_tol <- 10^(-4)
+		}
+	}
+	if(in_crit_tol<=0){
+		user_n <- ncol(x)
+		if(family %in% c("mse","logistic","gaussian","normal")){
+		user_n <- user_n +1}
+		if(user_n <=200){in_crit_tol<- 10^(-5)
+		}else{in_crit_tol <- 10^(-4)
+		}
+		warnings(paste("Input in_crit_tol should be >0. Default value ", in_crit_tol," is used instead.",sep=""))
+	}	
+	
 	###############################
 	#### Calling C and Fortran ####
 	# Call correct internal function based on the specified model family
@@ -258,7 +390,21 @@ casso <- function(
 			as.integer(nrow(k)), # Number of kits
 			as.integer(print), # Tuning parameter for verbosity
 			as.integer(start), # Tuning parameter for starting values
-			as.integer(kmax) # Tuning parameter for max k run
+			as.integer(kmax), # Tuning parameter for max k run
+			as.integer(in_mrounds), # The number of rounds in one main iteration 
+			as.integer(in_mit), # The number of main iteration 
+			as.integer(in_mrounds_esc), # The number of rounds in escape procedure
+			as.integer(in_b1), # Bundle B1
+			as.integer(in_b2), # Bundle B2
+			as.integer(in_b), # Bundle B in escape procedure
+			as.double(in_m), # Descent parameter
+			as.double(in_m_clarke), # Descent parameter in escape procedure
+			as.double(in_c), # Extra decrease parameter
+			as.double(in_r_dec), # Decrease parameter
+			as.double(in_r_inc), # Increase parameter
+			as.double(in_eps1), # Enlargement parameter
+			as.double(in_eps), # Stopping tolerance: Proximity measure
+			as.double(in_crit_tol) # Stopping tolerance: Criticality tolerance
 		)
 		if(verb>=2){
 			print(res)
@@ -281,7 +427,21 @@ casso <- function(
 			as.integer(nrow(k)), # Number of kits
 			as.integer(print), # Tuning parameter for verbosity
 			as.integer(start), # Tuning parameter for starting values
-			as.integer(kmax) # Tuning parameter for max k run
+			as.integer(kmax), # Tuning parameter for max k run
+			as.integer(in_mrounds), # The number of rounds in one main iteration 
+			as.integer(in_mit), # The number of main iteration 
+			as.integer(in_mrounds_esc), # The number of rounds in escape procedure
+			as.integer(in_b1), # Bundle B1
+			as.integer(in_b2), # Bundle B2
+			as.integer(in_b), # Bundle B in escape procedure
+			as.double(in_m), # Descent parameter
+			as.double(in_m_clarke), # Descent parameter in escape procedure
+			as.double(in_c), # Extra decrease parameter
+			as.double(in_r_dec), # Decrease parameter
+			as.double(in_r_inc), # Increase parameter
+			as.double(in_eps1), # Enlargement parameter
+			as.double(in_eps), # Stopping tolerance: Proximity measure
+			as.double(in_crit_tol) # Stopping tolerance: Criticality tolerance
 		)
 		# Beta per k steps
 		# Add row for intercept
@@ -302,7 +462,21 @@ casso <- function(
 			as.integer(nrow(k)), # Number of kits
 			as.integer(print), # Tuning parameter for verbosity
 			as.integer(start), # Tuning parameter for starting values
-			as.integer(kmax) # Tuning parameter for max k run
+			as.integer(kmax), # Tuning parameter for max k run
+			as.integer(in_mrounds), # The number of rounds in one main iteration 
+			as.integer(in_mit), # The number of main iteration 
+			as.integer(in_mrounds_esc), # The number of rounds in escape procedure
+			as.integer(in_b1), # Bundle B1
+			as.integer(in_b2), # Bundle B2
+			as.integer(in_b), # Bundle B in escape procedure
+			as.double(in_m), # Descent parameter
+			as.double(in_m_clarke), # Descent parameter in escape procedure
+			as.double(in_c), # Extra decrease parameter
+			as.double(in_r_dec), # Decrease parameter
+			as.double(in_r_inc), # Increase parameter
+			as.double(in_eps1), # Enlargement parameter
+			as.double(in_eps), # Stopping tolerance: Proximity measure
+			as.double(in_crit_tol) # Stopping tolerance: Criticality tolerance
 		)
 		# Beta per k steps
 		# Add row for intercept
