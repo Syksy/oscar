@@ -2,6 +2,8 @@ RM = rm
 
 C_OBJS = cassoc.o
 FT_OBJS = kaikki.o plqdf1.o
+PKG_FCFLAGS = -fopenmp
+PKG_LIBS = -fopenmp
 
 all:
 	@$(MAKE) $(SHLIB)
