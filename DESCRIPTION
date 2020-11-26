@@ -1,8 +1,8 @@
 Package: casso
 Type: Package
 Title: Cardinality-constrained Absolute Subset Selection Optimization (CASSO) using the L0-pseudonorm
-Version: 0.4.6
-Date: 2020-11-16
+Version: 0.4.7
+Date: 2020-11-26
 Authors@R: c(
 	person(given="Teemu Daniel", family="Laajala", role=c("aut", "cre"), email="teelaa@utu.fi", comment = c(ORCID = "0000-0002-7016-7354")),
 	person(given="Kaisa", family="Joki", role=c("aut"), email="kjjoki@utu.fi"),

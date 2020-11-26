@@ -4594,7 +4594,8 @@
                
                ! Needed in parallellization
 
-               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
+              ! TDL: Already read in from C
+              ! INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
                INTEGER(KIND=c_int) :: threads               ! the number of threads used in parallellization
                INTEGER(KIND=c_int) :: max_sub_prob          ! the maximum number of subproblems solved at the same time
                
