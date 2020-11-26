@@ -6693,7 +6693,7 @@
 			   ! The initialization of parametrs used in DBDC methods
 			   CALL allocate_parameters(in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
 		                                   & in_b, in_m_clarke, in_eps, in_crit_tol)
-               '
+               
 			   ! Set the number of rows and columns inside Fortran  + kits           
 			   nrecord = nrow
                nft = ncol
