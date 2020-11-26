@@ -4593,6 +4593,8 @@
                                                 ! 5 - the biggest possible number of rounds executed in the 'Clarke stationary' algorithm
                
                ! Needed in parallellization
+
+               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
                INTEGER(KIND=c_int) :: threads               ! the number of threads used in parallellization
                INTEGER(KIND=c_int) :: max_sub_prob          ! the maximum number of subproblems solved at the same time
                
@@ -4859,11 +4861,11 @@
                delta = 0.0_c_double              
                
 ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
+
                !max_threads = omp_get_max_threads()
                max_sub_prob = give_max_size_b2(B2)+1
                threads = MIN(max_threads, max_sub_prob)
-               CALL omp_set_num_threads(threads) 
-			   !WRITE(*,*) 'Threadeja on:', max_threads, max_sub_prob, threads
+               CALL omp_set_num_threads(threads)   
 ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
               
@@ -6301,7 +6303,7 @@
                     
                     END DO subproblems1
                !->->->->->->->->->->->->->-> EACH SUBPROBLEM SOLVED END <-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-                      
-               !$OPM END PARALLEL DO
+               !$OMP END PARALLEL DO
 
                subprob_counter = subprob_counter + 1 
                
