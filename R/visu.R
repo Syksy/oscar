@@ -195,3 +195,35 @@ cv.visu <- function(
 	# Standard errors as a function of k
 	arrows(x0=x, y0=means-sds, x1=x, y1=means+sds, code=3, angle=90, length=0.1)
 }
+
+## Bootstrap visualization with boxplot, percentage of new additions
+bs.boxplot <- function(
+	bs, # Bootstrap array as produced by bs.casso
+	...
+){
+	nbootstrap <- dim(bs)[3]
+	nft <- dim(bs)[2]
+	nkits <- dim(bs)[1]
+	howoften.new <- matrix(rep(0,nkits*nft),nrow=nkits)
+	colnames(howoften.new) <- colnames(bs[,,1])
+	for(k in 1:nkits){  #Kits
+	  for(i in 1:nft){ #Measures
+	    lkm <-0
+	    valittu <- 0
+	    for(j in 1:nbootstrap){  #Bootsrap iteration
+	      if(bs[k,i,j]!=0){
+		valittu <- valittu +1
+		if(k>1&&bs[k-1,i,j]==0){
+		  lkm <- lkm +1
+		}
+	      }
+	    }
+	    if(k==1){  ## If only 1 kit, no previous to compare, so overall percent is used
+		howoften.new[k,i] <- valittu/nbootstrap
+	    }else{   ## Compared to previous, how often each feature is chosen as the new variable
+		howoften.new[k,i] <- lkm/nbootstrap}
+	  }
+	}
+	barplot(t(howoften.new)[,nkits:1,drop=FALSE],horiz=TRUE,col=rainbow(38))
+
+}
