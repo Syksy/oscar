@@ -3,6 +3,7 @@
 export(bs.casso)
 export(bs.k)
 export(bs.visu)
+export(bs.boxplot)
 export(casso)
 export(cv.casso)
 export(cv.visu)
