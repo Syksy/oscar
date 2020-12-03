@@ -11,7 +11,7 @@ vignette: >
 
 Example use of CASSO and fine-tuning parameters
 
-```{r, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Model coefficients as a function of k."}
+```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Model coefficients as a function of k."}
 
 # Use example swiss-data for quickness
 library(casso)
@@ -25,7 +25,7 @@ plot(fit)
 
 Model convergence in target function is important, while an another axis can be plotted simultaneously to provide supporting information:
 
-```{r, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Target function value as a function of k."}
+```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Target function value as a function of k."}
 
 visu(fit, y="target")
 
@@ -33,7 +33,7 @@ visu(fit, y="target")
 
 Fit model object can be inspected based on visual diagnostics such as cross-validation and bootstrapping:
 
-```{r, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="10-fold cross-validation for optimally generalizable cardinality 'k'"}
+```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="10-fold cross-validation for optimally generalizable cardinality 'k'"}
 
 # Perform 10-fold cross-validation to find out optimal k
 cv <- cv.casso(fit, fold=10, seed=0)
@@ -44,7 +44,7 @@ cv.visu(cv)
 
 Appears that k-values 3 or 4 saturate the model, with no further coefficients contributing to the model's generalization capability. Further, there is some uncertainty as to what order the coefficients should be non-zero, based on bootstrapping:
 
-```{r, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Bootstrapped coefficient trajectories"}
+```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Bootstrapped coefficient trajectories"}
 
 # Bootstrap original data 25 times (sampling with replacement and refitting)
 bs <- bs.casso(fit, bootstrap=25, seed=0)
@@ -55,7 +55,7 @@ bs.visu(bs)
 
 Useful commands for understanding the model and the casso object:
 
-```{r}
+```{r eval=FALSE}
 
 coef(fit, k=3) # All potential coefficients at cardinality k=3
 feat(fit, k=3) # All features chosen at cardinality k=3

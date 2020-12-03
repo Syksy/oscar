@@ -14,17 +14,11 @@ vignette: >
 \newcommand{\bW}{{\boldsymbol{W}}}           # vector W bolded
 \newcommand{\x}{{\boldsymbol{x}}}            # vector x bolded
 
-    
-    
-Anni S. Halkola, Teemu D. Laajala, Kaisa Joki
-
-Turku September 3, 2020
-
 Introduction
 
 Installation
 
-Quick Start
+Quick Start using the Cox model
 
 Data
 
@@ -65,15 +59,20 @@ Additionally, goodness of fit is calculated and stored in the casso object: Conc
 The package also includes methods for plotting and a function for cross validation.
 
 ## Installation 
-The casso package can be installed directly from CRAN with the following command in R console:
-install.packages(“casso”,repos=http://cran.us.r-project.org)
-The repos options may be changed depending on the users locations and preferences. Other options can be altered as well (see help(install.packages) for more details).
-The package source can also be downloaded at http://cran.r-project.org	/web/packages/casso/index.htlm
+The casso package can be installed directly from GitHub using devtools with the following command in R console:
+`install_github("Syksy/casso")`
 
-## Quick Start
+Direct URL to the latest source code of the package is available publicly on GitHub at: https://github.com/Syksy/casso
+
+## Quick Start using the Cox model
 In this section we will give a general introduction how to use the package. First, we load the casso package:
 ```{r}
 library(casso)
+```
+
+```{r echo=FALSE}
+# The computationally heavy parts have been precomputed but are reproducible with the presented code
+load("vignette_workspace.RData")
 ```
 
 Here we use the pre-generated example data included in the package. Users can also use their own data (see Section data for more information). The example data includes three matrices (ex_X, ex_Y and ex_K) and one vector (ex_c). Here we load the example data:
@@ -82,13 +81,17 @@ data(ex)
 ```
 
 As a default, the model uses Cox model and generates the solutions starting with one allowed kit and finishing with all kits in the fit. We fit the model:
-```{r}
-tmp <- casso(x=ex_X,y=ex_Y,k=ex_K,w=ex_c,family="cox")
+```{r eval=FALSE}
+tmp <- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family="cox")
 ```
 
-Now "tmp" is a casso object that contains the relevant information, such as the model coefficients and target function values. The casso object "tmp" can be used further to, for example, plot and predict. We visualize the target function value with the `visu` function:
-```{r}
+Now `tmp` is a casso object that contains the relevant S4-object slots, such as the model coefficients and target function values. The casso object "tmp" can be used further to, for example, plot and predict. We visualize the target function value with the `visu` function:
+```{r eval=FALSE}
 visu(tmp)
+```
+
+```{r echo=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Figure caption"}
+include_graphics("images/tmp_visu.png")
 ```
 
 As a default this plots the target function value and the cost as the functions of the allowed kit number. In the example data there are 22 kits with total of 38 measurements. Costs don't affect the fit but in practice it is useful to see the price in relation to model goodness. We now check which kits are selected in each step:
@@ -108,39 +111,61 @@ coef(tmp, k=4)
 
 We can also make predictions with new input data, for example with four kits allowed:
 ```{r}
+set.seed(1)
 new.X <- matrix(rnorm(38*20),nrow=20,ncol=38)
 colnames(new.X) <- colnames(ex_X)
 predict(tmp@fits$k_4, newdata=data.frame(new.X))
 ```
 
 Cross-validation can be performed (10-fold is used as a default). For Cox model, C-index is used as the quality measurement:
-```{r}
+```{r eval=FALSE}
 cv.tmp <- cv.casso(tmp, fold=10, seed=0)
 ```
 
 The results can be plotted:
-```{r}
+```{r eval=FALSE}
 cv.visu(cv.tmp)
 ```
 
+```{r echo=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Figure caption"}
+include_graphics("images/tmp_cv_visu.png")
+```
+
+
 Bootstrap can be performed (100 is the default number of bootstrapped datasets). Here for example with bootstrap=10:
-```{r}
+```{r eval=FALSE}
 bs.tmp <- bs.casso(tmp, bootstrap=10, seed=0)
 ```
 
 This can be plotted with:
-```{r}
+```{r eval=FALSE}
 bs.visu(bs.tmp)
 ```
 
+```{r echo=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Figure caption"}
+include_graphics("images/tmp_bs_visu.png")
+```
+
+
 Sometimes with many features (like thousands of genes in gene expression data) it is not useful to fit until the number selected features is at its maximum. Then a parameter `kmax` can be used to limit when to stop. The model is then fitted for 1,...,kmax kits.
-```{r}
-tmp.kmax10<- casso(x=ex_X,y=ex_Y,k=ex_K,w=ex_c, kmax=10)
+```{r eval=FALSE}
+tmp.kmax10<- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, kmax=10, family="cox")
 ```
 
 This fits only until the allowed kit number is 10.
-```{r}
+```{r eval=FALSE}
 visu(tmp.kmax10)
+```
+
+```{r echo=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Figure caption"}
+include_graphics("images\tmp_kmax10_visu.png")
+```
+
+With the model fitted above, we can check the chosen kits and model coefficients. Here for example with k=10 cardinality:
+```{r}
+kits(tmp, k=10)
+coef(tmp, k=10)
+feat(tmp, k=10)
 ```
 
 
@@ -180,21 +205,21 @@ head(ex_Y)
 ```
 
 To fit a Cox model we choose `family = "cox"`. However, `casso` uses Cox as a default, and thus the used option is not necessary in this case. The algorithm standardizes the input data and thus user should use non-standardized data. 
-```{r}
+```{r eval=FALSE}
 tmp.cox <- casso(x=ex_X,y=ex_Y,k=ex_K,w=ex_c,family="cox")
 ```
 
 Other options in `casso` function call include print options and whether to fit from one kit to maximum or vice versa. See help file `help(casso)` for more details.
 
 As in the section Quick start, we can check the chosen kits and model coefficients. Here for example with 10 kits allowed:
-```{r}
+```{r eval=FALSE}
 kits(tmp.cox, k=10)
 coef(tmp.cox, k=10)
 feat(tmp.cox, k=10)
 ```
 
 In addition to target function values, the casso object "tmp.cox" includes also calculation for goodness of fit. In the case Cox this is concordance index. Let's plot goodness of fit with target function value:
-```{r}
+```{r eval=FALSE}
 visu(tmp.cox, y=c("goodness","target"),legend="right")
 ```
 
@@ -202,32 +227,32 @@ visu(tmp.cox, y=c("goodness","target"),legend="right")
 
 ## MSE
 The linear regression model is often used to predict a scalar response from predictors, which, in our examples, are patient measurements. `casso` uses mean square error as the quality measure in the fitting. The response our example data is survival data and thus not fitting for the problem in this case. Thus to demonstrate, we use the swiss dataset included in the R `datasets` package. This data consists of standardized fertility measures and socio-economic indicators (See https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/swiss.html). Users can also use their own data (see section Data for requirements).
-```{r}
+```{r eval=FALSE}
 data(swiss)
 ```
 
 In this example we try to predict the fertility measure with the socio-economic indicators, such as education and religion (catholic or protestant).
-```{r}
+```{r eval=FALSE}
 head(swiss)
 swiss.X <- swiss[,2:6]
 swiss.Y <- swiss[,1]
 ```
 
 To fit a lm model we choose `family = "mse"`. The algorithm standardizes the input data and thus user should use non-standardized data. In this example the predictors are not measured in kit structures and thus the kit matrix is let to be the default identity matrix. Similarly costs are not applicable in this case and they are left to the default which is the unit cost.
-```{r}
+```{r eval=FALSE}
 tmp.mse <- casso(x=swiss.X,y=swiss.Y,family="mse")
 ```
 
 Other options in `casso` function call include print options and whether to fit from one kit to maximum or vice versa. See help file `help(casso)` for more details.
 
 As in the previous sections, we can check the chosen predictors and model coefficients. The first predictor is intercept which is always included.
-```{r}
+```{r eval=FALSE}
 tmp.mse@kperk
 tmp.mse@bperk
 ```
 
 In addition to target function values, the `casso` object "tmp.mse" includes also calculation for goodness of fit. In the case of mse the measure is the mean square error itself. Let's plot goodness of fit with target function value:
-```{r}
+```{r eval=FALSE}
 visu(tmp.mse, y=c("goodness","target"), legend="topright")
 ```
 
@@ -235,23 +260,23 @@ As can be seen from the plot, target function value and goodness of fit should o
 
 ## Logistic
 The generalized linear model is more flexible than linear model and a link function can be included between linear prediction and response. In `casso` logistic link function is used to predict binomial responses (0 or 1). The response our example data is survival data and thus not fitting for the problem in this case. Thus to demonstrate, we use the Titanic dataset included in the R `datasets` package. This data consists of survival of passengers in Titanic (See https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/Titanic.html).
-```{r}
+```{r eval=FALSE}
 data(Titanic)
 ```
 
 We try to predict the survival (No=0, Yes=1) with the other variables included: class, sex and age.
-```{r}
+```{r eval=FALSE}
 View(Titanic)
 ```
 
 The Titanic data is presented as frequencies of each possible parameter combination and for our purposes this needs to be presented as individuals. This requires some modifications.
-```{r}
+```{r eval=FALSE}
 Titanic.dataf <- data.frame(Titanic)  # From table to data.frame
 Titanic.mod <- do.call("rbind",(sapply(seq(1,32,by=1),FUN=function(z){do.call("rbind",replicate(Titanic.dataf[z,5],Titanic.dataf[z,1:4],simplify=FALSE))})))  # Each row is repeated according to the frequency
 ```
 
 Additionally, the categorical variables are changed to dummy values.
-```{r}
+```{r eval=FALSE}
 Titanic.mod[,"Class"] <- as.numeric(as.factor(Titanic.mod[,"Class"]))
 Titanic.mod[,"Sex"] <- as.numeric(as.factor(Titanic.mod[,"Sex"]))
 Titanic.mod[,"Age"] <- as.numeric(as.factor(Titanic.mod[,"Age"]))
@@ -259,20 +284,20 @@ Titanic.mod[,"Survived"] <- as.numeric(as.factor(Titanic.mod[,"Survived"]))-1  #
 ```
 
 To fit a glm model we choose `family = "logistic"`. The algorithm standardizes the input data and thus user should use non-standardized data. As in the previous section, the kit structure and costs are not applicable in this case and they are left to their defaults.
-```{r}
+```{r eval=FALSE}
 tmp.log <- casso(x=Titanic.mod[,c("Class","Sex","Age")],y=Titanic.mod[,"Survived"],family="logistic")
 ```
 
 Other options in `casso` function call include print options and whether to fit from one kit to maximum or vice versa. See help file `help(casso)` for more details.
 
 As in the previous sections, we can check the chosen predictors and model coefficients. In this example there are only three possible predictors. The first predictor is the intercept which is always included.
-```{r}
+```{r eval=FALSE}
 tmp.log@kperk
 tmp.log@bperk
 ```
 
 In addition to target function values, the `casso` object "tmp.log" includes also calculation for goodness of fit. In the case of logistic the measure is the percentage of right predictions (cut-off at 0.5). Let's plot goodness of fit with target function value:
-```{r}
+```{r eval=FALSE}
 visu(tmp.log, y=c("goodness","target"),legend="topright")
 ```
 
