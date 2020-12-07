@@ -1,13 +1,17 @@
 Package: casso
 Type: Package
-Title: Cardinality-constrained Absolute Subset Selection Optimization (CASSO) using the L0-pseudonorm
-Version: 0.4.8
-Date: 2020-12-03
+Title: Optimal Subset Cardinality Regression (OSCAR) models using the L0-pseudonorm
+Version: 0.4.9
+Date: 2020-12-07
 Authors@R: c(
 	person(given="Teemu Daniel", family="Laajala", role=c("aut", "cre"), email="teelaa@utu.fi", comment = c(ORCID = "0000-0002-7016-7354")),
 	person(given="Kaisa", family="Joki", role=c("aut"), email="kjjoki@utu.fi"),
 	person(given="Anni", family="Halkola", role=c("aut"), email="ansuha@utu.fi"))
-Description: TO DO. This is still a work in progress before becoming a finalized package.
+Description: 
+	OSCAR (Optimal Subset CArdinality Regression) models offer regularized regression using the L0-pseudonorm, 
+	conventionally known as the number of non-zero coefficients. The package estimates an optimal subset of features 
+	using the L0 penalization, via cross-validation, bootstrapping and visual diagnostics. 
+	Multiple model families are supported: Cox, logistic, and gaussian.
 License: GPL-3
 LazyData: true
 NeedsCompilation: yes
