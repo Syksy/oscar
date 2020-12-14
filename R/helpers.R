@@ -379,7 +379,9 @@ bs.oscar <- function(
                 conv <- FALSE
                 warning(gettextf("no observations informative at iteration %d", 
                   iter), domain = NA)
-                break
+                ## MODIFIED
+                # break
+                ## MODIFIED ENDS
             }
             z <- (eta - offset)[good] + (y - mu)[good]/mu.eta.val[good]
             w <- sqrt((weights[good] * mu.eta.val[good]^2)/variance(mu)[good])

@@ -27,6 +27,7 @@ Version plan:
 * 0.5 - User-friendliness in R-package; vignette, helper tools, oscar S4-class applicable functions
 * ...
 * 0.x - All renaming to OSCAR complete
+* 0.x - Make sure there are no WARNINGs or NOTEs in 'R CMD check pckg.tar.gz --as-cran'
 * 0.x - Roxygenize R package documentation
 * 0.x - Use omp_lib for parallelization in Fortran (or a similar approach)
 * 0.x - Testing for final modeling procedure (Ideally R unit testing folder)
