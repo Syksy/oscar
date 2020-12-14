@@ -23,7 +23,7 @@
 #' @rdname visu
 #' @export
 visu <- function(
-	object,	# casso-object (with corresponding slots available)
+	object,	# oscar-object (with corresponding slots available)
 	## Options for plotting on the y-axes:
 	# target: Target objective function value at each k step
 	# cost: model kit cost at each k step
@@ -37,7 +37,7 @@ visu <- function(
 	mtexts = TRUE, # Outer margin texts
 	add = FALSE # Should plot be added into an existing frame / plot
 ){
-	if(!class(object) %in% "casso") stop("'object' should be of class 'casso'")
+	if(!class(object) %in% "oscar") stop("'object' should be of class 'oscar'")
 	par(las=2,  # All labels orthogonally to axes
 		mar=c(7,4,1,4), # Inner margins
 		oma=c(ifelse(mtexts, 2, 0), ifelse(mtexts, 2, 0), 0, ifelse(mtexts, 2, 0))) # Outer margins depend on additional labels with mtext
@@ -112,7 +112,7 @@ visu <- function(
 	}
 }
 
-#' @title Visualize bootstrapping of a fit casso object
+#' @title Visualize bootstrapping of a fit oscar object
 #' @description FUNCTION_DESCRIPTION
 #' @param bs PARAM_DESCRIPTION
 #' @param intercept PARAM_DESCRIPTION, Default: FALSE
@@ -128,12 +128,12 @@ visu <- function(
 #' @rdname bs
 #' @export
 bs.visu <- function(
-	bs, # Bootstrap array as produced by bs.casso
+	bs, # Bootstrap array as produced by bs.oscar
 	intercept = FALSE, # Whether intercept coefficient ought to be plotted as well
 	add = FALSE # Should plot be added into an existing frame / plot
 ){
 	# Sanity checking
-	if(!length(dim(bs))==3) stop("Parameter 'bs' ought to be a 3-dim array as produced by bs.casso")
+	if(!length(dim(bs))==3) stop("Parameter 'bs' ought to be a 3-dim array as produced by bs.oscar")
 	# Remove intercept if needed
 	if(!intercept & "(Intercept)" %in% dimnames(bs)[[2]]){
 		bs <- bs[,-which("(Intercept)" == dimnames(bs)[[2]]),]
@@ -173,7 +173,7 @@ bs.visu <- function(
 #' @rdname cv
 #' @export
 cv.visu <- function(
-	cvs, # Matrix produced by cv.casso; rows are cv-folds, cols are k-values
+	cvs, # Matrix produced by cv.oscar; rows are cv-folds, cols are k-values
 	add = FALSE # Should plot be added into an existing frame / plot
 ){
 	# Compute statistics for the CV-curve
@@ -198,7 +198,7 @@ cv.visu <- function(
 
 ## Bootstrap visualization with boxplot, percentage of new additions
 bs.boxplot <- function(
-	bs, # Bootstrap array as produced by bs.casso
+	bs, # Bootstrap array as produced by bs.oscar
 	...
 ){
 	nbootstrap <- dim(bs)[3]

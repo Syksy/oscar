@@ -1,9 +1,9 @@
-# casso
-Cardinality-constrained Absolute Subset Selection Optimized (CASSO) regression models
+# OSCAR models with R
+Optimal Subset Cardinality Regression (OSCAR) models with R
 
 Checking in command terminal using (no ERRORs, WARNINGs, or NOTEs except CRAN first submission NOTE):
-* R CMD build casso
-* R CMD check casso_x.y.z.tar.gz --as-cran
+* R CMD build oscar
+* R CMD check oscar_x.y.z.tar.gz --as-cran
 
 Current R-package folder structure:
 
@@ -24,9 +24,9 @@ Root files
 * ...
 
 Version plan:
-* 0.4 - Implement cross-validation (cv) and/or bootstrap (bs) for model diagnostics
-* 0.5 - User-friendliness in R-package; vignette, helper tools, casso S4-class applicable functions
+* 0.5 - User-friendliness in R-package; vignette, helper tools, oscar S4-class applicable functions
 * ...
+* 0.x - All renaming to OSCAR complete
 * 0.x - Roxygenize R package documentation
 * 0.x - Use omp_lib for parallelization in Fortran (or a similar approach)
 * 0.x - Testing for final modeling procedure (Ideally R unit testing folder)
@@ -34,38 +34,38 @@ Version plan:
 * ...
 
 Compiling the code and running examples:
-* > R CMD build casso
-* > R CMD INSTALL casso_VERSION.tar.gz
-* > Alternatively from inside an on-going R-session run: > install.packages("casso_VERSION.tar.gz", source=TRUE)
+* > R CMD build oscar
+* > R CMD INSTALL oscar_VERSION.tar.gz
+* > Alternatively from inside an on-going R-session run: > install.packages("oscar_VERSION.tar.gz", source=TRUE)
 * > R -> Start R session inside command prompt
 
-\> library(casso) # Load blasso-package  
+\> library(oscar) # Load blasso-package  
 
 \> data(ex) # Load example dataset (consists of ex_X, ex_Y, ex_K and ex_c) for Cox regression  
 
-\> fit <- casso::casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family="cox") # Test run, notice this uses all the data! Smaller test would be feasible  
+\> fit <- oscar::oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family="cox") # Test run, notice this uses all the data! Smaller test would be feasible  
 
 \> fit # Show model results and other attributes  
 
-\> casso::visu(fit, y=c("target", "goodness")) # Visualize fit as a function of allowed kits  
+\> oscar::visu(fit, y=c("target", "goodness")) # Visualize fit as a function of allowed kits  
 
 \> \# Example of cross-validation based k-selection  
 
-\> cv <- casso::cv.casso(fit, fold=5, seed=123) # 5-fold cross-validation, with fixed seed  
+\> cv <- oscar::cv.oscar(fit, fold=5, seed=123) # 5-fold cross-validation, with fixed seed  
 
-\> casso::cv.visu(cv) # Visualize the cross-validation curve (highest point in c-index in optimal generalizable k-value)  
+\> oscar::cv.visu(cv) # Visualize the cross-validation curve (highest point in c-index in optimal generalizable k-value)  
 
 \> \# Naive example using events in logistic regression (not good modelling! placeholder)  
 
-\> fit2 <- casso::casso(x=ex_X, y=ex_Y[,2], k=ex_K, w=ex_c, family="logistic")  
+\> fit2 <- oscar::oscar(x=ex_X, y=ex_Y[,2], k=ex_K, w=ex_c, family="logistic")  
 
-\> casso::visu(fit2, y=c("target", "goodness"))  
+\> oscar::visu(fit2, y=c("target", "goodness"))  
 
 \> \# Example swiss fertility data  
 
 \> data(swiss)  
 
-\> fit_mse <- casso::casso(x=swiss[,-1], y=swiss[,1], family="gaussian")  
+\> fit_mse <- oscar::oscar(x=swiss[,-1], y=swiss[,1], family="gaussian")  
 
 \> fit_mse@fits  
 

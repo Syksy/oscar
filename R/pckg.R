@@ -4,13 +4,13 @@
 #
 ###
 
-#' casso: placeholder pckg name
+#' oscar: Optimal Subset Cardinality Regression
 #'
-#' placeholder pckg description
+#' OSCAR models utilize the L0-pseudonorm to select an optimal subset of features that generalizes linear regression models to a variety of families. Currently supported models include conventional Gaussian regression (family="mse" or family="gaussian"), Binomial/Logistic regression (family="logistic"), and Cox proportional hazards modeling (family="cox").
 #' 
-#' @section casso functionality, list of functions
+#' @section oscar functionality, list of functions
 #'
 #' @docType package
-#' @name casso
-#' @useDynLib casso, .registration=TRUE
+#' @name oscar
+#' @useDynLib oscar, .registration=TRUE
 NULL
