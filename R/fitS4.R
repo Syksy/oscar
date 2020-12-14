@@ -5,12 +5,12 @@
 #
 ####
 
-#' S4-class for casso
+#' S4-class for oscar
 #'
 #'
 #'
 #' @export
-setClass("casso", # abbreviation
+setClass("oscar", # abbreviation
 	representation(
 		# Set class representations for the S4-class @-slots
 		## Results from Fortran
@@ -79,24 +79,24 @@ setClass("casso", # abbreviation
 #' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2
 #' @param verb Integer with additional integer values giving verbal feedback, Default: 1
 #' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality
-#' @return Fitted casso-object
+#' @return Fitted oscar-object
 #' @details DETAILS
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
 #'   data(ex)
-#'   fit <- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit
 #'  }
 #' }
 #' @seealso 
 #'  \code{\link[survival]{coxph}},\code{\link[survival]{coxph.control}}
 #'  \code{\link[stats]{glm}}
-#' @rdname casso
+#' @rdname oscar
 #' @export 
 #' @importFrom survival coxph coxph.control
 #' @importFrom stats glm
-casso <- function(
+oscar <- function(
 	# Data matrix x
 	x, 
 	# Response vector y (or 2-column survival response matrix)
@@ -380,7 +380,7 @@ casso <- function(
 	# Call correct internal function based on the specified model family
 	if(family=="cox"){
 		# Call C function for Cox regression
-		res <- .Call(c_casso_cox_f, 
+		res <- .Call(c_oscar_cox_f, 
 			as.double(x), # Data matrix x
 			as.double(y), # Response y
 			as.integer(k), # Kit indicator matrix k 
@@ -416,7 +416,7 @@ casso <- function(
 	# Gaussian / normal distribution fit using mean-squared error	
 	}else if(family %in% c("mse", "gaussian")){
 		# Call C function for Mean-Squared Error regression
-		res <- .Call(c_casso_mse_f, 
+		res <- .Call(c_oscar_mse_f, 
 			as.double(x), # Data matrix x
 			as.double(y), # Response y
 			## Requires artificial addition of intercept kit?
@@ -451,7 +451,7 @@ casso <- function(
 		
 	}else if(family == "logistic"){
 		# Call C function for logistic regression
-		res <- .Call(c_casso_logistic_f, 
+		res <- .Call(c_oscar_logistic_f, 
 			as.double(x), # Data matrix x
 			as.integer(y), # Response y
 			## Requires artificial addition of intercept kit?
@@ -555,7 +555,7 @@ casso <- function(
 	}
 
 	# Return the freshly built S4 model object
-	obj <- new("casso", 
+	obj <- new("oscar", 
 		## Model fit results
 		bperk = bperk[1:kmax,,drop=FALSE], # Beta coef per k-steps up to kmax
 		fperk = fperk[1:kmax], # Target function values per k-steps up to kmax
@@ -591,13 +591,13 @@ casso <- function(
 				## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
 				stats::glm(
 					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
-					, data = data.frame(obj@x), start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod
+					, data = data.frame(obj@x), start = bs, family = gaussian(link="identity"), method = oscar:::.glm.fit.mod
 				)
 			}else if(family=="logistic"){
 				## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
 				stats::glm(
 					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
-					, data = data.frame(obj@x),, start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod
+					, data = data.frame(obj@x),, start = bs, family = binomial(link="logit"), method = oscar:::.glm.fit.mod
 				)
 			}
 		})

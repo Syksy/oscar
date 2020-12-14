@@ -4,9 +4,9 @@
 #
 ####
 
-#' @title Cross-validation for casso-fitted model objects over k-range
+#' @title Cross-validation for oscar-fitted model objects over k-range
 #' @description Create a cross-validation matrix with the chosen goodness metric with n-folds. Based on the goodness metric, one ought to pick optimal cardinality (parameter 'k').
-#' @param fit casso-model object
+#' @param fit oscar-model object
 #' @param fold Number of cross-validation folds, Default: 10
 #' @param seed Random seed for reproducibility with NULL indicating that it is not set, Default: NULL
 #' @param verb Level of verbosity with higher integer giving more information, Default: 0
@@ -25,8 +25,8 @@
 #' @export 
 #' @importFrom stats predict.glm
 #' @importFrom survival coxph Surv
-cv.casso <- function(
-	# casso-object
+cv.oscar <- function(
+	# oscar-object
 	fit,
 	# k-fold
 	fold = 10,
@@ -85,10 +85,10 @@ cv.casso <- function(
 		# Constructing appropriate model object
 		if(fit@family == "cox"){
 			# Cox model is 2-column in y-response
-			fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=fit@family, k=fit@k, w=fit@w, verb=verb)
+			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=fit@family, k=fit@k, w=fit@w, verb=verb)
 		}else if(fit@family %in% c("mse", "gaussian", "logistic")){
 			# All other models have a y-vector
-			fittmp <- casso::casso(x=fit@x[cvsets$train[[z]],], y=c(fit@y)[cvsets$train[[z]]], family=fit@family, k=fit@k, w=fit@w, verb=verb)
+			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=c(fit@y)[cvsets$train[[z]]], family=fit@family, k=fit@k, w=fit@w, verb=verb)
 		}else{
 			stop(paste("Incorrect family-parameter fit@family:", fit@family))
 		}
@@ -172,9 +172,9 @@ cv.casso <- function(
 	cvs
 }
 
-#' @title Bootstrapping for casso-fitted model objects
-#' @description This model bootstraps the fitting of a given casso object (re-fits the model for data that is equal in size but sampled with replacement). The output objects give insight into robustness of the casso-coefficient path, as well as relative importance of model objects.
-#' @param fit casso-model object
+#' @title Bootstrapping for oscar-fitted model objects
+#' @description This model bootstraps the fitting of a given oscar object (re-fits the model for data that is equal in size but sampled with replacement). The output objects give insight into robustness of the oscar-coefficient path, as well as relative importance of model objects.
+#' @param fit oscar-model object
 #' @param bootstrap Number of bootstrapped datasets, Default: 100
 #' @param seed Random seed for reproducibility with NULL indicating that it is not set, Default: NULL
 #' @param verb Level of verbosity with higher integer giving more information, Default: 0
@@ -188,8 +188,8 @@ cv.casso <- function(
 #' }
 #' @rdname bs
 #' @export 
-bs.casso <- function(
-	# casso-object
+bs.oscar <- function(
+	# oscar-object
 	fit,
 	# How many bootstrapped datasets to generate
 	bootstrap = 100,
@@ -209,7 +209,7 @@ bs.casso <- function(
 		ytemp <- fit@y[samps,]
 		# Wrap expression inside try for catching errors
 		try({
-			ftemp <- casso::casso(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, kmax = fit@kmax, print = verb, start = fit@start, verb = verb)		
+			ftemp <- oscar::oscar(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, kmax = fit@kmax, print = verb, start = fit@start, verb = verb)		
 		})
 		# Return successfully fitted model
 		if(!class(ftemp)=="try-error"){
@@ -553,7 +553,7 @@ bs.casso <- function(
 #' @rdname bs.k
 #' @export
 bs.k <- function(
-	bs	# Bootstrapped list from bs.casso
+	bs	# Bootstrapped list from bs.oscar
 ){
 	# Omit entries with try-errors
 	if(any(unlist(lapply(bs, FUN=class))=="try-error")){

@@ -1,6 +1,6 @@
 ###
 #
-# Functions specific for the S4 class object 'casso'
+# Functions specific for the S4 class object 'oscar'
 # 'show', 'coef', etc base function replacements
 #
 ###
@@ -11,14 +11,14 @@
 #
 ###
 
-#' Showing casso-objects
+#' Showing oscar-objects
 #'
 #' @rdname generics
 #'
 #' @export
-setMethod("show", "casso",
+setMethod("show", "oscar",
 	function(object){
-		cat("Cardinality-constrained Absolute Subset Selection Optimized model object\n")
+		cat("Optimal Subset Cardinality Regression (OSCAR) model object\n")
 		cat(paste("Model family: ", object@family,"\n", sep=""))
 		cat(paste("k steps: ", object@kmax,"\n", sep=""))
 		cat(paste("dim(x): [", paste(dim(object@x),collapse=","),"]\n", sep=""))
@@ -26,12 +26,12 @@ setMethod("show", "casso",
 	}
 )
 
-#' Extract coefficients of casso-objects
+#' Extract coefficients of oscar-objects
 #'
 #' @rdname generics
 #'
 #' @export
-setMethod("coef", "casso",
+setMethod("coef", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
 		if(missing(k)){
@@ -44,12 +44,12 @@ setMethod("coef", "casso",
 	}
 )
 
-#' Plot casso-coefficients as a function of k and override default plot generic
+#' Plot oscar-coefficients as a function of k and override default plot generic
 #'
 #' @rdname generics
 #'
 #' @export
-setMethod("plot", "casso",
+setMethod("plot", "oscar",
 	function(x, y, k=1:x@kmax, add=FALSE, intercept=FALSE, ...){
 		# Should intercept be omitted from the plot
 		if(!intercept & "(Intercept)" %in% colnames(x@bperk)){
@@ -83,7 +83,7 @@ setMethod("plot", "casso",
 
 ###
 #
-# casso-specific S4-functions
+# oscar-specific S4-functions
 #
 ###
 
@@ -98,7 +98,7 @@ setGeneric("feat",
 		standardGeneric("feat")
 	}
 )
-setMethod("feat", "casso",
+setMethod("feat", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
 		if(missing(k)){
@@ -107,7 +107,7 @@ setMethod("feat", "casso",
 			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
 		}
 		# Returning the correct nonzero coefs at k:th step and name the indices according to data matrix column names
-		tmp <- casso::coef(object@fits[[k]])
+		tmp <- oscar::coef(object@fits[[k]])
 		# Return the non-zero coefs, named vector
 		tmp[!tmp==0]
 	}
@@ -123,7 +123,7 @@ setGeneric("kits",
 		standardGeneric("kits")
 	}
 )
-setMethod("kits", "casso",
+setMethod("kits", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
 		if(missing(k)){
