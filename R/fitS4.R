@@ -118,11 +118,11 @@ oscar <- function(
 	in_b1, # Bundle B1, default min(n+5,1000) depends on the problem -> defined later
 	in_b2 = 3, # Bundle B2
 	in_b, # Bundle B in escape procedure, default 2n depends on the problem -> defined later
-	in_m = 0.2, # Descent parameter
+	in_m = 0.01, # Descent parameter
 	in_m_clarke = 0.01, # Descent parameter in escape procedure
 	in_c = 0.1, # Extra decrease parameter
 	in_r_dec, # Decrease parameter, default depends on the problem -> defined later
-	in_r_inc = 10^7, # Increase parameter
+	in_r_inc = 10^5, # Increase parameter
 	in_eps1 = 5*10^(-5), # Enlargement parameter
 	in_eps, # Stopping tolerance: Proximity measure, default depends on the problem -> defined later
 	in_crit_tol # Stopping tolerance: Criticality tolerance, default depends on the problem -> defined later
