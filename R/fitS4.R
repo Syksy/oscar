@@ -125,7 +125,7 @@ oscar <- function(
 	in_r_inc = 10^5, # Increase parameter
 	in_eps1 = 5*10^(-5), # Enlargement parameter
 	in_eps, # Stopping tolerance: Proximity measure, default depends on the problem -> defined later
-	in_crit_tol # Stopping tolerance: Criticality tolerance, default depends on the problem -> defined later
+	in_crit_tol =10^(-5) # Stopping tolerance: Criticality tolerance
 ){
 	# TODO: Sanity checks for input here
 	
@@ -357,21 +357,22 @@ oscar <- function(
 		}
 		warnings(paste("Input in_eps should be >0. Default value ", in_eps," is used instead.",sep=""))
 	}
-	if(missing(in_crit_tol)){# Stopping tolerance: Criticality tolerance
-		user_n <- ncol(x)
-		if(family %in% c("mse","logistic","gaussian","normal")){
-		user_n <- user_n +1}
-		if(user_n <=200){in_crit_tol <- 10^(-5)
-		}else{in_crit_tol <- 10^(-4)
-		}
-	}
+	#if(missing(in_crit_tol)){# Stopping tolerance: Criticality tolerance
+	#	user_n <- ncol(x)
+	#	if(family %in% c("mse","logistic","gaussian","normal")){
+	#	user_n <- user_n +1}
+	#	if(user_n <=200){in_crit_tol <- 10^(-5)
+	#	}else{in_crit_tol <- 10^(-4)
+	#	}
+	#}
 	if(in_crit_tol<=0){
-		user_n <- ncol(x)
-		if(family %in% c("mse","logistic","gaussian","normal")){
-		user_n <- user_n +1}
-		if(user_n <=200){in_crit_tol<- 10^(-5)
-		}else{in_crit_tol <- 10^(-4)
-		}
+		in_crit_tol <- 10^(-5)
+		#user_n <- ncol(x)
+		#if(family %in% c("mse","logistic","gaussian","normal")){
+		#user_n <- user_n +1}
+		#if(user_n <=200){in_crit_tol<- 10^(-5)
+		#}else{in_crit_tol <- 10^(-4)
+		#}
 		warnings(paste("Input in_crit_tol should be >0. Default value ", in_crit_tol," is used instead.",sep=""))
 	}	
 	
