@@ -569,8 +569,8 @@ oscar <- function(
 		w=as.numeric(w),	# Vector of weights/costs for kits
 		## Additional parameters
 		family=as.character(family),	# Model family as a character string
-		start = start,	# Method for generating starting points
-		kmax = kmax	# Max run k-step
+		start=start,	# Method for generating starting points
+		kmax=kmax	# Max run k-step
 	)
 
 	if(verb>=2){
@@ -580,25 +580,31 @@ oscar <- function(
 	# Fit lm/glm/coxph/... models per each estimated set of beta coefs (function call depends on 'family')
 	try({
 		obj@fits <- apply(obj@bperk, MARGIN=1, FUN=function(bs){
+			# Debugging
+			if(verb>=2) print("Performing obj@fits ...")
 			if(family=="cox"){
 				## Prefit a coxph-object
 				survival::coxph(
-					as.formula(paste("survival::Surv(time=obj@y[,1],event=obj@y[,2]) ~",paste(colnames(obj@x),collapse='+'))), # Formula for response 'y' modeled using data matrix 'x' 
+					#as.formula(paste("survival::Surv(time=obj@y[,1],event=obj@y[,2]) ~",paste(colnames(obj@x),collapse='+'))), # Formula for response 'y' modeled using data matrix 'x' 
+					as.formula("survival::Surv(time=obj@y[,1],event=obj@y[,2]) ~ ."), # Formula for response 'y' modeled using data matrix 'x' 
 					data=data.frame(obj@x), # Use data matrix 'x'
+					#data = data.frame(obj@x[,names(bs)]), # Use data matrix 'x'
 					init = bs, # Use model coefficients obtained using the DBDC optimization 
 					control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
 				)
 			}else if(family %in% c("mse", "gaussian")){
 				## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
 				stats::glm(
-					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
+					#as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
+					as.formula("y ~ .")
 					, data = data.frame(obj@x), start = bs, family = gaussian(link="identity"), method = oscar:::.glm.fit.mod
 				)
 			}else if(family=="logistic"){
 				## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
 				stats::glm(
-					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
-					, data = data.frame(obj@x),, start = bs, family = binomial(link="logit"), method = oscar:::.glm.fit.mod
+					#as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
+					as.formula("y ~ .")
+					, data = data.frame(obj@x), start = bs, family = binomial(link="logit"), method = oscar:::.glm.fit.mod
 				)
 			}
 		})
