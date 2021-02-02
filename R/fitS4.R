@@ -32,7 +32,8 @@ setClass("oscar", # abbreviation
 		fits = "list",		# Pre-fitted model objects, where each model fit only allows the optimal subset of features to be incorporated into the model; length should be equal to k sequence
 		info = "character",	# Additional error messages, warnings or such reported e.g. during model fitting
 		kmax = "integer",	# Number of maximum k tested
-		metric = "character"	# Name of the goodness-of-fit metric used
+		metric = "character",	# Name of the goodness-of-fit metric used
+		AIC = "numeric"		# Akaike's Information Criterion for each member of @fits
 	),	
 	prototype(
 		# Prototype base model object
@@ -54,7 +55,8 @@ setClass("oscar", # abbreviation
 		fits = list(),
 		info = NA_character_,
 		kmax = NA_integer_,
-		metric = NA_character_
+		metric = NA_character_,
+		AIC = NA_real_
 	),
 	# Function for testing whether all S4-slots are legitimate for the S4 object 
 	# TODO
@@ -579,6 +581,7 @@ oscar <- function(
 	
 	# Fit lm/glm/coxph/... models per each estimated set of beta coefs (function call depends on 'family')
 	try({
+		# Model fits as a function of beta coefs
 		obj@fits <- apply(obj@bperk, MARGIN=1, FUN=function(bs){
 			# Debugging
 			if(verb>=2) print("Performing obj@fits ...")
@@ -608,6 +611,8 @@ oscar <- function(
 				)
 			}
 		})
+		# Extract corresponding model AICs as a function of k
+		obj@AIC <- lapply(obj@fits, FUN=function(z) { stats::extractAIC(z)[2] })
 	})
 
 	if(verb>=2){

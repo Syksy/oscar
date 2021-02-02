@@ -30,7 +30,7 @@ visu <- function(
 	# goodness: model goodness-of-fit measure at each k step
 	# cv: cross-validated model generalization goodness-measure at each k step
 	## Notice only 1st and 2nd element of the vector is used; if vector is of length 1, only first y-axis is used
-	y = c("target", "cost", "goodness", "cv"), 
+	y = c("target", "cost", "goodness", "cv", "aic"), 
 	# Associated y-axis colors
 	cols = c("red", "blue"),
 	legend = "top", # Legend on top, FALSE/NA omits legend, otherwise it's used for placing the legend
@@ -61,6 +61,9 @@ visu <- function(
 	}else if(y[1]=="cv"){
 		# TODO
 		leg <- c(leg, "Cross-validated goodness-of-fit")		
+	}else if(y[1]=="aic"){
+		y1 <- object@aic
+		leg <- c(leg, "AIC")
 	}else{
 		stop(paste("Invalid y[1] parameter (", y[1],"), should be one of: 'target', 'cost', 'goodness', 'cv'", sep=""))
 	}
@@ -86,6 +89,9 @@ visu <- function(
 		}else if(y[2]=="cv"){
 			# TODO
 			leg <- c(leg, paste("Cross-validated goodness-of-fit", object@metric, ")"))		
+		}else if(y[2]=="aic"){
+			y2 <- object@aic
+			leg <- c(leg, "AIC")
 		}else{
 			stop(paste("Invalid y[2] parameter (", y[2],"), should be one of: 'target', 'cost', 'goodness', 'cv'", sep=""))
 		}
