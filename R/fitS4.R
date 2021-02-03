@@ -612,7 +612,7 @@ oscar <- function(
 			}
 		})
 		# Extract corresponding model AICs as a function of k
-		obj@AIC <- lapply(obj@fits, FUN=function(z) { stats::extractAIC(z)[2] })
+		obj@AIC <- unlist(lapply(obj@fits, FUN=function(z) { stats::extractAIC(z)[2] }))
 	})
 
 	if(verb>=2){
