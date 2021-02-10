@@ -85,10 +85,10 @@ cv.oscar <- function(
 		# Constructing appropriate model object
 		if(fit@family == "cox"){
 			# Cox model is 2-column in y-response
-			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=fit@family, k=fit@k, w=fit@w, verb=verb)
+			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=fit@family, k=fit@k, w=fit@w, verb=verb, start=fit@start)
 		}else if(fit@family %in% c("mse", "gaussian", "logistic")){
 			# All other models have a y-vector
-			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=c(fit@y)[cvsets$train[[z]]], family=fit@family, k=fit@k, w=fit@w, verb=verb)
+			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=c(fit@y)[cvsets$train[[z]]], family=fit@family, k=fit@k, w=fit@w, verb=verb, start=fit@start)
 		}else{
 			stop(paste("Incorrect family-parameter fit@family:", fit@family))
 		}
