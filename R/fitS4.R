@@ -81,6 +81,7 @@ setClass("oscar", # abbreviation
 #' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2
 #' @param verb Integer with additional integer values giving verbal feedback, Default: 1
 #' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality
+#' @param sanitize Whether input column names should be cleaned of potentially problematic symbols
 #' @return Fitted oscar-object
 #' @details DETAILS
 #' @examples 
@@ -111,9 +112,10 @@ oscar <- function(
 	family = "cox",
 	## Tuning parameters
 	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
-	start=2,# Deterministic start point 
+	start=2,# Strategy for choosing starting points at each n_k iteration
 	verb=1, # Level of R verbosity (1 = standard, 2 = debug level, 3 = excessive debugging, 0<= none)
 	kmax,    # Maximum tested k-values
+	sanitize = TRUE,	# Whether column (i.e. variable) names are cleaned of potentially hazardous symbols
 	in_mrounds = 5000, # The number of rounds in one main iteration 
 	in_mit = 5000, # The number of main iteration 
 	in_mrounds_esc = 5000, # The number of rounds in escape procedure
@@ -162,9 +164,6 @@ oscar <- function(
 	if(family=="cox"&&nrow(y)!=nrow(x)){
 		stop(paste("Number of observations in the response matrix y (",nrow(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
 	}
-	#if(family %in% c("mse", "gaussian","logistic")&length(y)!=nrow(x)){
-#		stop(paste("Number of observations in the response vector y (",length(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
-#	}
 	
 	###############################
 	#### CHECKING kit matrix k ####
@@ -377,6 +376,11 @@ oscar <- function(
 		#}
 		warnings(paste("Input in_crit_tol should be >0. Default value ", in_crit_tol," is used instead.",sep=""))
 	}	
+	
+	## Sanitize column names, replacing '+' with 'plus', '-' with 'minus', and ' ', '(' and ')' with '_'
+	if(sanitize){
+		colnames(x) <- gsub("\\ |\\(|)", "_", gsub("\\+", "plus", gsub("\\-", "minus", colnames(x))))
+	}
 	
 	###############################
 	#### Calling C and Fortran ####

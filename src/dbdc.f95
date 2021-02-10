@@ -9212,7 +9212,7 @@
                REAL(KIND=c_double), DIMENSION(8) :: mrho        ! Vector containing the values of rho parameter used in the method 
               
                INTEGER(KIND=c_int) :: nstart              ! the number of starting point
-               INTEGER(KIND=c_int) :: start_max           ! the number of starting point when 'start = 5'
+               INTEGER(KIND=c_int) :: start_max           ! the number of starting point when 'start = 4'
 
                INTEGER(KIND=c_int) :: termination         ! The reason for termination in DBDC method
                                                           ! 1 - the stopping condition is satisfied (i.e. Clarke stationarity)
