@@ -97,9 +97,9 @@ cv.oscar <- function(
 		# Model specificity in predictions (?)
 		pred <- lapply(fittmp@fits, FUN=function(f){
 			#if(verb>=2) print(f)
-			#x <- as.data.frame(fit@x[cvsets$test[[z]],])
-			#colnames(x) <- colnames(fit@x)
-			x <- as.matrix(fit@x[cvsets$test[[z]],])
+			x <- as.data.frame(fit@x[cvsets$test[[z]],])
+			colnames(x) <- colnames(fit@x)
+			#x <- as.matrix(fit@x[cvsets$test[[z]],])
 			# MSE/Gaussian
 			if(fit@family %in% c("mse", "gaussian")){
 				as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))

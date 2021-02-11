@@ -30,7 +30,7 @@ visu <- function(
 	# goodness: model goodness-of-fit measure at each k step
 	# cv: cross-validated model generalization goodness-measure at each k step
 	## Notice only 1st and 2nd element of the vector is used; if vector is of length 1, only first y-axis is used
-	y = c("target", "cost", "goodness", "cv", "aic"), 
+	y = c("target", "cost", "goodness", "cv", "AIC"), 
 	# Associated y-axis colors
 	cols = c("red", "blue"),
 	legend = "top", # Legend on top, FALSE/NA omits legend, otherwise it's used for placing the legend
@@ -61,11 +61,11 @@ visu <- function(
 	}else if(y[1]=="cv"){
 		# TODO
 		leg <- c(leg, "Cross-validated goodness-of-fit")		
-	}else if(y[1]=="aic"){
-		y1 <- object@aic
+	}else if(y[1]=="AIC"){
+		y1 <- object@AIC
 		leg <- c(leg, "AIC")
 	}else{
-		stop(paste("Invalid y[1] parameter (", y[1],"), should be one of: 'target', 'cost', 'goodness', 'cv'", sep=""))
+		stop(paste("Invalid y[1] parameter (", y[1],"), should be one of: 'target', 'cost', 'goodness', 'cv', 'AIC'", sep=""))
 	}
 	if(!add){
 		plot.window(xlim=c(1,length(x)), ylim=range(y1))
@@ -168,6 +168,8 @@ bs.visu <- function(
 #' @description FUNCTION_DESCRIPTION
 #' @param cvs PARAM_DESCRIPTION
 #' @param add PARAM_DESCRIPTION
+#' @param main PARAM_DESCRIPTION
+#' @param ... PARAM_DESCRIPTION
 #' @return OUTPUT_DESCRIPTION
 #' @details DETAILS
 #' @examples 
@@ -180,7 +182,9 @@ bs.visu <- function(
 #' @export
 cv.visu <- function(
 	cvs, # Matrix produced by cv.oscar; rows are cv-folds, cols are k-values
-	add = FALSE # Should plot be added into an existing frame / plot
+	add = FALSE, # Should plot be added into an existing frame / plot
+	main = "OSCAR cross-validation", # Main title
+	...
 ){
 	# Compute statistics for the CV-curve
 	means <- apply(cvs, MARGIN=2, FUN=mean)
@@ -191,8 +195,9 @@ cv.visu <- function(
 	if(!add){
 		# If not adding to an existing plot, setup the graphics device
 		plot.new()
-		plot.window(xlim=range(x), ylim=extendrange(means-sds))
+		plot.window(xlim=range(x), ylim=extendrange(c(means-sds, means+sds)))
 		box(); axis(1); axis(2)
+		title(main=main)
 	}
 	# Plotting
 	points(x, means, type="l", xlab="k-step", ylab="CV performance", ylim=extendrange(c(means+sds, means-sds)), main="Cross-validation over k")
