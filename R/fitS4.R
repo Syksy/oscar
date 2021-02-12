@@ -613,6 +613,19 @@ oscar <- function(
 					as.formula("y ~ .")
 					, data = data.frame(obj@x), start = bs, family = binomial(link="logit"), method = oscar:::.glm.fit.mod
 				)
+				
+				### Alternative function instead of glm (not tested here)
+				#log.pred <- function(new.data){
+				#	log.pred <-  bs%*%t(cbind(rep(1,nrow(new.data)),new.data))  ## NOTE! columnnames should be checked!
+				#	log.pred <- exp(-log.pred)
+				#	prob <- 1/(1+log.pred)
+				#	pred <- lapply(prob,FUN=function(x){if(x>0.5){1}else{0}})  ## Cut-off 0.5 here
+				#	return(pred)
+				#}
+})
+log.acc.val <- apply(log.ennusteet.val,MARGIN=2,FUN=function(en){
+  1-sum(abs(en-mval.cY10[which(mval.cX10[,"metastpvm"]==0),1]))/length(mval.cY10[which(mval.cX10[,"metastpvm"]==0),1])
+})
 			}
 		})
 		# Extract corresponding model AICs as a function of k
