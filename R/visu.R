@@ -35,7 +35,8 @@ visu <- function(
 	cols = c("red", "blue"),
 	legend = "top", # Legend on top, FALSE/NA omits legend, otherwise it's used for placing the legend
 	mtexts = TRUE, # Outer margin texts
-	add = FALSE # Should plot be added into an existing frame / plot
+	add = FALSE, # Should plot be added into an existing frame / plot
+	main = ""
 ){
 	if(!class(object) %in% "oscar") stop("'object' should be of class 'oscar'")
 	par(las=2,  # All labels orthogonally to axes
@@ -71,7 +72,7 @@ visu <- function(
 		plot.window(xlim=c(1,length(x)), ylim=range(y1))
 		axis(1, at=1:length(x), labels=x)
 		axis(2, col.axis=cols[1])
-		box()
+		box(); title(main=main)
 	}
 	points(1:length(x), y1, pch=16, col=cols[1])
 	points(1:length(x), y1, type="l", col=cols[1])
@@ -184,6 +185,8 @@ cv.visu <- function(
 	cvs, # Matrix produced by cv.oscar; rows are cv-folds, cols are k-values
 	add = FALSE, # Should plot be added into an existing frame / plot
 	main = "OSCAR cross-validation", # Main title
+	xlab = "Cardinality 'k'",
+	ylab = "CV performance",
 	...
 ){
 	# Compute statistics for the CV-curve
@@ -197,10 +200,10 @@ cv.visu <- function(
 		plot.new()
 		plot.window(xlim=range(x), ylim=extendrange(c(means-sds, means+sds)))
 		box(); axis(1); axis(2)
-		title(main=main)
+		title(main=main, xlab=xlab, ylab=ylab)
 	}
 	# Plotting
-	points(x, means, type="l", xlab="k-step", ylab="CV performance", ylim=extendrange(c(means+sds, means-sds)), main="Cross-validation over k")
+	points(x, means, type="l")
 	# Means as a function of k
 	points(x, means, pch=16, col="red")
 	# Standard errors as a function of k
