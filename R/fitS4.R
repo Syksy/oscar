@@ -622,10 +622,7 @@ oscar <- function(
 				#	pred <- lapply(prob,FUN=function(x){if(x>0.5){1}else{0}})  ## Cut-off 0.5 here
 				#	return(pred)
 				#}
-})
-log.acc.val <- apply(log.ennusteet.val,MARGIN=2,FUN=function(en){
-  1-sum(abs(en-mval.cY10[which(mval.cX10[,"metastpvm"]==0),1]))/length(mval.cY10[which(mval.cX10[,"metastpvm"]==0),1])
-})
+
 			}
 		})
 		# Extract corresponding model AICs as a function of k
