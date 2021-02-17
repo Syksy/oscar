@@ -110,6 +110,8 @@ oscar <- function(
 	w, 
 	# Model family (defines the likelihood function)
 	family = "cox",
+	# Goodness metric used in model goodness-of-fit 
+	metric,
 	## Tuning parameters
 	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
 	start=2,# Strategy for choosing starting points at each n_k iteration
@@ -149,6 +151,25 @@ oscar <- function(
 	
 	# ...
 	if(verb>=2) print("Sanity checks ready")
+
+	# If no custom metric defined, using default goodness metrics:
+	# mse/gaussian: mean-squared error
+	# cox: c-index
+	# logistic: (roc-)auc
+	if(missing(metric)){
+		if(family %in% c("mse","gaussian")){
+			metric <- "mse"
+		}else if(family == "cox"){
+			metric <- "concordance"
+		}else if(family == "logistic"){
+			metric <- "auc"
+		}else{
+			stop(paste("Invalid parameter 'family':", family))
+		}
+	}else{
+		# TODO; User provided custom metrics; 
+		# check if legitimate (for logistic e.g. 'accuracy' and 'auc' ought to work)
+	}
 
 	# TODO: Currently Cox assumes that event and time come in certain order in the 2-column y
 	# Flip them depending on which way is expected
@@ -575,6 +596,7 @@ oscar <- function(
 		w=as.numeric(w),	# Vector of weights/costs for kits
 		## Additional parameters
 		family=as.character(family),	# Model family as a character string
+		metric=as.character(metric),	# Model goodness metric
 		start=start,	# Method for generating starting points
 		kmax=kmax	# Max run k-step
 	)
@@ -584,54 +606,54 @@ oscar <- function(
 	}
 	
 	# Fit lm/glm/coxph/... models per each estimated set of beta coefs (function call depends on 'family')
-	try({
-		# Model fits as a function of beta coefs
-		obj@fits <- apply(obj@bperk, MARGIN=1, FUN=function(bs){
-			# Debugging
-			if(verb>=2) print("Performing obj@fits ...")
-			if(family=="cox"){
-				## Prefit a coxph-object
-				survival::coxph(
-					#as.formula(paste("survival::Surv(time=obj@y[,1],event=obj@y[,2]) ~",paste(colnames(obj@x),collapse='+'))), # Formula for response 'y' modeled using data matrix 'x' 
-					as.formula("survival::Surv(time=obj@y[,1],event=obj@y[,2]) ~ ."), # Formula for response 'y' modeled using data matrix 'x' 
-					data=data.frame(obj@x), # Use data matrix 'x'
-					#data = data.frame(obj@x[,names(bs)]), # Use data matrix 'x'
-					init = bs, # Use model coefficients obtained using the DBDC optimization 
-					control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
-				)
-			}else if(family %in% c("mse", "gaussian")){
-				## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
-				stats::glm(
-					#as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
-					as.formula("y ~ .")
-					, data = data.frame(obj@x), start = bs, family = gaussian(link="identity"), method = oscar:::.glm.fit.mod
-				)
-			}else if(family=="logistic"){
-				## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
-				stats::glm(
-					#as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
-					as.formula("y ~ .")
-					, data = data.frame(obj@x), start = bs, family = binomial(link="logit"), method = oscar:::.glm.fit.mod
-				)
-				
-				### Alternative function instead of glm (not tested here)
-				#log.pred <- function(new.data){
-				#	log.pred <-  bs%*%t(cbind(rep(1,nrow(new.data)),new.data))  ## NOTE! columnnames should be checked!
-				#	log.pred <- exp(-log.pred)
-				#	prob <- 1/(1+log.pred)
-				#	pred <- lapply(prob,FUN=function(x){if(x>0.5){1}else{0}})  ## Cut-off 0.5 here
-				#	return(pred)
-				#}
-
-			}
-		})
-		# Extract corresponding model AICs as a function of k
-		obj@AIC <- unlist(lapply(obj@fits, FUN=function(z) { stats::extractAIC(z)[2] }))
-	})
-
-	if(verb>=2){
-		print("fits-slot created successfully")
-	}
+	#try({
+	#	# Model fits as a function of beta coefs
+	#	obj@fits <- apply(obj@bperk, MARGIN=1, FUN=function(bs){
+	#		# Debugging
+	#		if(verb>=2) print("Performing obj@fits ...")
+	#		if(family=="cox"){
+	#			## Prefit a coxph-object
+	#			survival::coxph(
+	#				#as.formula(paste("survival::Surv(time=obj@y[,1],event=obj@y[,2]) ~",paste(colnames(obj@x),collapse='+'))), # Formula for response 'y' modeled using data matrix 'x' 
+	#				as.formula("survival::Surv(time=obj@y[,1],event=obj@y[,2]) ~ ."), # Formula for response 'y' modeled using data matrix 'x' 
+	#				data=data.frame(obj@x), # Use data matrix 'x'
+	#				#data = data.frame(obj@x[,names(bs)]), # Use data matrix 'x'
+	#				init = bs, # Use model coefficients obtained using the DBDC optimization 
+	#				control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
+	#			)
+	#		}else if(family %in% c("mse", "gaussian")){
+	#			## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
+	#			stats::glm(
+	#				#as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
+	#				as.formula("y ~ .")
+	#				, data = data.frame(obj@x), start = bs, family = gaussian(link="identity"), method = oscar:::.glm.fit.mod
+	#			)
+	#		}else if(family=="logistic"){
+	#			## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
+	#			stats::glm(
+	#				#as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
+	#				as.formula("y ~ .")
+	#				, data = data.frame(obj@x), start = bs, family = binomial(link="logit"), method = oscar:::.glm.fit.mod
+	#			)
+	#			
+	#			### Alternative function instead of glm (not tested here)
+	#			#log.pred <- function(new.data){
+	#			#	log.pred <-  bs%*%t(cbind(rep(1,nrow(new.data)),new.data))  ## NOTE! columnnames should be checked!
+	#			#	log.pred <- exp(-log.pred)
+	#			#	prob <- 1/(1+log.pred)
+	#			#	pred <- lapply(prob,FUN=function(x){if(x>0.5){1}else{0}})  ## Cut-off 0.5 here
+	#			#	return(pred)
+	#			#}
+	#
+	#		}
+	#	})
+	#	# Extract corresponding model AICs as a function of k
+	#	obj@AIC <- unlist(lapply(obj@fits, FUN=function(z) { stats::extractAIC(z)[2] }))
+	#})
+	#
+	#if(verb>=2){
+	#	print("fits-slot created successfully")
+	#}
 		
 	# Calculate/extract model goodness metric at each k
 	try({
@@ -639,15 +661,18 @@ oscar <- function(
 		if(family=="cox"){
 			# Use c-index as the goodness measure
 			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { z$concordance["concordance"] }))
-			obj@metric <- "cindex"
 		}else if(family %in% c("mse", "gaussian")){
 			# Use mean squared error as the goodness measure
 			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { mean((y - predict.glm(z, type="response"))^2) }))
-			obj@metric <- "mse"
 		}else if(family=="logistic"){
 			# Use correct classification percent as the goodness measure
-			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { sum(as.numeric(y == (predict.glm(z, type="response")>0.5)))/length(y) }))
-			obj@metric <- "accuracy"
+			# ROC-AUC
+			if(metric=="auc"){
+			
+			# Accuracy
+			}else if(metric=="accuracy"){
+				#obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { sum(as.numeric(y == (predict.glm(z, type="response")>0.5)))/length(y) }))
+			}
 		}
 	})
 	
