@@ -97,21 +97,21 @@ cv.oscar <- function(
 		# Model specificity in predictions (?)
 		pred <- lapply(1:fit@kmax, FUN=function(ki){
 			#if(verb>=2) print(f)
-			x <- fit@x[cvsets$test[[z]],drop=FALSE]
+			x <- fit@x[cvsets$test[[z]],,drop=FALSE]
 			#colnames(x) <- colnames(fit@x)
 			#x <- as.matrix(fit@x[cvsets$test[[z]],])
 			# MSE/Gaussian
 			if(fit@family %in% c("mse", "gaussian")){
-				predict.oscar(fit, type = "response", k = ki, newdata = x)
+				oscar::predict(fit, type = "response", k = ki, newdata = x)
 				#as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))
 				
 			# Logistic	
 			}else if(fit@family %in% c("logistic")){
-				predict.oscar(fit, type = "response", k = ki, newdata = x)
+				oscar::predict(fit, type = "response", k = ki, newdata = x)
 				#as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))
 			# Cox
 			}else if(fit@family %in% c("cox")){
-				predict.oscar(fit, type = "response", k = ki, newdata = x)
+				oscar::predict(fit, type = "response", k = ki, newdata = x)
 				#as.vector(unlist(survival:::predict.coxph(f, type="risk", newdata=x)))
 			}
 		})
@@ -155,7 +155,9 @@ cv.oscar <- function(
 				mean((q-z$true)^2)
 			# Logistic; ROC-AUC by default
 			}else if(fit@family %in% c("logistic") & fit@metric == "auc"){
-				pROC::auc(z$true ~ q)
+				#pROC::auc(response = z$true, predictor = c(q))
+				# Less 'cat' output
+				invisible(as.numeric(pROC::auc(pROC::roc(response=z$true, predictor=c(q), levels=c(0,1), direction="<"))))
 				#sum(as.integer(q>0.5)==z$true)/length(q)
 			# Logistic; correct classification rate if metric desired is accuracy
 			}else if(fit@family %in% c("logistic") & fit@metric == "accuracy"){

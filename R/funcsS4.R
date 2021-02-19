@@ -36,7 +36,7 @@ setMethod("coef", "oscar",
 		# Sanity checking for k-values
 		if(missing(k)){
 			stop("You need to provide parameter 'k' for obtaining coefficients at a certain k-step")
-		}else if(k<1 | k>length(object@fits) | !is.numeric(k)){
+		}else if(k<1 | k>object@kmax | !is.numeric(k)){
 			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
 		}
 		# Returning the correct coef at k:th step
@@ -56,7 +56,7 @@ setMethod("predict", "oscar",
 		# Sanity checking for k-values
 		if(missing(k)){
 			stop("You need to provide parameter 'k' for obtaining coefficients at a certain k-step")
-		}else if(k<1 | k>length(object@fits) | !is.numeric(k)){
+		}else if(k<1 | k>object@kmax | !is.numeric(k)){
 			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
 		}else if(!object@family %in% c("cox", "mse", "gaussian", "logistic")){
 			stop(paste("Invalid family-parameter in oscar-object:", object@family))
@@ -65,10 +65,10 @@ setMethod("predict", "oscar",
 		if(type[1] == "response"){
 			if(object@family == "cox"){
 				# Xb
-				as.matrix(newdata) %*% object@bperk[k,colnames(newdata)]
+				as.matrix(newdata) %*% t(object@bperk[k,,drop=FALSE])
 			}else{
 				# Need to add intercept to b0 + Xb in 
-				cbind(1, as.matrix(newdata)) %*% object@bperk[k,colnames(newdata)]
+				cbind(1, as.matrix(newdata)) %*% t(object@bperk[k,,drop=FALSE])
 			}
 		# Non-zero coefficients
 		}else if(type[1] == "nonzero"){
@@ -79,17 +79,17 @@ setMethod("predict", "oscar",
 		# Xb run through the link function
 		}else if(type[1] == "link"){		
 			if(object@family %in% "logistic"){
-				Xb <- cbind(1, as.matrix(newdata)) %*% object@bperk[k,colnames(newdata)]
+				Xb <- cbind(1, as.matrix(newdata)) %*% t(object@bperk[k,,drop=FALSE])
 				1/(1+exp(-Xb))
 			}else if(object@family %in% c("cox")){
-				exp(as.matrix(newdata) %*% object@bperk[k,colnames(newdata)])
+				exp(as.matrix(newdata) %*% t(object@bperk[k,,drop=FALSE]))
 			}
 		# Class labels (binary for starters)
 		}else if(type[1] == "label"){
 			if(!object@family == "logistic"){
 				stop("Parameter type == 'label' is intended for logistic or multinomial predictions")
 			}
-			Xb <- cbind(1, as.matrix(newdata)) %*% object@bperk[k,colnames(newdata)]
+			Xb <- cbind(1, as.matrix(newdata)) %*% t(object@bperk[k,,drop=FALSE])
 			as.integer(1/(1+exp(-Xb))>0.5)
 		}
 	}
@@ -127,7 +127,7 @@ setMethod("plot", "oscar",
 		})
 		names(ret) <- colnames(bperk)
 		# Return a bperk coefficients list which is plotted
-		ret
+		invisible(ret)
 	}
 )
 
@@ -154,7 +154,7 @@ setMethod("feat", "oscar",
 		# Sanity checking for k-values
 		if(missing(k)){
 			stop("You need to provide parameter 'k' for obtaining coefficients at a certain k-step")
-		}else if(k<1 | k>length(object@fits) | !is.numeric(k)){
+		}else if(k<1 | k>object@kmax | !is.numeric(k)){
 			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
 		}
 		# Returning the correct nonzero coefs at k:th step and name the indices according to data matrix column names
@@ -179,7 +179,7 @@ setMethod("kits", "oscar",
 		# Sanity checking for k-values
 		if(missing(k)){
 			stop("You need to provide parameter 'k' for obtaining coefficients at a certain k-step")
-		}else if(k<1 | k>length(object@fits) | !is.numeric(k)){
+		}else if(k<1 | k>object@kmax | !is.numeric(k)){
 			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
 		}
 		# Returning the correct kit indices while naming them

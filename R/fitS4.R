@@ -660,10 +660,10 @@ oscar <- function(
 		# Cox regression
 		if(family=="cox"){
 			# Use c-index as the goodness measure
-			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { z$concordance["concordance"] }))
+			obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { survival::coxph(Surv(time=y[,1], event=y[,2]) ~ x %*% t(bperk[z,,drop=FALSE]))$concordance["concordance"] }))
 		}else if(family %in% c("mse", "gaussian")){
 			# Use mean squared error as the goodness measure
-			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { mean((y - predict.glm(z, type="response"))^2) }))
+			obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { mean((y - (cbind(1, x) %*% t(bperk[z,,drop=FALSE])))^2) }))
 		}else if(family=="logistic"){
 			# Use correct classification percent as the goodness measure
 			# ROC-AUC
