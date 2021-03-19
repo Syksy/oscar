@@ -1,18 +1,12 @@
 # OSCAR models with R
-Optimal Subset Cardinality Regression (OSCAR) models with R
-
-Checking in command terminal using (no ERRORs, WARNINGs, or NOTEs except CRAN first submission NOTE):
-* R CMD build oscar
-* R CMD check oscar_x.y.z.tar.gz --as-cran
-
-Current R-package folder structure:
+Optimal Subset CArdinality Regression (OSCAR) models with R
 
 Folders
 
-* ./man/  : All R-code manuals (\*.Rd) go here
-* ./src/  : All source code (\*.c, \*.f95) goes here; e.g. Fortran implementation that is passed through C, including makefile
-* ./R/    : All R-code (\*.R) goes here
-* ./data/ : TO DO; example dataset goes here as a \*.RData
+* ./man/  : R-code manuals (\*.Rd)
+* ./src/  : Source code (\*.c, \*.f95), including makefile
+* ./R/    : R-code (\*.R)
+* ./data/ : example data as \*.RData
 * ./inst/ : TO DO
 * ...
 
@@ -24,9 +18,7 @@ Root files
 * ...
 
 Version plan:
-* 0.5 - User-friendliness in R-package; vignette, helper tools, oscar S4-class applicable functions
 * ...
-* 0.x - All renaming to OSCAR complete
 * 0.x - Make sure there are no WARNINGs or NOTEs in 'R CMD check pckg.tar.gz --as-cran'
 * 0.x - Roxygenize R package documentation
 * 0.x - Use omp_lib for parallelization in Fortran (or a similar approach)
