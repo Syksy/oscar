@@ -280,8 +280,9 @@ bs.k <- function(
 #' @title Create a sparse matrix representation of betas as a function of k
 #' @description Variable estimates (rows) as a function of cardinality (k, columns). Since a model can drop out variables in favor of two better ones as k increases, this sparse representation helps visualize which variables are included at what cardinality.
 #' @param fit oscar-model object
+#' @param kmax Create matrix until kmax-value; by default same as for fit object, but for high dimensional tasks one may wish to reduce this
 #' @return A sparse matrix of variables (rows) as a function of cardinality k (columns), where elements are the beta estimates.
-#' @details TODO
+#' @details Uses sparseMatrix-class from Matrix-package
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
@@ -289,18 +290,21 @@ bs.k <- function(
 #'  }
 #' }
 #'
-#' @rdname bmat
+#' @rdname sparsify
 #' @export 
 #' @importFrom Matrix sparseMatrix
 sparsify <- function(
-	fit
+	fit,
+	kmax = fit@kmax
 ){
 	if(!class(fit) %in% c("oscar")){
 		stop("'fit' should be a fit oscar object")
 	}
 	
 	# Order in which variables are first observed as non-zero
-	varorder <- unique(unlist(fit@kperk))
+	#varorder <- unique(unlist(fit@kperk))
+	# For models fit kits, a more sophisticated approach is required
+	varorder <- unique(unlist(apply(fit@bperk, MARGIN=1, FUN=function(z) which(!z==0))))
 
 	# Ordered beta matrix, order variables and transpose
 	bkorder <- t(fit@bperk[,varorder])
@@ -315,6 +319,37 @@ sparsify <- function(
 	)
 	dimnames(smat) <- dimnames(bkorder)	
 	
-	smat
+	smat[,1:kmax]
+}
+
+#' @title Binary logical indicator matrix representation of an oscar object's coefficients (zero vs. non-zero, i.e. feature inclusion)
+#' @description Create a sparse matrix with binary indicator 1 indicating that a coefficient was non-zero, and value 0 (or . in sparse matrix) indicating that a coefficient was zero (i.e. feature not included)
+#' @param Fit oscar-model object
+#' @param kmax Create matrix until kmax-value; by default same as for fit object, but for high dimensional tasks one may wish to reduce this
+#' @return A binary logical indicator matrix of variables (rows) as a function of cardinality k (columns), where elements are binary indicators for 1 as non-zero and 0 as zero.
+#' @details TODO
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#'
+#' @rdname binarize
+#' @export 
+#' @importFrom Matrix lsparseMatrix
+binarize <- function(
+	fit, # oscar model object
+	kmax = fit@kmax # limit to kmax
+){
+	if(!class(fit) %in% c("oscar")){
+		stop("'fit' should be a fit oscar object")
+	}
+	
+	# Full sparse matrix representation
+	#binmat <- apply(oscar::sparsify(fit), MARGIN=2, FUN=function(z) { ifelse(z==0, FALSE, TRUE) })
+	binmat <- apply(sparsify(fit), MARGIN=2, FUN=function(z) { ifelse(z==0, FALSE, TRUE) })
+	
+	binmat[,1:kmax]
 }
 
