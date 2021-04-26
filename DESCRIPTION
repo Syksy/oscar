@@ -1,7 +1,7 @@
 Package: oscar
 Type: Package
 Title: Optimal Subset CArdinality Regression (OSCAR) models using the L0-pseudonorm
-Version: 0.6.3
+Version: 0.6.4
 Date: 2021-04-26
 Authors@R: c(
 	person(given="Teemu Daniel", family="Laajala", role=c("aut", "cre"), email="teelaa@utu.fi", comment = c(ORCID = "0000-0002-7016-7354")),
@@ -16,8 +16,8 @@ License: GPL-3
 LazyData: true
 NeedsCompilation: yes
 Depends: R (>= 3.6.0)
-Imports: survival, knitr
-Suggests: glmnet, hamlet, ePCR, rmarkdown, pROC
+Imports: survival, knitr, hamlet
+Suggests: glmnet, ePCR, rmarkdown, pROC
 Encoding: UTF-8
 VignetteBuilder: knitr
 RoxygenNote: 7.1.1

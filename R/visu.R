@@ -210,7 +210,9 @@ cv.visu <- function(
 	arrows(x0=x, y0=means-sds, x1=x, y1=means+sds, code=3, angle=90, length=0.1)
 }
 
-## Bootstrap visualization with boxplot, percentage of new additions
+#' @title Bootstrap visualization with boxplot, percentage of new additions
+#'
+#' @export
 bs.boxplot <- function(
 	bs, # Bootstrap array as produced by bs.oscar
 	...
@@ -240,4 +242,52 @@ bs.boxplot <- function(
 	}
 	barplot(t(howoften.new)[,nkits:1,drop=FALSE],horiz=TRUE,col=rainbow(38))
 
+}
+
+#' @title Visualize binary indicator matrix optionally coupled with cross-validation performance
+#'
+#' @export
+binplot <- function(
+	fit, # Model fit object
+	cv, # Cross-validation performance if calculated
+	kmax, # Maximum k to draw to; if missing, using kmax from fit@kmax
+	collines = TRUE, # Draw vertical lines to bottom part
+	rowlines = TRUE, # Draw horizontal lines to highlight variables
+	cex.axis = 0.6, 
+	heights=c(0.2, 0.8),
+	... # Additional parameters passed on to hamlet::hmap
+){
+	if(!class(fit) %in% c("oscar")){
+		stop("'fit' should be a fit oscar object")
+	}
+	if(missing(kmax)){
+		kmax <- fit@kmax
+	}
+	
+	if(!missing(cv)){
+		# Extra CV annotation on top
+		par(mar=c(0,4,1,1), las=1)
+		# Set up paneling
+		layout(matrix(c(1,2), nrow=2), heights=heights)
+		oscar::cv.visu(cv[,1:kmax])
+		axis(1, at=1:kmax)
+	}
+
+	# Bottom binarized indicator panel
+	par(mar=c(4,4,1,1))
+	bfit <- binarize(fit)[,1:kmax]
+	plot.new()
+	plot.window(xlim=c(0.2,0.8), ylim=c(0.2,0.8))
+	
+	h <- hamlet::hmap(oscar::binarize(fit), Colv=NA, Rowv=NA, toplim=0.8, bottomlim=0.2, col=c("lightgrey", "darkgrey"), nbins=2, namerows=FALSE, namecols=FALSE, add=TRUE)
+	#title(ylab="Non-zero coefficients", xlab="Cardinality 'k'")
+	title(xlab="Cardinality 'k'")
+	axis(1, at=h$coltext$xseq[1:kmax], labels=1:kmax)
+	axis(2, at=h$rowtext$yseq, labels=h$rowtext$rownam, cex.axis=cex.axis, las=1)
+	# Line annotations
+	if(collines) abline(v=h$coltext$xseq[1:kmax], col="grey")
+	if(rowlines) abline(h=h$rowtext$yseq, col="grey")
+	# Legend
+	legend("topright", col=c("lightgrey", "darkgrey"), pch=15, legend=c("Excluded", "Included"), bg="white")
+	box()
 }
