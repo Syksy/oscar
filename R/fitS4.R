@@ -32,8 +32,7 @@ setClass("oscar", # abbreviation
 		fits = "list",		# Pre-fitted model objects, where each model fit only allows the optimal subset of features to be incorporated into the model; length should be equal to k sequence
 		info = "character",	# Additional error messages, warnings or such reported e.g. during model fitting
 		kmax = "integer",	# Number of maximum k tested
-		metric = "character",	# Name of the goodness-of-fit metric used
-		AIC = "numeric"		# Akaike's Information Criterion for each member of @fits
+		metric = "character"	# Name of the goodness-of-fit metric used
 	),	
 	prototype(
 		# Prototype base model object
@@ -55,8 +54,7 @@ setClass("oscar", # abbreviation
 		fits = list(),
 		info = NA_character_,
 		kmax = NA_integer_,
-		metric = NA_character_,
-		AIC = NA_real_
+		metric = NA_character_
 	),
 	# Function for testing whether all S4-slots are legitimate for the S4 object 
 	# TODO

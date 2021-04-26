@@ -18,12 +18,9 @@
 #'  #EXAMPLE1
 #'  }
 #' }
-#' @seealso 
-#'  \code{\link[stats]{predict.glm}}
-#'  \code{\link[survival]{predict.coxph}},\code{\link[survival]{coxph}},\code{\link[survival]{Surv}}
+#'
 #' @rdname cv
 #' @export 
-#' @importFrom stats predict.glm
 #' @importFrom survival coxph Surv
 cv.oscar <- function(
 	# oscar-object
@@ -279,3 +276,45 @@ bs.k <- function(
 	
 	bs
 }
+
+#' @title Create a sparse matrix representation of betas as a function of k
+#' @description Variable estimates (rows) as a function of cardinality (k, columns). Since a model can drop out variables in favor of two better ones as k increases, this sparse representation helps visualize which variables are included at what cardinality.
+#' @param fit oscar-model object
+#' @return A sparse matrix of variables (rows) as a function of cardinality k (columns), where elements are the beta estimates.
+#' @details TODO
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#'
+#' @rdname bmat
+#' @export 
+#' @importFrom Matrix sparseMatrix
+sparsify <- function(
+	fit
+){
+	if(!class(fit) %in% c("oscar")){
+		stop("'fit' should be a fit oscar object")
+	}
+	
+	# Order in which variables are first observed as non-zero
+	varorder <- unique(unlist(fit@kperk))
+
+	# Ordered beta matrix, order variables and transpose
+	bkorder <- t(fit@bperk[,varorder])
+	# Extract pairwise indices for non-zero elements
+	nonzeroes <- which(!bkorder==0, arr.ind=TRUE)
+	
+
+	smat <- Matrix::sparseMatrix(
+		i = nonzeroes[,1], # row indices of non-zero elements
+		j = nonzeroes[,2], # col indices of non-zero elements
+		x = c(bkorder[!bkorder==0]) # beta estimates at {i,j} running indices
+	)
+	dimnames(smat) <- dimnames(bkorder)	
+	
+	smat
+}
+
