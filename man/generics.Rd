@@ -3,6 +3,7 @@
 \name{show,oscar-method}
 \alias{show,oscar-method}
 \alias{coef,oscar-method}
+\alias{predict,oscar-method}
 \alias{plot,oscar-method}
 \alias{feat}
 \alias{kits}
@@ -11,6 +12,13 @@
 \S4method{show}{oscar}(object)
 
 \S4method{coef}{oscar}(object, k)
+
+\S4method{predict}{oscar}(
+  object,
+  k,
+  type = c("response", "link", "nonzero", "coefficients", "label"),
+  newdata = object@x
+)
 
 \S4method{plot}{oscar}(x, y, k = 1:x@kmax, add = FALSE, intercept = FALSE, ...)
 
@@ -22,6 +30,8 @@ kits(object, k)
 Showing oscar-objects
 
 Extract coefficients of oscar-objects
+
+Predicting based on oscar-objects
 
 Plot oscar-coefficients as a function of k and override default plot generic
 

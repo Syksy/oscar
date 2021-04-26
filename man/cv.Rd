@@ -7,7 +7,14 @@
 \usage{
 cv.oscar(fit, fold = 10, seed = NULL, verb = 0)
 
-cv.visu(cvs, add = FALSE)
+cv.visu(
+  cvs,
+  add = FALSE,
+  main = "OSCAR cross-validation",
+  xlab = "Cardinality 'k'",
+  ylab = "CV performance",
+  ...
+)
 }
 \arguments{
 \item{fit}{oscar-model object}
@@ -21,6 +28,10 @@ cv.visu(cvs, add = FALSE)
 \item{cvs}{PARAM_DESCRIPTION}
 
 \item{add}{PARAM_DESCRIPTION}
+
+\item{main}{PARAM_DESCRIPTION}
+
+\item{...}{PARAM_DESCRIPTION}
 }
 \value{
 A matrix with goodness of fit over folds and k-values
@@ -43,13 +54,10 @@ if(interactive()){
  #EXAMPLE1
  }
 }
+
 \dontrun{
 if(interactive()){
  #EXAMPLE1
  }
 }
-}
-\seealso{
-\code{\link[stats]{predict.glm}}
- \code{\link[survival]{predict.coxph}},\code{\link[survival]{coxph}},\code{\link[survival]{Surv}}
 }

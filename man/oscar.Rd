@@ -11,24 +11,26 @@ oscar(
   k,
   w,
   family = "cox",
+  metric,
   print = 3,
   start = 2,
   verb = 1,
   kmax,
+  sanitize = TRUE,
   in_mrounds = 5000,
   in_mit = 5000,
   in_mrounds_esc = 5000,
   in_b1,
   in_b2 = 3,
   in_b,
-  in_m = 0.2,
+  in_m = 0.01,
   in_m_clarke = 0.01,
   in_c = 0.1,
   in_r_dec,
-  in_r_inc = 10^7,
+  in_r_inc = 10^5,
   in_eps1 = 5 * 10^(-5),
   in_eps,
-  in_crit_tol
+  in_crit_tol = 10^(-5)
 )
 }
 \arguments{
@@ -49,6 +51,8 @@ oscar(
 \item{verb}{Integer with additional integer values giving verbal feedback, Default: 1}
 
 \item{kmax}{Maximum k step tested, by default all k are tested from k to maximum dimensionality}
+
+\item{sanitize}{Whether input column names should be cleaned of potentially problematic symbols}
 }
 \value{
 Fitted oscar-object

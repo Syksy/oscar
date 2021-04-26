@@ -337,7 +337,6 @@ sparsify <- function(
 #'
 #' @rdname binarize
 #' @export 
-#' @importFrom Matrix lsparseMatrix
 binarize <- function(
 	fit, # oscar model object
 	kmax = fit@kmax # limit to kmax
@@ -347,8 +346,7 @@ binarize <- function(
 	}
 	
 	# Full sparse matrix representation
-	#binmat <- apply(oscar::sparsify(fit), MARGIN=2, FUN=function(z) { ifelse(z==0, FALSE, TRUE) })
-	binmat <- apply(sparsify(fit), MARGIN=2, FUN=function(z) { ifelse(z==0, FALSE, TRUE) })
+	binmat <- apply(oscar::sparsify(fit), MARGIN=2, FUN=function(z) { ifelse(z==0, FALSE, TRUE) })
 	
 	binmat[,1:kmax]
 }
