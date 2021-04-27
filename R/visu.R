@@ -291,3 +291,47 @@ binplot <- function(
 	legend("topright", col=c("lightgrey", "darkgrey"), pch=15, legend=c("Excluded", "Included"), bg="white")
 	box()
 }
+
+#' @title Bootstrap + cross-validation heatmap plot
+#'
+#' @export
+bs.plot <- function(
+	fit, # Model fit object
+	#cv, # Cross-validation performance if calculated
+	bs, # Bootstrapped data estimates if calculated
+	kmax, # Maximum k to draw to; if missing, using kmax from fit@kmax
+	cex.axis = 0.6, 	
+	...
+){
+	if(!class(fit) %in% c("oscar")){
+		stop("'fit' should be a fit oscar object")
+	}
+	if(missing(kmax)){
+		kmax <- fit@kmax
+	}
+	par(xpd=NA)
+	# Cross-validation
+	#if(!missing(cv)){
+	#	# Extra CV annotation on top
+	#	par(mar=c(0,4,1,1), las=1)
+	#	# Set up paneling
+	#	layout(matrix(c(1,2), nrow=2), heights=heights)
+	#	oscar::cv.visu(cv[,1:kmax])
+	#	axis(1, at=1:kmax)
+	#}
+	# Bootstrapping
+	if(!missing(bs)){
+		bmat <- Reduce("+", lapply(1:dim(bs)[3], FUN=function(z) { !bs[,,z]==0 }))/dim(bs)[3]		
+	}else{
+		bmat <- oscar::binarize(fit)
+	}
+	# Order in which variables were first picked in the original fit
+	varorder <- unique(unlist(apply(fit@bperk, MARGIN=1, FUN=function(z) which(!z==0))))
+	bmat <- t(bmat[,varorder])
+
+	h <- hamlet::hmap(bmat, Colv=NA, Rowv=NA, toplim=0.8, bottomlim=0.2, col=colorRampPalette(c("orange", "red", "black", "blue", "cyan"))(100), nbins=100, namerows=FALSE, namecols=FALSE)
+	title(xlab="Cardinality 'k'")
+	axis(1, at=h$coltext$xseq[1:kmax], labels=1:kmax)
+	axis(2, at=h$rowtext$yseq, labels=h$rowtext$rownam, cex.axis=cex.axis, las=1)
+	hamlet::hmap.key(h)
+}
