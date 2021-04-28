@@ -300,7 +300,11 @@ bs.plot <- function(
 	#cv, # Cross-validation performance if calculated
 	bs, # Bootstrapped data estimates if calculated
 	kmax, # Maximum k to draw to; if missing, using kmax from fit@kmax
-	cex.axis = 0.6, 	
+	cex.axis = 0.6, # Axis cex, for scaling
+	palet = colorRampPalette(c("orange", "red", "black", "blue", "cyan"))(100), # color palette used in the heatmap
+	nbins = 100, # Number of color bins
+	Colv=NA, # Sorting of columns
+	Rowv=NA, # Sorting of rows
 	...
 ){
 	if(!class(fit) %in% c("oscar")){
@@ -309,7 +313,7 @@ bs.plot <- function(
 	if(missing(kmax)){
 		kmax <- fit@kmax
 	}
-	par(xpd=NA)
+	par(mar=c(4,4,0,0))
 	# Cross-validation
 	#if(!missing(cv)){
 	#	# Extra CV annotation on top
@@ -329,7 +333,7 @@ bs.plot <- function(
 	varorder <- unique(unlist(apply(fit@bperk, MARGIN=1, FUN=function(z) which(!z==0))))
 	bmat <- t(bmat[,varorder])
 
-	h <- hamlet::hmap(bmat, Colv=NA, Rowv=NA, toplim=0.8, bottomlim=0.2, col=colorRampPalette(c("orange", "red", "black", "blue", "cyan"))(100), nbins=100, namerows=FALSE, namecols=FALSE)
+	h <- hamlet::hmap(bmat, Colv=Colv, Rowv=Rowv, xlim=c(0.25, 1), ylim=c(0, 0.75), col=palet, nbins=nbins, namerows=FALSE, namecols=FALSE)
 	title(xlab="Cardinality 'k'")
 	axis(1, at=h$coltext$xseq[1:kmax], labels=1:kmax)
 	axis(2, at=h$rowtext$yseq, labels=h$rowtext$rownam, cex.axis=cex.axis, las=1)
