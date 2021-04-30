@@ -1,8 +1,8 @@
 Package: oscar
 Type: Package
 Title: Optimal Subset CArdinality Regression (OSCAR) models using the L0-pseudonorm
-Version: 0.6.5
-Date: 2021-04-27
+Version: 0.6.6
+Date: 2021-04-30
 Authors@R: c(
 	person(given="Teemu Daniel", family="Laajala", role=c("aut", "cre"), email="teelaa@utu.fi", comment = c(ORCID = "0000-0002-7016-7354")),
 	person(given="Kaisa", family="Joki", role=c("aut"), email="kjjoki@utu.fi"),

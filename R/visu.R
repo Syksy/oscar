@@ -246,6 +246,7 @@ bs.boxplot <- function(
 
 #' @title Visualize binary indicator matrix optionally coupled with cross-validation performance
 #'
+#' @importFrom hamlet hmap hmap.key
 #' @export
 binplot <- function(
 	fit, # Model fit object
@@ -294,6 +295,7 @@ binplot <- function(
 
 #' @title Bootstrap + cross-validation heatmap plot
 #'
+#' @importFrom hamlet hmap hmap.key
 #' @export
 bs.plot <- function(
 	fit, # Model fit object
