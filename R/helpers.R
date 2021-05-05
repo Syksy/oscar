@@ -29,6 +29,8 @@ cv.oscar <- function(
 	fold = 10,
 	# RNG seed (integer) that can be set for exact reproducibility
 	seed = NULL,
+	# Should some strata be balanced over the bins? By default no, should be a vector equal to the number of rows in x
+        strata = rep(1, times=nrow(fit@x)),
 	# Level of verbosity mainly for debugging
 	verb = 0
 ){
@@ -67,7 +69,7 @@ cv.oscar <- function(
 		list(train = train, test = test)
 	}
 	# Generate cv-folds
-	cvsets <- cv(fit@x, fold = fold, seed = seed)
+	cvsets <- cv(fit@x, fold = fold, seed = seed,strata=strata)
 	cvsets
 	# Verbose
 	if(verb>=1) print(str(cvsets))
