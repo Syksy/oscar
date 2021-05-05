@@ -1,6 +1,6 @@
 ###
 #
-# Functions specific for the S4 class object 'casso'
+# Functions specific for the S4 class object 'oscar'
 # 'show', 'coef', etc base function replacements
 #
 ###
@@ -11,14 +11,14 @@
 #
 ###
 
-#' Showing casso-objects
+#' Showing oscar-objects
 #'
 #' @rdname generics
 #'
 #' @export
-setMethod("show", "casso",
+setMethod("show", "oscar",
 	function(object){
-		cat("Cardinality-constrained Absolute Subset Selection Optimized model object\n")
+		cat("Optimal Subset Cardinality Regression (OSCAR) model object\n")
 		cat(paste("Model family: ", object@family,"\n", sep=""))
 		cat(paste("k steps: ", object@kmax,"\n", sep=""))
 		cat(paste("dim(x): [", paste(dim(object@x),collapse=","),"]\n", sep=""))
@@ -26,30 +26,81 @@ setMethod("show", "casso",
 	}
 )
 
-#' Extract coefficients of casso-objects
+#' Extract coefficients of oscar-objects
 #'
 #' @rdname generics
 #'
 #' @export
-setMethod("coef", "casso",
+setMethod("coef", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
 		if(missing(k)){
 			stop("You need to provide parameter 'k' for obtaining coefficients at a certain k-step")
-		}else if(k<1 | k>length(object@fits) | !is.numeric(k)){
+		}else if(k<1 | k>object@kmax | !is.numeric(k)){
 			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
 		}
 		# Returning the correct coef at k:th step
-		stats::coef(object@fits[[k]])
+		#stats::coef(object@fits[[k]])
+		object@bperk[k,]
 	}
 )
 
-#' Plot casso-coefficients as a function of k and override default plot generic
+#' Predicting based on oscar-objects
 #'
 #' @rdname generics
 #'
 #' @export
-setMethod("plot", "casso",
+setMethod("predict", "oscar",
+	# Showing possible options for types of responses
+	function(object, k, type = c("response","link","nonzero","coefficients","label"), newdata = object@x){
+		# Sanity checking for k-values
+		if(missing(k)){
+			stop("You need to provide parameter 'k' for obtaining coefficients at a certain k-step")
+		}else if(k<1 | k>object@kmax | !is.numeric(k)){
+			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
+		}else if(!object@family %in% c("cox", "mse", "gaussian", "logistic")){
+			stop(paste("Invalid family-parameter in oscar-object:", object@family))
+		}
+		# Returning the correct coef at k:th step
+		if(type[1] == "response"){
+			if(object@family == "cox"){
+				# Xb
+				as.matrix(newdata) %*% t(object@bperk[k,,drop=FALSE])
+			}else{
+				# Need to add intercept to b0 + Xb in 
+				cbind(1, as.matrix(newdata)) %*% t(object@bperk[k,,drop=FALSE])
+			}
+		# Non-zero coefficients
+		}else if(type[1] == "nonzero"){
+			object@bperk[k,which(!object@bperk[k,]==0)]
+		# All coefficients
+		}else if(type[1] == "coefficients"){
+			object@bperk[k,]
+		# Xb run through the link function
+		}else if(type[1] == "link"){		
+			if(object@family %in% "logistic"){
+				Xb <- cbind(1, as.matrix(newdata)) %*% t(object@bperk[k,,drop=FALSE])
+				1/(1+exp(-Xb))
+			}else if(object@family %in% c("cox")){
+				exp(as.matrix(newdata) %*% t(object@bperk[k,,drop=FALSE]))
+			}
+		# Class labels (binary for starters)
+		}else if(type[1] == "label"){
+			if(!object@family == "logistic"){
+				stop("Parameter type == 'label' is intended for logistic or multinomial predictions")
+			}
+			Xb <- cbind(1, as.matrix(newdata)) %*% t(object@bperk[k,,drop=FALSE])
+			as.integer(1/(1+exp(-Xb))>0.5)
+		}
+	}
+)
+
+#' Plot oscar-coefficients as a function of k and override default plot generic
+#'
+#' @rdname generics
+#'
+#' @export
+setMethod("plot", "oscar",
 	function(x, y, k=1:x@kmax, add=FALSE, intercept=FALSE, ...){
 		# Should intercept be omitted from the plot
 		if(!intercept & "(Intercept)" %in% colnames(x@bperk)){
@@ -76,14 +127,14 @@ setMethod("plot", "casso",
 		})
 		names(ret) <- colnames(bperk)
 		# Return a bperk coefficients list which is plotted
-		ret
+		invisible(ret)
 	}
 )
 
 
 ###
 #
-# casso-specific S4-functions
+# oscar-specific S4-functions
 #
 ###
 
@@ -98,16 +149,16 @@ setGeneric("feat",
 		standardGeneric("feat")
 	}
 )
-setMethod("feat", "casso",
+setMethod("feat", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
 		if(missing(k)){
 			stop("You need to provide parameter 'k' for obtaining coefficients at a certain k-step")
-		}else if(k<1 | k>length(object@fits) | !is.numeric(k)){
+		}else if(k<1 | k>object@kmax | !is.numeric(k)){
 			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
 		}
 		# Returning the correct nonzero coefs at k:th step and name the indices according to data matrix column names
-		tmp <- casso::coef(object@fits[[k]])
+		tmp <- oscar::coef(object@fits[[k]])
 		# Return the non-zero coefs, named vector
 		tmp[!tmp==0]
 	}
@@ -123,12 +174,12 @@ setGeneric("kits",
 		standardGeneric("kits")
 	}
 )
-setMethod("kits", "casso",
+setMethod("kits", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
 		if(missing(k)){
 			stop("You need to provide parameter 'k' for obtaining coefficients at a certain k-step")
-		}else if(k<1 | k>length(object@fits) | !is.numeric(k)){
+		}else if(k<1 | k>object@kmax | !is.numeric(k)){
 			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
 		}
 		# Returning the correct kit indices while naming them

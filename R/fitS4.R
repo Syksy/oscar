@@ -5,12 +5,12 @@
 #
 ####
 
-#' S4-class for casso
+#' S4-class for oscar
 #'
 #'
 #'
 #' @export
-setClass("casso", # abbreviation
+setClass("oscar", # abbreviation
 	representation(
 		# Set class representations for the S4-class @-slots
 		## Results from Fortran
@@ -79,24 +79,25 @@ setClass("casso", # abbreviation
 #' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2
 #' @param verb Integer with additional integer values giving verbal feedback, Default: 1
 #' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality
-#' @return Fitted casso-object
+#' @param sanitize Whether input column names should be cleaned of potentially problematic symbols
+#' @return Fitted oscar-object
 #' @details DETAILS
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
 #'   data(ex)
-#'   fit <- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit
 #'  }
 #' }
 #' @seealso 
 #'  \code{\link[survival]{coxph}},\code{\link[survival]{coxph.control}}
 #'  \code{\link[stats]{glm}}
-#' @rdname casso
+#' @rdname oscar
 #' @export 
 #' @importFrom survival coxph coxph.control
 #' @importFrom stats glm
-casso <- function(
+oscar <- function(
 	# Data matrix x
 	x, 
 	# Response vector y (or 2-column survival response matrix)
@@ -107,25 +108,28 @@ casso <- function(
 	w, 
 	# Model family (defines the likelihood function)
 	family = "cox",
+	# Goodness metric used in model goodness-of-fit 
+	metric,
 	## Tuning parameters
 	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
-	start=2,# Deterministic start point 
+	start=2,# Strategy for choosing starting points at each n_k iteration
 	verb=1, # Level of R verbosity (1 = standard, 2 = debug level, 3 = excessive debugging, 0<= none)
 	kmax,    # Maximum tested k-values
+	sanitize = TRUE,	# Whether column (i.e. variable) names are cleaned of potentially hazardous symbols
 	in_mrounds = 5000, # The number of rounds in one main iteration 
 	in_mit = 5000, # The number of main iteration 
 	in_mrounds_esc = 5000, # The number of rounds in escape procedure
 	in_b1, # Bundle B1, default min(n+5,1000) depends on the problem -> defined later
 	in_b2 = 3, # Bundle B2
 	in_b, # Bundle B in escape procedure, default 2n depends on the problem -> defined later
-	in_m = 0.2, # Descent parameter
+	in_m = 0.01, # Descent parameter
 	in_m_clarke = 0.01, # Descent parameter in escape procedure
 	in_c = 0.1, # Extra decrease parameter
 	in_r_dec, # Decrease parameter, default depends on the problem -> defined later
-	in_r_inc = 10^7, # Increase parameter
+	in_r_inc = 10^5, # Increase parameter
 	in_eps1 = 5*10^(-5), # Enlargement parameter
 	in_eps, # Stopping tolerance: Proximity measure, default depends on the problem -> defined later
-	in_crit_tol # Stopping tolerance: Criticality tolerance, default depends on the problem -> defined later
+	in_crit_tol =10^(-5) # Stopping tolerance: Criticality tolerance
 ){
 	# TODO: Sanity checks for input here
 	
@@ -146,6 +150,25 @@ casso <- function(
 	# ...
 	if(verb>=2) print("Sanity checks ready")
 
+	# If no custom metric defined, using default goodness metrics:
+	# mse/gaussian: mean-squared error
+	# cox: c-index
+	# logistic: (roc-)auc
+	if(missing(metric)){
+		if(family %in% c("mse","gaussian")){
+			metric <- "mse"
+		}else if(family == "cox"){
+			metric <- "concordance"
+		}else if(family == "logistic"){
+			metric <- "auc"
+		}else{
+			stop(paste("Invalid parameter 'family':", family))
+		}
+	}else{
+		# TODO; User provided custom metrics; 
+		# check if legitimate (for logistic e.g. 'accuracy' and 'auc' ought to work)
+	}
+
 	# TODO: Currently Cox assumes that event and time come in certain order in the 2-column y
 	# Flip them depending on which way is expected
 	if(any(class(y) %in% c("matrix", "array", "Surv"))){
@@ -160,9 +183,6 @@ casso <- function(
 	if(family=="cox"&&nrow(y)!=nrow(x)){
 		stop(paste("Number of observations in the response matrix y (",nrow(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
 	}
-	#if(family %in% c("mse", "gaussian","logistic")&length(y)!=nrow(x)){
-#		stop(paste("Number of observations in the response vector y (",length(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
-#	}
 	
 	###############################
 	#### CHECKING kit matrix k ####
@@ -357,30 +377,36 @@ casso <- function(
 		}
 		warnings(paste("Input in_eps should be >0. Default value ", in_eps," is used instead.",sep=""))
 	}
-	if(missing(in_crit_tol)){# Stopping tolerance: Criticality tolerance
-		user_n <- ncol(x)
-		if(family %in% c("mse","logistic","gaussian","normal")){
-		user_n <- user_n +1}
-		if(user_n <=200){in_crit_tol <- 10^(-5)
-		}else{in_crit_tol <- 10^(-4)
-		}
-	}
+	#if(missing(in_crit_tol)){# Stopping tolerance: Criticality tolerance
+	#	user_n <- ncol(x)
+	#	if(family %in% c("mse","logistic","gaussian","normal")){
+	#	user_n <- user_n +1}
+	#	if(user_n <=200){in_crit_tol <- 10^(-5)
+	#	}else{in_crit_tol <- 10^(-4)
+	#	}
+	#}
 	if(in_crit_tol<=0){
-		user_n <- ncol(x)
-		if(family %in% c("mse","logistic","gaussian","normal")){
-		user_n <- user_n +1}
-		if(user_n <=200){in_crit_tol<- 10^(-5)
-		}else{in_crit_tol <- 10^(-4)
-		}
+		in_crit_tol <- 10^(-5)
+		#user_n <- ncol(x)
+		#if(family %in% c("mse","logistic","gaussian","normal")){
+		#user_n <- user_n +1}
+		#if(user_n <=200){in_crit_tol<- 10^(-5)
+		#}else{in_crit_tol <- 10^(-4)
+		#}
 		warnings(paste("Input in_crit_tol should be >0. Default value ", in_crit_tol," is used instead.",sep=""))
 	}	
+	
+	## Sanitize column names, replacing '+' with 'plus', '-' with 'minus', and ' ', '(' and ')' with '_'
+	if(sanitize){
+		colnames(x) <- gsub("\\ |\\(|)", "_", gsub("\\+", "plus", gsub("\\-", "minus", colnames(x))))
+	}
 	
 	###############################
 	#### Calling C and Fortran ####
 	# Call correct internal function based on the specified model family
 	if(family=="cox"){
 		# Call C function for Cox regression
-		res <- .Call(c_casso_cox_f, 
+		res <- .Call(c_oscar_cox_f, 
 			as.double(x), # Data matrix x
 			as.double(y), # Response y
 			as.integer(k), # Kit indicator matrix k 
@@ -416,7 +442,7 @@ casso <- function(
 	# Gaussian / normal distribution fit using mean-squared error	
 	}else if(family %in% c("mse", "gaussian")){
 		# Call C function for Mean-Squared Error regression
-		res <- .Call(c_casso_mse_f, 
+		res <- .Call(c_oscar_mse_f, 
 			as.double(x), # Data matrix x
 			as.double(y), # Response y
 			## Requires artificial addition of intercept kit?
@@ -451,7 +477,7 @@ casso <- function(
 		
 	}else if(family == "logistic"){
 		# Call C function for logistic regression
-		res <- .Call(c_casso_logistic_f, 
+		res <- .Call(c_oscar_logistic_f, 
 			as.double(x), # Data matrix x
 			as.integer(y), # Response y
 			## Requires artificial addition of intercept kit?
@@ -555,7 +581,7 @@ casso <- function(
 	}
 
 	# Return the freshly built S4 model object
-	obj <- new("casso", 
+	obj <- new("oscar", 
 		## Model fit results
 		bperk = bperk[1:kmax,,drop=FALSE], # Beta coef per k-steps up to kmax
 		fperk = fperk[1:kmax], # Target function values per k-steps up to kmax
@@ -568,8 +594,9 @@ casso <- function(
 		w=as.numeric(w),	# Vector of weights/costs for kits
 		## Additional parameters
 		family=as.character(family),	# Model family as a character string
-		start = start,	# Method for generating starting points
-		kmax = kmax	# Max run k-step
+		metric=as.character(metric),	# Model goodness metric
+		start=start,	# Method for generating starting points
+		kmax=kmax	# Max run k-step
 	)
 
 	if(verb>=2){
@@ -577,51 +604,73 @@ casso <- function(
 	}
 	
 	# Fit lm/glm/coxph/... models per each estimated set of beta coefs (function call depends on 'family')
-	try({
-		obj@fits <- apply(obj@bperk, MARGIN=1, FUN=function(bs){
-			if(family=="cox"){
-				## Prefit a coxph-object
-				survival::coxph(
-					as.formula(paste("survival::Surv(time=obj@y[,1],event=obj@y[,2]) ~",paste(colnames(obj@x),collapse='+'))), # Formula for response 'y' modeled using data matrix 'x' 
-					data=data.frame(obj@x), # Use data matrix 'x'
-					init = bs, # Use model coefficients obtained using the DBDC optimization 
-					control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
-				)
-			}else if(family %in% c("mse", "gaussian")){
-				## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
-				stats::glm(
-					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
-					, data = data.frame(obj@x), start = bs, family = gaussian(link="identity"), method = casso:::.glm.fit.mod
-				)
-			}else if(family=="logistic"){
-				## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
-				stats::glm(
-					as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
-					, data = data.frame(obj@x),, start = bs, family = binomial(link="logit"), method = casso:::.glm.fit.mod
-				)
-			}
-		})
-	})
-
-	if(verb>=2){
-		print("fits-slot created successfully")
-	}
+	#try({
+	#	# Model fits as a function of beta coefs
+	#	obj@fits <- apply(obj@bperk, MARGIN=1, FUN=function(bs){
+	#		# Debugging
+	#		if(verb>=2) print("Performing obj@fits ...")
+	#		if(family=="cox"){
+	#			## Prefit a coxph-object
+	#			survival::coxph(
+	#				#as.formula(paste("survival::Surv(time=obj@y[,1],event=obj@y[,2]) ~",paste(colnames(obj@x),collapse='+'))), # Formula for response 'y' modeled using data matrix 'x' 
+	#				as.formula("survival::Surv(time=obj@y[,1],event=obj@y[,2]) ~ ."), # Formula for response 'y' modeled using data matrix 'x' 
+	#				data=data.frame(obj@x), # Use data matrix 'x'
+	#				#data = data.frame(obj@x[,names(bs)]), # Use data matrix 'x'
+	#				init = bs, # Use model coefficients obtained using the DBDC optimization 
+	#				control = survival::coxph.control(iter.max=0) # Prevent iterator from deviating from prior model parameters
+	#			)
+	#		}else if(family %in% c("mse", "gaussian")){
+	#			## Prefit a linear glm-object with gaussian error; use heavily stabbed .glm.fit.mod allowing maxit = 0
+	#			stats::glm(
+	#				#as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
+	#				as.formula("y ~ .")
+	#				, data = data.frame(obj@x), start = bs, family = gaussian(link="identity"), method = oscar:::.glm.fit.mod
+	#			)
+	#		}else if(family=="logistic"){
+	#			## Prefit a logistic glm-object with logistic link function; use heavily stabbed .glm.fit.mod allowing maxit = 0
+	#			stats::glm(
+	#				#as.formula(paste("y ~",paste(colnames(obj@x),collapse='+')))
+	#				as.formula("y ~ .")
+	#				, data = data.frame(obj@x), start = bs, family = binomial(link="logit"), method = oscar:::.glm.fit.mod
+	#			)
+	#			
+	#			### Alternative function instead of glm (not tested here)
+	#			#log.pred <- function(new.data){
+	#			#	log.pred <-  bs%*%t(cbind(rep(1,nrow(new.data)),new.data))  ## NOTE! columnnames should be checked!
+	#			#	log.pred <- exp(-log.pred)
+	#			#	prob <- 1/(1+log.pred)
+	#			#	pred <- lapply(prob,FUN=function(x){if(x>0.5){1}else{0}})  ## Cut-off 0.5 here
+	#			#	return(pred)
+	#			#}
+	#
+	#		}
+	#	})
+	#	# Extract corresponding model AICs as a function of k
+	#	obj@AIC <- unlist(lapply(obj@fits, FUN=function(z) { stats::extractAIC(z)[2] }))
+	#})
+	#
+	#if(verb>=2){
+	#	print("fits-slot created successfully")
+	#}
 		
 	# Calculate/extract model goodness metric at each k
 	try({
 		# Cox regression
 		if(family=="cox"){
 			# Use c-index as the goodness measure
-			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { z$concordance["concordance"] }))
-			obj@metric <- "cindex"
+			obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { survival::coxph(Surv(time=y[,1], event=y[,2]) ~ x %*% t(bperk[z,,drop=FALSE]))$concordance["concordance"] }))
 		}else if(family %in% c("mse", "gaussian")){
 			# Use mean squared error as the goodness measure
-			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { mean((y - predict.glm(z, type="response"))^2) }))
-			obj@metric <- "mse"
+			obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { mean((y - (cbind(1, x) %*% t(bperk[z,,drop=FALSE])))^2) }))
 		}else if(family=="logistic"){
 			# Use correct classification percent as the goodness measure
-			obj@goodness <- unlist(lapply(obj@fits, FUN=function(z) { sum(as.numeric(y == (predict.glm(z, type="response")>0.5)))/length(y) }))
-			obj@metric <- "accuracy"
+			# ROC-AUC
+			if(metric=="auc"){
+			
+			# Accuracy
+			}else if(metric=="accuracy"){
+				#obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { sum(as.numeric(y == (predict.glm(z, type="response")>0.5)))/length(y) }))
+			}
 		}
 	})
 	

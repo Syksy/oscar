@@ -6,11 +6,12 @@
 \usage{
 visu(
   object,
-  y = c("target", "cost", "goodness", "cv"),
+  y = c("target", "cost", "goodness", "cv", "AIC"),
   cols = c("red", "blue"),
   legend = "top",
   mtexts = TRUE,
-  add = FALSE
+  add = FALSE,
+  main = ""
 )
 }
 \arguments{

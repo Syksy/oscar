@@ -1,0 +1,303 @@
+---
+title: "Vignette oscar"
+output: rmarkdown::html_vignette
+date: "`r Sys.Date()`"
+vignette: >
+  %\VignetteIndexEntry{CASSO vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+\newcommand{\vertiii}[1]{{\left\vert\kern-0.25ex\left\vert\kern-0.25ex\left\vert #1 
+    \right\vert\kern-0.25ex\right\vert\kern-0.25ex\right\vert}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}      # vector \beta bolded
+\newcommand{\bg}{{\boldsymbol{g}}}           # vector g bolded
+\newcommand{\bW}{{\boldsymbol{W}}}           # vector W bolded
+\newcommand{\x}{{\boldsymbol{x}}}            # vector x bolded
+
+Introduction
+
+Installation
+
+Quick Start using the Cox model
+
+Data
+
+Cox
+
+MSE
+
+Logistic
+
+## Introduction
+OSCAR is a package that fits Cox proportional hazards model (Cox), linear regression model (mean square error, mse) or generalized linear model (logistic) via an algorithm, called CASS-DBDC (Cardinality-constrained Absolute Subset Selection with the DBDC method). It can be used to predict survival or scalar responses, such as binomial responses, from the patient data. Additionally, it incorporates the kit structure, where measurements (e.g. hemoglobin and red blood cells) are measured in bulks (e.g. complete blood count). The kit structure is important, when considering the price of predictive measurements as multiple measurements might be included within one additional cost.
+The authors of oscar are Teemu D. Laajala, Kaisa Joki and Anni S. Halkola, and the R package is maintained by (Anni ja Daniel?). This vignette describes how to use oscar.
+
+The optimization problem solved by `oscar` is
+
+\begin{equation}
+\min_{\boldsymbol{\beta}} \quad f(\bbeta)=-l(\bbeta) + \rho \left(\|\bbeta\|_1 -\vertiii{\bg(\bbeta,\bW)}_{[K]}\,\right),
+\end{equation}
+
+where $l(\bbeta)$ is the scaled log partial likelihood. E.g. in the case of Cox:
+\begin{equation}
+l(\bbeta)=\frac{2}{n} \sum_{i=1}^m \left\{ \sum_{j\in D_i}\x_j^{\top}\bbeta - d_i \ln\left( \sum_{j\in R_i} e^{x_j^{\top}\bbeta} \right) \right\}.
+\end{equation}
+In the objective function $f(\bbeta)$ the second part is a cardinality constraint, where $\rho$ is a positive penalization parameter, $\bW$ is the kit matrix and $K$ is the number of kits. Now the mapping
+\begin{equation}
+g_i(\bbeta,\bW) := \sum_{j=1}^p (\bW)_{i,j}|\beta_i|,
+\end{equation}
+where $j$ is the measurement (column) and $i$ is the kit (row). 
+
+The CASS-DBDC algorithm is used to solve the problem $\min_{\boldsymbol{\beta}} f(\bbeta)$. The algorithm combines the penalty function approach with the double bundle method (DBDC). As starting point usually influences the solution in nonconvex problems, such as our problem, an incremental approach is used to select the set of starting points. In particular, we start to solve the problem with one kit allowed and then increase the number until maximum. The solution with $i$ kits is then used to derive new starting points to the problem with $i+1$ kits.
+
+The code cannot (yet?) handle sparse input matrices We advise the user to see section "Data" in this vignette to gain knowledge about what kind of input data is required.
+
+The package produces a S4 object (oscar object) which includes, either `coxph` or `glm` object with coefficients obtained by the code. These models have their own predict functions and thus can be used as such. The `survival` package is required to predict with `coxph` and the `stats` package is required to predict with `glm`.  See … .
+
+Additionally, goodness of fit is calculated and stored in the oscar object: Concordance index for Cox, mean square error for mse and percentage of correct predictions for logistic.
+
+The package also includes methods for plotting and a function for cross validation.
+
+## Installation 
+The oscar package can be installed directly from GitHub using devtools with the following command in R console:
+`install_github("Syksy/oscar")`
+
+Direct URL to the latest source code of the package is available publicly on GitHub at: https://github.com/Syksy/oscar
+
+## Quick Start using the Cox model
+In this section we will give a general introduction how to use the package. First, we load the oscar package:
+```{r}
+library(oscar)
+```
+
+```{r echo=FALSE}
+# The computationally heavy parts have been precomputed but are reproducible with the presented code
+load("vignette_workspace.RData")
+```
+
+Here we use the pre-generated example data included in the package. Users can also use their own data (see Section data for more information). The example data includes three matrices (ex_X, ex_Y and ex_K) and one vector (ex_c). Here we load the example data:
+```{r}
+data(ex)
+```
+
+As a default, the model uses Cox model and generates the solutions starting with one allowed kit and finishing with all kits in the fit. We fit the model:
+```{r eval=FALSE}
+tmp <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family="cox")
+```
+
+Now `tmp` is a oscar object that contains the relevant S4-object slots, such as the model coefficients and target function values. The oscar object "tmp" can be used further to, for example, plot and predict. We visualize the target function value with the `visu` function:
+```{r eval=FALSE}
+visu(tmp)
+```
+
+```{r echo=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Figure caption"}
+knitr::include_graphics("images/tmp_visu.png")
+```
+
+As a default this plots the target function value and the cost as the functions of the allowed kit number. In the example data there are 22 kits with total of 38 measurements. Costs don't affect the fit but in practice it is useful to see the price in relation to model goodness. We now check which kits are selected in each step:
+```{r}
+tmp@kperk
+```
+
+For example, with four kits allowed selected kits are `r names(tmp@kperk$k_4)`. We can check the coefficients for each allowed kit number:
+```{r}
+tmp@bperk
+```
+
+Measurements are in the columns and allowed kit numbers are in the rows. We can also check the coefficients for a specific number of kits, for example four:
+```{r}
+coef(tmp, k=4)
+```
+
+We can also make predictions with new input data, for example with four kits allowed:
+```{r}
+set.seed(1)
+new.X <- matrix(rnorm(38*20),nrow=20,ncol=38)
+colnames(new.X) <- colnames(ex_X)
+predict(tmp@fits$k_4, newdata=data.frame(new.X))
+```
+
+Cross-validation can be performed (10-fold is used as a default). For Cox model, C-index is used as the quality measurement:
+```{r eval=FALSE}
+cv.tmp <- cv.oscar(tmp, fold=10, seed=0)
+```
+
+The results can be plotted:
+```{r eval=FALSE}
+cv.visu(cv.tmp)
+```
+
+```{r echo=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Figure caption"}
+knitr::include_graphics("images/tmp_cv_visu.png")
+```
+
+
+Bootstrap can be performed (100 is the default number of bootstrapped datasets). Here for example with bootstrap=10:
+```{r eval=FALSE}
+bs.tmp <- bs.oscar(tmp, bootstrap=10, seed=0)
+```
+
+This can be plotted with:
+```{r eval=FALSE}
+bs.visu(bs.tmp)
+```
+
+```{r echo=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Figure caption"}
+knitr::include_graphics("images/tmp_bs_visu.png")
+```
+
+
+Sometimes with many features (like thousands of genes in gene expression data) it is not useful to fit until the number selected features is at its maximum. Then a parameter `kmax` can be used to limit when to stop. The model is then fitted for 1,...,kmax kits.
+```{r eval=FALSE}
+tmp.kmax10<- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, kmax=10, family="cox")
+```
+
+This fits only until the allowed kit number is 10.
+```{r eval=FALSE}
+visu(tmp.kmax10)
+```
+
+```{r echo=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Figure caption"}
+knitr::include_graphics("images/tmp_kmax10_visu.png")
+```
+
+With the model fitted above, we can check the chosen kits and model coefficients. Here for example with k=10 cardinality:
+```{r}
+kits(tmp, k=10)
+coef(tmp, k=10)
+feat(tmp, k=10)
+```
+
+
+## Data
+In this section we explain some requirements for input data.
+
+The oscar package includes an pre-generated dataset with three matrices and one vector. This example data was generated using real life data as a guide. Matrix `ex_X` is the predictor matrix with patients as rows and measuremets as columns. Matrix `ex_Y` is the response matrix with two columns for time and event.
+```{r}
+head(ex_X)
+head(ex_Y)
+```
+
+Matrix `ex_K` is kit matrix with kits as rows and measurements as columns. Vector `ex_c` is a kit cost vector and the length is equal to number of rows in `ex_K`.
+```{r}
+head(ex_K)
+head(ex_c)
+```
+
+Users can also use their own data, however there are some requirements for the composition of data:
+
+- **Predictor matrix**: Input matrix `x` should not have missing values (for now at least). Additionally, patients (observations) should be as rows and measurments as columns. Data should be non-standardized as the algorithm does that.
+
+- **Response matrix**: Input matrix `y` should not have missing values. Row number should be equal to row number of matrix `x`. In the case of survial prediction with Cox, there should be two columns with time in the first column and event (0/1) in the second. In the cases of mse and logistic, only one column is needed. Additionally, in the case of logistic, the response should be binomial (0/1).
+
+- **Kit matrix**: Input matrix `k` should not have missing values. Measurements should be as columns and those should match with columns in matrix `x`. Kits are as rows. Value `k[i,j]` should be 0 or 1 depending on whether the measurement `j` is included in the kit `i`. Measurement can only be in one kit (for now). Additionally, there should be no zero columns or rows, i.e. all measurements should be in one kit and all kits should have at least one measurement. Identity matrix is the default and can always be used as kit matrix, in which case all measurements are treated independently.
+
+- **Cost vector**: Input vector `w` should have length equal to the row number of kit matrix `k`. A unit vector is used as a default.
+
+
+
+
+## Cox
+The Cox proportional hazards model is used to predict survival where the response consists of time and event. Event is either death (1) or right-censoring (0). To demonstrate, we use a pre-generated dataset included in the oscar package. Users can use their own data (see section Data for requirements).
+```{r}
+data(ex)
+head(ex_Y)
+```
+
+To fit a Cox model we choose `family = "cox"`. However, `oscar` uses Cox as a default, and thus the used option is not necessary in this case. The algorithm standardizes the input data and thus user should use non-standardized data. 
+```{r eval=FALSE}
+tmp.cox <- oscar(x=ex_X,y=ex_Y,k=ex_K,w=ex_c,family="cox")
+```
+
+Other options in `oscar` function call include print options and whether to fit from one kit to maximum or vice versa. See help file `help(oscar)` for more details.
+
+As in the section Quick start, we can check the chosen kits and model coefficients. Here for example with 10 kits allowed:
+```{r eval=FALSE}
+kits(tmp.cox, k=10)
+coef(tmp.cox, k=10)
+feat(tmp.cox, k=10)
+```
+
+In addition to target function values, the oscar object "tmp.cox" includes also calculation for goodness of fit. In the case Cox this is concordance index. Let's plot goodness of fit with target function value:
+```{r eval=FALSE}
+visu(tmp.cox, y=c("goodness","target"),legend="right")
+```
+
+
+
+## MSE
+The linear regression model is often used to predict a scalar response from predictors, which, in our examples, are patient measurements. `oscar` uses mean square error as the quality measure in the fitting. The response our example data is survival data and thus not fitting for the problem in this case. Thus to demonstrate, we use the swiss dataset included in the R `datasets` package. This data consists of standardized fertility measures and socio-economic indicators (See https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/swiss.html). Users can also use their own data (see section Data for requirements).
+```{r eval=FALSE}
+data(swiss)
+```
+
+In this example we try to predict the fertility measure with the socio-economic indicators, such as education and religion (catholic or protestant).
+```{r eval=FALSE}
+head(swiss)
+swiss.X <- swiss[,2:6]
+swiss.Y <- swiss[,1]
+```
+
+To fit a lm model we choose `family = "mse"`. The algorithm standardizes the input data and thus user should use non-standardized data. In this example the predictors are not measured in kit structures and thus the kit matrix is let to be the default identity matrix. Similarly costs are not applicable in this case and they are left to the default which is the unit cost.
+```{r eval=FALSE}
+tmp.mse <- oscar(x=swiss.X,y=swiss.Y,family="mse")
+```
+
+Other options in `oscar` function call include print options and whether to fit from one kit to maximum or vice versa. See help file `help(oscar)` for more details.
+
+As in the previous sections, we can check the chosen predictors and model coefficients. The first predictor is intercept which is always included.
+```{r eval=FALSE}
+tmp.mse@kperk
+tmp.mse@bperk
+```
+
+In addition to target function values, the `oscar` object "tmp.mse" includes also calculation for goodness of fit. In the case of mse the measure is the mean square error itself. Let's plot goodness of fit with target function value:
+```{r eval=FALSE}
+visu(tmp.mse, y=c("goodness","target"), legend="topright")
+```
+
+As can be seen from the plot, target function value and goodness of fit should overlap.
+
+## Logistic
+The generalized linear model is more flexible than linear model and a link function can be included between linear prediction and response. In `oscar` logistic link function is used to predict binomial responses (0 or 1). The response our example data is survival data and thus not fitting for the problem in this case. Thus to demonstrate, we use the Titanic dataset included in the R `datasets` package. This data consists of survival of passengers in Titanic (See https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/Titanic.html).
+```{r eval=FALSE}
+data(Titanic)
+```
+
+We try to predict the survival (No=0, Yes=1) with the other variables included: class, sex and age.
+```{r eval=FALSE}
+View(Titanic)
+```
+
+The Titanic data is presented as frequencies of each possible parameter combination and for our purposes this needs to be presented as individuals. This requires some modifications.
+```{r eval=FALSE}
+Titanic.dataf <- data.frame(Titanic)  # From table to data.frame
+Titanic.mod <- do.call("rbind",(sapply(seq(1,32,by=1),FUN=function(z){do.call("rbind",replicate(Titanic.dataf[z,5],Titanic.dataf[z,1:4],simplify=FALSE))})))  # Each row is repeated according to the frequency
+```
+
+Additionally, the categorical variables are changed to dummy values.
+```{r eval=FALSE}
+Titanic.mod[,"Class"] <- as.numeric(as.factor(Titanic.mod[,"Class"]))
+Titanic.mod[,"Sex"] <- as.numeric(as.factor(Titanic.mod[,"Sex"]))
+Titanic.mod[,"Age"] <- as.numeric(as.factor(Titanic.mod[,"Age"]))
+Titanic.mod[,"Survived"] <- as.numeric(as.factor(Titanic.mod[,"Survived"]))-1  # -1 to make categories No=0, Yes=1
+```
+
+To fit a glm model we choose `family = "logistic"`. The algorithm standardizes the input data and thus user should use non-standardized data. As in the previous section, the kit structure and costs are not applicable in this case and they are left to their defaults.
+```{r eval=FALSE}
+tmp.log <- oscar(x=Titanic.mod[,c("Class","Sex","Age")],y=Titanic.mod[,"Survived"],family="logistic")
+```
+
+Other options in `oscar` function call include print options and whether to fit from one kit to maximum or vice versa. See help file `help(oscar)` for more details.
+
+As in the previous sections, we can check the chosen predictors and model coefficients. In this example there are only three possible predictors. The first predictor is the intercept which is always included.
+```{r eval=FALSE}
+tmp.log@kperk
+tmp.log@bperk
+```
+
+In addition to target function values, the `oscar` object "tmp.log" includes also calculation for goodness of fit. In the case of logistic the measure is the percentage of right predictions (cut-off at 0.5). Let's plot goodness of fit with target function value:
+```{r eval=FALSE}
+visu(tmp.log, y=c("goodness","target"),legend="topright")
+```
+
