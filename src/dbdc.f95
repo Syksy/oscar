@@ -10,7 +10,7 @@
         !| |                       2) Mean square error model                                 | |
         !| |                       3) Logistic regression model                               | |
         !| |                                                                                  | |
-        !| |                       by Kaisa Joki (last modified  November 2020)               | |
+        !| |                       by Kaisa Joki (last modified  May 2021)                    | |
         !| |                                                                                  | |
         !| |      Features :                                                                  | |
         !| |                                                                                  | |
@@ -34,10 +34,13 @@
         !| .**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**. |
         !*..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..*
 
+
       MODULE bundle1  
+
       
         USE, INTRINSIC :: iso_c_binding
-        USE omp_lib
+
+        
         IMPLICIT NONE 
         
         !*..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..*
@@ -694,7 +697,10 @@
 
 
       MODULE bundle2
+      
         USE, INTRINSIC :: iso_c_binding
+      
+
         IMPLICIT NONE 
 
         !*..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..*
@@ -1457,9 +1463,11 @@
       END MODULE bundle2
 
 
-        MODULE functions    
-      
+      MODULE functions    
+
+
         USE, INTRINSIC :: iso_c_binding
+        
         IMPLICIT NONE
         
       
@@ -1538,21 +1546,25 @@
         !__________________________________________________________________________________________
         !>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>><<>>
         !****************** PARAMETRES NEEDED ONLY IN MAIN ITERATION AlGORITHM ********************
-        
-        INTEGER(KIND=c_int), SAVE :: user_size_b1                     ! The biggest possible size of the bundle B_1 
+
+
+
+        TYPE set_info ! all information in the bundle
+            
+          INTEGER(KIND=c_int) :: user_size_b1                     ! The biggest possible size of the bundle B_1 
                                                                       ! If user_size_b1 <= 0 then DEFAULT value MIN(user_n+5,1000) is used 
                                                                    
-        INTEGER(KIND=c_int), SAVE :: user_size_b2                     ! The biggest possible size of the bundle B_2 
+          INTEGER(KIND=c_int) :: user_size_b2                     ! The biggest possible size of the bundle B_2 
                                                                       ! If user_size_b2 <= 0 then DEFAULT value 3 is used  
               
-        REAL(KIND=c_double), SAVE :: user_m                           ! The descent parameter  If user_m <= 0.0_c_double .OR. user_m >= 1.0_c_double 
+          REAL(KIND=c_double) :: user_m                           ! The descent parameter  If user_m <= 0.0_c_double .OR. user_m >= 1.0_c_double 
                                                                                !               then DEFAULT value 0.2_c_double is used
 
-        REAL(KIND=c_double), SAVE :: user_c                           ! The decrease parameter c in DBDC  
+          REAL(KIND=c_double) :: user_c                           ! The decrease parameter c in DBDC  
                                                                       ! If user_c <= 0.0_c_double or user_c > 1.0_c_double then DEFAULT value 0.1_c_double is used 
 
                                                                  
-        REAL(KIND=c_double), SAVE :: user_r_dec                       ! The decrease parameter r in DBDC 
+          REAL(KIND=c_double) :: user_r_dec                       ! The decrease parameter r in DBDC 
         
         !If user_r_dec <= 0.0_c_double .OR. user_r_dec >= 1.0_c_double then DEFAULT value is used.
         !                               
@@ -1572,10 +1584,10 @@
         !     If user_n=250:    user_r_dec = 0.98_c_double    
         !
         
-        REAL(KIND=c_double), SAVE :: user_r_inc                       ! The increase parameter R: If user_r_inc <= 1.0_c_double 
+          REAL(KIND=c_double) :: user_r_inc                       ! The increase parameter R: If user_r_inc <= 1.0_c_double 
                                                                       !                           then DEFAULT value (10.0_c_double)**7 is used
  
-        REAL(KIND=c_double), SAVE :: user_eps_1                       ! The enlargement parameter: If user_eps_1 <= 0.0_c_double .OR. user_eps_1 > 1.0_c_double 
+          REAL(KIND=c_double) :: user_eps_1                       ! The enlargement parameter: If user_eps_1 <= 0.0_c_double .OR. user_eps_1 > 1.0_c_double 
                                                                       !                            then DEFAULT value 5*(10.0_c_double)**(-5) is used
 
  
@@ -1584,13 +1596,13 @@
         !****************** PARAMETRES NEEDED ONLY IN CLARKE STATIONARY AlGORITHM *******************
         
         
-         INTEGER(KIND=c_int), SAVE :: user_size                    ! The biggest possible bundle size for the bundle used in 'Clarke stationary' algorithm
+           INTEGER(KIND=c_int) :: user_size                    ! The biggest possible bundle size for the bundle used in 'Clarke stationary' algorithm
 
-         REAL(KIND=c_double), SAVE :: user_m_clarke                ! The descent parameter: If user_m_clarke <= 0.0_c_double .OR. user_m_clarke >= 1.0_c_double 
+           REAL(KIND=c_double) :: user_m_clarke                ! The descent parameter: If user_m_clarke <= 0.0_c_double .OR. user_m_clarke >= 1.0_c_double 
                                                                    !                                    then DEFAULT value 0.01_c_double is used
                                                                     
           
-         REAL(KIND=c_double), SAVE :: user_eps                                 ! The proximity measure: If user_eps <= 0.0_c_double 
+           REAL(KIND=c_double) :: user_eps                                 ! The proximity measure: If user_eps <= 0.0_c_double 
                                                                                !                        then DEFAULT value (10.0_c_double)**(-6) is used when n <= 50
                                                                                !                                           (10.0_c_double)**(-5) is used when n > 50
                                                                     
@@ -1599,7 +1611,7 @@
         !****************** PARAMETER NEEDED IN STOPPING CONDITIONS ********************
               
         ! ** The stopping tolerance **      
-        REAL(KIND=c_double), SAVE :: user_crit_tol                                  ! If user_crit_tol <= 0.0_c_double then DEFAULT value (10.0_c_double)**(-5) is used when n <=200
+          REAL(KIND=c_double) :: user_crit_tol                                  ! If user_crit_tol <= 0.0_c_double then DEFAULT value (10.0_c_double)**(-5) is used when n <=200
                                                                                     !                                                     (10.0_c_double)**(-4) is used when n > 20     
        
         !________________________________________________________________________________
@@ -1610,32 +1622,33 @@
         !                             DATA MATRICES
         !-------------------------------------------------------------------------------
          
-        INTEGER(KIND=c_int), SAVE :: nft0              ! the maximum number of features in a predictor
-        INTEGER(KIND=c_int), SAVE :: nrecord0          ! the maximum number of observations (data points)
-        INTEGER(KIND=c_int), SAVE :: nkits0            ! the maximum number of kits
-        INTEGER(KIND=c_int), SAVE :: nk0               ! the k-norm used
+          INTEGER(KIND=c_int) :: nft0              ! the maximum number of features in a predictor
+          INTEGER(KIND=c_int) :: nrecord0          ! the maximum number of observations (data points)
+          INTEGER(KIND=c_int) :: nkits0            ! the maximum number of kits
+          INTEGER(KIND=c_int) :: nk0               ! the k-norm used
 
-        REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE, SAVE :: mX          ! predictor matrix (column is an observation)
-        REAL(KIND=c_double), DIMENSION(:), ALLOCATABLE, SAVE :: mC            ! kit costs
+          REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE :: mX          ! predictor matrix (column is an observation)
+          REAL(KIND=c_double), DIMENSION(:), ALLOCATABLE :: mC            ! kit costs
 
-        INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE, SAVE :: mY          ! observed times and labels matrix (column is an observation) in Cox's proportional hazard model  
-        REAL(KIND=c_double), DIMENSION(:), ALLOCATABLE, SAVE :: mY_mse        ! vector of outputs in the mean square error model  
-        INTEGER(KIND=c_int), DIMENSION(:), ALLOCATABLE, SAVE :: mY_log        ! vector of outputs in the logistic regression model
+          INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: mY          ! observed times and labels matrix (column is an observation) in Cox's proportional hazard model  
+          INTEGER(KIND=c_int), DIMENSION(:), ALLOCATABLE :: mY_log        ! vector of outputs in the logistic regression model
+          
+          REAL(KIND=c_double), DIMENSION(:), ALLOCATABLE :: mY_mse        ! vector of outputs in the mean square error model  
         
-        INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE, SAVE :: mK          ! kit matrix (column is a kit)
+          INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: mK          ! kit matrix (column is a kit)
         
-        INTEGER(KIND=c_int), DIMENSION(:), ALLOCATABLE, SAVE :: k_norm_ind    ! The last k places have the indices defining the k-norm
-        INTEGER(KIND=c_int), DIMENSION(:), ALLOCATABLE, SAVE :: k_norm_ind_k  ! The last k places have the indices defining the k-norm in kit structure
-        INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE, SAVE :: mFail       ! The matrix containing information about failures (time and index)
-        INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE, SAVE :: mUnique     ! The matrix containing first index for each failure time and the number of failures at that time
+          INTEGER(KIND=c_int), DIMENSION(:), ALLOCATABLE :: k_norm_ind    ! The last k places have the indices defining the k-norm
+          INTEGER(KIND=c_int), DIMENSION(:), ALLOCATABLE :: k_norm_ind_k  ! The last k places have the indices defining the k-norm in kit structure
+          INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: mFail       ! The matrix containing information about failures (time and index)
+          INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: mUnique     ! The matrix containing first index for each failure time and the number of failures at that time
          
-        REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE, SAVE :: hav         ! The matrix containing means and standard deviations for features
+          REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE :: hav         ! The matrix containing means and standard deviations for features
         
-        REAL(KIND=c_double), SAVE :: user_rho                              ! the penalization parameter in L0-norm     
-        REAL(KIND=c_double), SAVE :: user_lambda                           ! the penalization parameter in L1-norm     
-        REAL(KIND=c_double), PARAMETER :: user_a = 100.0_c_double          ! the penalization parameter        
-        INTEGER(KIND=c_int), SAVE :: nfail                                 ! The number of failures
-        INTEGER(KIND=c_int), SAVE :: nfailunique                           ! The number of unique failures
+          REAL(KIND=c_double) :: user_rho                              ! the penalization parameter in L0-norm     
+          REAL(KIND=c_double) :: user_lambda                           ! the penalization parameter in L1-norm     
+          REAL(KIND=c_double) :: user_a                                ! the penalization parameter        
+          INTEGER(KIND=c_int) :: nfail                                 ! The number of failures
+          INTEGER(KIND=c_int) :: nfailunique                           ! The number of unique failures
 
         !REAL(KIND=c_double), DIMENSION(nft,nrecord), SAVE :: mX       ! predictor matrix (column is an observation)
         !INTEGER(KIND=c_int), DIMENSION(2,nrecord), SAVE :: mY         ! observed times and labels matrix (column is an observation)  
@@ -1644,75 +1657,83 @@
         !INTEGER(KIND=c_int), DIMENSION(nft,nkits), SAVE :: mK         ! kit matrix (column is a kit)
         !REAL(KIND=c_double), DIMENSION(nkits), SAVE :: mC             ! kit costs
          
-        !INTEGER(KIND=c_int), DIMENSION(nft), SAVE :: k_norm_ind    ! The first k places have the indices defining the k-norm
+        !INTEGER(KIND=c_int), DIMENSION(nft), SAVE :: k_norm_ind       ! The first k places have the indices defining the k-norm
         
-                
+          END TYPE set_info                 
         
         
-        !*..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..*
-        !| .**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**. |
-        !| |                                                                                  | |
-        !| |                                                                                  | |
-        !| |    SUBROUTINES:                                                                  | |
-        !| |                                                                                  | |
-        !| |       allocate_parameters((in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc,  &      | |
-		!| |                           & in_eps1, in_b, in_m_clarke, in_eps, in_crit_tol)     | |
-        !| |                                                                                  | |
-        !| |       allocate_data_cox(nft,nrecord,nkits,nk)  - allocates data matrices         | |
-        !| |       deallocate_data_cox()                    - deallocates data matrices       | |
-        !| |                                                                                  | |
-        !| |       allocate_data_mse(nft,nrecord,nkits,nk)  - allocates data matrices         | |
-        !| |       deallocate_data_mse()                    - deallocates data matrices       | |
-        !| |                                                                                  | |
-        !| |       allocate_data_log(nft,nrecord,nkits,nk)  - allocates data matrices         | |
-        !| |       deallocate_data_log()                    - deallocates data matrices       | |
-        !| |                                                                                  | |
-        !| |       set_k(nk)                               - defines the L0-norm used         | |
-        !| |       scaling_cox()                           - scaling of data                  | |
-        !| |       rescaling_cox()                         - rescaling of data                | |
-        !| |       rescaling_beta_cox(y)                   - rescaling of solution            | |
-        !| |       scaling_mse()                           - scaling of data                  | |
-        !| |       rescaling_mse()                         - rescaling of data                | |
-        !| |       rescaling_beta_mse(y)                   - rescaling of solution            | |
-        !| |       scaling_log()                           - scaling of data                  | |
-        !| |       rescaling_log()                         - rescaling of data                | |
-        !| |       rescaling_beta_log(y)                   - rescaling of solution            | |
-        !| |       failures()                              - Allocates the failure matrix and | |
-        !| |                                                 initializes its values           | |       
-        !| |                                                                                  | |
-        !| |       f1_sub(y,problem1,user_n,f1,grad1)  - value and subgradient of f1 at y     | |
-        !| |                                                                                  | |
-        !| |       f1(y,problem1,user_n)               - value of f1 at y                     | |
-        !| |       f2(y,problem1,user_n)               - value of f2 at y                     | |
-        !| |                                                                                  | |
-        !| |       subgradient_f1(y,problem1,user_n)   - subgradient of f1 at y               | |
-        !| |       subgradient_f2(y,problem2,user_n)   - subgradient of f2 at y               | |
-        !| |                                                                                  | |
-        !| |       SUBROUTINES to use headsort algorithm                                      | |
-        !| |       heapsort(a)                                                                | |
-        !| |       heapsort_ind(a,b)                                                          | |
-        !| |       heapsort_k(a,b,k)                                                          | |
-        !| |                                                                                  | |       
-        !| .**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**. |
-        !*..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..*
+        !*..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..*
+        !| .**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**. |
+        !| |                                                                                          | |
+        !| |                                                                                          | |
+        !| |    SUBROUTINES:                                                                          | |
+        !| |                                                                                          | |
+        !| |       allocate_parameters((in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc,  &              | |
+        !| |                           & in_eps1, in_b, in_m_clarke, in_eps, in_crit_tol)             | |
+        !| |                                                                                          | |
+        !| |       allocate_data_cox(set, nft,nrecord,nkits,nk)  - allocates size of data matrices    | |
+        !| |       allocate_matrices_cox(set, ...)               - allocates data matrices            | |
+        !| |       deallocate_data_cox(set)                      - deallocates data matrices          | |
+        !| |                                                                                          | |
+        !| |       allocate_data_mse(set,nft,nrecord,nkits,nk)   - allocates size of data matrices    | |
+        !| |       allocate_matrices_mse(set, ...)               - allocates data matrices            | |
+        !| |       deallocate_data_mse(set)                      - deallocates data matrices          | |
+        !| |                                                                                          | |
+        !| |       allocate_data_log(set,nft,nrecord,nkits,nk)   - allocates size of data matrices    | |
+        !| |       allocate_matrices_mse(set, ...)               - allocates data matrices            | |
+        !| |       deallocate_data_log(set)                      - deallocates data matrices          | |
+        !| |                                                                                          | |
+        !| |       set_k(nk)                               - defines the L0-norm used                 | |
+        !| |       scaling_cox(set)                        - scaling of data                          | |
+        !| |       scaling_matrix_cox(set, in_mX)          - scaled data matrix is stored to in_mX    | |
+        !| |       rescaling_cox(set)                      - rescaling of data                        | |
+        !| |       rescaling_beta_cox(y)                   - rescaling of solution                    | |
+        !| |       scaling_mse(set)                        - scaling of data                          | |
+        !| |       scaling_matrix_mse(set, in_mX)          - scaled data matrix is stored to in_mX    | |
+        !| |       rescaling_mse(set)                      - rescaling of data                        | |
+        !| |       rescaling_beta_mse(y)                   - rescaling of solution                    | |
+        !| |       scaling_log(set)                        - scaling of data                          | |
+        !| |       scaling_matrix_log(set, in_mX)          - scaled data matrix is stored to in_mX    | |
+        !| |       rescaling_log(set)                      - rescaling of data                        | |
+        !| |       rescaling_beta_log(y)                   - rescaling of solution                    | |
+        !| |       failures(set)                           - Allocates the failure matrix and         | |
+        !| |                                                 initializes its values                   | |       
+        !| |                                                                                          | |
+        !| |       f1_sub(y,problem1,user_n,f1,grad1)  - value and subgradient of f1 at y             | |
+        !| |                                                                                          | |
+        !| |       f1(y,problem1,user_n)               - value of f1 at y                             | |
+        !| |       f2(y,problem1,user_n)               - value of f2 at y                             | |
+        !| |                                                                                          | |
+        !| |       subgradient_f1(y,problem1,user_n)   - subgradient of f1 at y                       | |
+        !| |       subgradient_f2(y,problem2,user_n)   - subgradient of f2 at y                       | |
+        !| |                                                                                          | |
+        !| |       SUBROUTINES to use headsort algorithm                                              | |
+        !| |       heapsort(a)                                                                        | |
+        !| |       heapsort_ind(a,b)                                                                  | |
+        !| |       heapsort_k(a,b,k)                                                                  | |
+        !| |                                                                                          | |       
+        !| .**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**. |
+        !*..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..*
     
         
         CONTAINS
         
-		
+        
            !------------------------------------------------------------------------------------------
-           SUBROUTINE allocate_parameters(in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-		                                   & in_b, in_m_clarke, in_eps, in_crit_tol)
+           SUBROUTINE allocate_parameters(set, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                           & in_b, in_m_clarke, in_eps, in_crit_tol)
                !
                ! Allocates the parameters use in DBDC method
                !       
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+               TYPE(set_info), INTENT(INOUT) :: set          ! The set of information 
+               
                INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
                INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
                INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
-			   
+               
                REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
                REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
                REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
@@ -1721,28 +1742,30 @@
                REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
                REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
                REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance 
-			   
+               
                !**************************** OTHER VARIABLES **************************************
                
-               user_size_b1 = in_b1
-               user_size_b2 = in_b2
-               user_size = in_b
-               user_m = in_m
-               user_m_clarke = in_m_clarke
-               user_c = in_c
-               user_r_dec = in_r_dec				   
-               user_r_inc = in_r_inc	
-			   user_eps_1 = in_eps1
-			   user_eps = in_eps
-			   user_crit_tol = in_crit_tol
+               set%user_size_b1 = in_b1
+               set%user_size_b2 = in_b2
+               set%user_size = in_b
+               set%user_m = in_m
+               set%user_m_clarke = in_m_clarke
+               set%user_c = in_c
+               set%user_r_dec = in_r_dec                   
+               set%user_r_inc = in_r_inc    
+               set%user_eps_1 = in_eps1
+               set%user_eps = in_eps
+               set%user_crit_tol = in_crit_tol
+               
+               set%user_a = 100.0_c_double
            
            END SUBROUTINE allocate_parameters
-           !------------------------------------------------------------------------------------------		
-		
+           !------------------------------------------------------------------------------------------      
+        
            !------------------------------------------------------------------------------------------
-           SUBROUTINE allocate_data_cox(nft, nrecord, nkits, nk)
+           SUBROUTINE allocate_data_cox(set, nft, nrecord, nkits, nk)
                !
-               ! Allocates the data matrices and their lengths for the Cox' proportiona hazard model.
+               ! Allocates the sizes of data matrices for the Cox's proportiona hazard model.
                ! 
                ! 
                ! NOTICE: * 'nft' >= 'nk' > 0
@@ -1751,28 +1774,31 @@
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+               TYPE(set_info), INTENT(INOUT) :: set          ! The set of information 
+               
                INTEGER(KIND=c_int), INTENT(IN) :: nft                     ! the dimension of the problem = the number of features in a predictor
                INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
                INTEGER(KIND=c_int), INTENT(IN) :: nkits                   ! the number of kits
                INTEGER(KIND=c_int), INTENT(IN) :: nk                      ! defines the k-norm used
                !**************************** OTHER VARIABLES **************************************
                
-               nft0 = nft
-               nrecord0 = nrecord
-               nkits0 = nkits
-               nk0 = nk
+               set%nft0 = nft
+               set%nrecord0 = nrecord
+               set%nkits0 = nkits
+               set%nk0 = nk
                
-               ALLOCATE(mX(nft0,nrecord0),mY(2,nrecord0),mK(nft0,nkits0),mC(nkits0),k_norm_ind(nft0), &
-                        & k_norm_ind_k(nkits0),hav(2,nft))            
+               ALLOCATE(set%mX(nft,nrecord),set%mY(2,nrecord),set%mK(nft,nkits), & 
+                        & set%mC(nkits),set%k_norm_ind(nft), &
+                        & set%k_norm_ind_k(nkits),set%hav(2,nft))            
            
            END SUBROUTINE allocate_data_cox
            !------------------------------------------------------------------------------------------
 
 
            !------------------------------------------------------------------------------------------
-           SUBROUTINE allocate_data_mse(nft, nrecord, nkits, nk)
+           SUBROUTINE allocate_data_mse(set, nft, nrecord, nkits, nk)
                !
-               ! Allocates the data matrices and their lengths for the mean square error model.
+               ! Allocates the sizes of data matrices for the mean square error model.
                ! 
                ! 
                ! NOTICE: * 'nft' >= 'nk' > 0
@@ -1781,28 +1807,31 @@
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+               TYPE(set_info), INTENT(INOUT) :: set          ! The set of information  
+               
                INTEGER(KIND=c_int), INTENT(IN) :: nft                     ! the dimension of the problem = the number of features in a predictor
                INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
                INTEGER(KIND=c_int), INTENT(IN) :: nkits                   ! the number of kits
                INTEGER(KIND=c_int), INTENT(IN) :: nk                      ! defines the k-norm used
                !**************************** OTHER VARIABLES **************************************
                
-               nft0 = nft
-               nrecord0 = nrecord
-               nkits0 = nkits
-               nk0 = nk
+               set%nft0 = nft
+               set%nrecord0 = nrecord
+               set%nkits0 = nkits
+               set%nk0 = nk
                
-               ALLOCATE(mX(nft0,nrecord0),mY_mse(nrecord0),mK(nft0,nkits0),mC(nkits0),k_norm_ind(nft0), &
-                        & k_norm_ind_k(nkits0),hav(2,nft0+1))            
+               ALLOCATE(set%mX(nft,nrecord),set%mY_mse(nrecord),set%mK(nft,nkits), & 
+                        & set%mC(nkits),set%k_norm_ind(nft), &
+                        & set%k_norm_ind_k(nkits),set%hav(2,nft+1))            
            
            END SUBROUTINE allocate_data_mse
            !------------------------------------------------------------------------------------------           
           
 
            !------------------------------------------------------------------------------------------
-           SUBROUTINE allocate_data_log(nft, nrecord, nkits, nk)
+           SUBROUTINE allocate_data_log(set, nft, nrecord, nkits, nk)
                !
-               ! Allocates the data matrices and their lengths for the logistic regression model.
+               ! Allocates the sizes of data matrices for the logistic regression model.
                ! 
                ! 
                ! NOTICE: * 'nft' >= 'nk' > 0
@@ -1811,26 +1840,195 @@
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+               TYPE(set_info), INTENT(INOUT) :: set          ! The set of information               
+               
                INTEGER(KIND=c_int), INTENT(IN) :: nft                     ! the dimension of the problem = the number of features in a predictor
                INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
                INTEGER(KIND=c_int), INTENT(IN) :: nkits                   ! the number of kits
                INTEGER(KIND=c_int), INTENT(IN) :: nk                      ! defines the k-norm used
                !**************************** OTHER VARIABLES **************************************
                
-               nft0 = nft
-               nrecord0 = nrecord
-               nkits0 = nkits
-               nk0 = nk
+               set%nft0 = nft
+               set%nrecord0 = nrecord
+               set%nkits0 = nkits
+               set%nk0 = nk
                
-               ALLOCATE(mX(nft0,nrecord0),mY_log(nrecord0),mK(nft0,nkits0),mC(nkits0),k_norm_ind(nft0), &
-                        & k_norm_ind_k(nkits0),hav(2,nft0+1))            
+               ALLOCATE(set%mX(nft,nrecord),set%mY_log(nrecord),set%mK(nft,nkits), & 
+                        & set%mC(nkits),set%k_norm_ind(nft), &
+                        & set%k_norm_ind_k(nkits),set%hav(2,nft+1))            
                    
            END SUBROUTINE allocate_data_log
-           !------------------------------------------------------------------------------------------           
-  
-  
+           !------------------------------------------------------------------------------------------  
+
+
+ 
+            !------------------------------------------------------------------------------------------
+           SUBROUTINE allocate_matrices_cox(set, in_mX, in_mY, in_mK, in_mC,  & 
+                                            & nrecord, nft, nk)
+               !
+               ! Allocates the data matrices in Cox's proportiona hazard model
+               ! 
+               ! 
+               ! NOTICE: * 'nft' >= 'nk' > 0
+               !         * 'nrecord' > 0               
+               !         * 'nkits' > 0               
+               !
+               IMPLICIT NONE
+               !**************************** NEEDED FROM USER *************************************
+               TYPE(set_info), INTENT(INOUT) :: set                       ! The set of information        
+
+               REAL(KIND=c_double), DIMENSION(nft,nrecord) :: in_mX       ! predictor matrix (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(2,nrecord) :: in_mY         ! observed times and labels matrix (column is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(nk,nft) :: in_mK            ! kit matrix (row is a kit)
+               REAL(KIND=c_double), DIMENSION(nk) :: in_mC                ! kit costs          
+
+               INTEGER(KIND=c_int), INTENT(IN) :: nft                     ! the dimension of the problem = the number of features in a predictor
+               INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
+               INTEGER(KIND=c_int), INTENT(IN) :: nk                      ! the number of kits
+                
+               !**************************** OTHER VARIABLES **************************************           
+               INTEGER :: i, j               
+
+              
+                  DO j = 1, nrecord
+                    DO i = 1, nft
+                        set%mX(i,j) = in_mX(i,j)
+                    END DO
+                  END DO
+                      
+                  DO j = 1, nrecord
+                    DO i = 1, 2
+                        set%mY(i,j) = in_mY(i,j)
+                    END DO
+                  END DO    
+              
+                  DO i = 1, nk
+                    DO j = 1, nft
+                        set%mK(j,i) = in_mK(i,j)
+                    END DO
+                  END DO          
+              
+                  DO i = 1, nk         
+                     set%mC(i) = in_mC(i)
+                  END DO
+              
+                  CALL failures(set)
+                    
+           
+           END SUBROUTINE allocate_matrices_cox
            !------------------------------------------------------------------------------------------
-           SUBROUTINE set_k(nk)
+           
+    
+           !------------------------------------------------------------------------------------------
+           SUBROUTINE allocate_matrices_mse(set, in_mX, in_mY, in_mK, in_mC,  & 
+                                            & nrecord, nft, nk)
+               !
+               ! Allocates the data matrices in the mean square error model.
+               ! 
+               ! 
+               ! NOTICE: * 'nft' >= 'nk' > 0
+               !         * 'nrecord' > 0               
+               !         * 'nkits' > 0               
+               !
+               IMPLICIT NONE
+               !**************************** NEEDED FROM USER *************************************
+               TYPE(set_info), INTENT(INOUT) :: set                       ! The set of information        
+
+               REAL(KIND=c_double), DIMENSION(nft,nrecord) :: in_mX       ! predictor matrix (column is an observation)
+               REAL(KIND=c_double), DIMENSION(nrecord) :: in_mY           ! responses 
+               INTEGER(KIND=c_int), DIMENSION(nk,nft) :: in_mK            ! kit matrix (row is a kit)
+               REAL(KIND=c_double), DIMENSION(nk) :: in_mC                ! kit costs          
+
+               INTEGER(KIND=c_int), INTENT(IN) :: nft                     ! the dimension of the problem = the number of features in a predictor
+               INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
+               INTEGER(KIND=c_int), INTENT(IN) :: nk                      ! the number of kits
+                
+               !**************************** OTHER VARIABLES **************************************           
+               INTEGER :: i, j               
+
+              
+                  DO j = 1, nrecord
+                    DO i = 1, nft
+                        set%mX(i,j) = in_mX(i,j)
+                    END DO
+                  END DO
+                      
+                  DO j = 1, nrecord
+                        set%mY_mse(j) = in_mY(j)
+                  END DO    
+              
+                  DO i = 1, nk
+                    DO j = 1, nft
+                        set%mK(j,i) = in_mK(i,j)
+                    END DO
+                  END DO          
+              
+                  DO i = 1, nk         
+                     set%mC(i) = in_mC(i)
+                  END DO
+              
+           
+           END SUBROUTINE allocate_matrices_mse
+           !------------------------------------------------------------------------------------------
+ 
+ 
+ 
+            !------------------------------------------------------------------------------------------
+           SUBROUTINE allocate_matrices_log(set, in_mX, in_mY, in_mK, in_mC,  & 
+                                            & nrecord, nft, nk)
+               !
+               ! Allocates the data matrices in the logistic regression model.
+               ! 
+               ! 
+               ! NOTICE: * 'nft' >= 'nk' > 0
+               !         * 'nrecord' > 0               
+               !         * 'nkits' > 0               
+               !
+               IMPLICIT NONE
+               !**************************** NEEDED FROM USER *************************************
+               TYPE(set_info), INTENT(INOUT) :: set                       ! The set of information        
+
+               REAL(KIND=c_double), DIMENSION(nft,nrecord) :: in_mX       ! predictor matrix (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(nrecord) :: in_mY           ! responses 
+               INTEGER(KIND=c_int), DIMENSION(nk,nft) :: in_mK            ! kit matrix (row is a kit)
+               REAL(KIND=c_double), DIMENSION(nk) :: in_mC                ! kit costs          
+
+               INTEGER(KIND=c_int), INTENT(IN) :: nft                     ! the dimension of the problem = the number of features in a predictor
+               INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
+               INTEGER(KIND=c_int), INTENT(IN) :: nk                      ! the number of kits
+                
+               !**************************** OTHER VARIABLES **************************************           
+               INTEGER :: i, j               
+
+              
+                  DO j = 1, nrecord
+                    DO i = 1, nft
+                        set%mX(i,j) = in_mX(i,j)
+                    END DO
+                  END DO
+                      
+                  DO j = 1, nrecord
+                        set%mY_log(j) = in_mY(j)
+                  END DO    
+              
+                  DO i = 1, nk
+                    DO j = 1, nft
+                        set%mK(j,i) = in_mK(i,j)
+                    END DO
+                  END DO          
+              
+                  DO i = 1, nk         
+                     set%mC(i) = in_mC(i)
+                  END DO
+             
+           
+           END SUBROUTINE allocate_matrices_log
+           !------------------------------------------------------------------------------------------
+ 
+
+ 
+           !------------------------------------------------------------------------------------------
+           SUBROUTINE set_k(set, nk)
                !
                ! Changes the value of k (defines the L0-norm used)
                ! 
@@ -1838,184 +2036,235 @@
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
-               INTEGER(KIND=c_int), INTENT(IN) :: nk                      ! defines the k-norm used
+               TYPE(set_info), INTENT(INOUT) :: set          ! The set of information               
+               
+               INTEGER(KIND=c_int), INTENT(IN) :: nk         ! defines the k-norm used
                !**************************** OTHER VARIABLES **************************************
                
-                  nk0 = nk
+                  set%nk0 = nk
                        
            END SUBROUTINE set_k
            !------------------------------------------------------------------------------------------
            
            
            !------------------------------------------------------------------------------------------
-           SUBROUTINE deallocate_data_cox()
+           SUBROUTINE deallocate_data_cox(set)
                !
                ! Deallocates the data matrices for the Cox's proportional hazard model.           
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                !**************************** OTHER VARIABLES **************************************
                
-               DEALLOCATE(mX,mY,mK,mC,k_norm_ind,k_norm_ind_k,mFail,mUnique,hav)
+               DEALLOCATE(set%mX,set%mY,set%mK,set%mC,set%k_norm_ind,& 
+                         & set%k_norm_ind_k,set%mFail,set%mUnique,set%hav)
            
            END SUBROUTINE deallocate_data_cox
            !------------------------------------------------------------------------------------------
            
                     
            !------------------------------------------------------------------------------------------
-           SUBROUTINE deallocate_data_mse()
+           SUBROUTINE deallocate_data_mse(set)
                !
                ! Deallocates the data matrices for the mean square error model.              
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                !**************************** OTHER VARIABLES **************************************
                
-               DEALLOCATE(mX,mY_mse,mK,mC,k_norm_ind,k_norm_ind_k,hav)
+               DEALLOCATE(set%mX,set%mY_mse,set%mK,set%mC, &
+                         & set%k_norm_ind,set%k_norm_ind_k,set%hav)
            
            END SUBROUTINE deallocate_data_mse
            !------------------------------------------------------------------------------------------
            
                     
            !------------------------------------------------------------------------------------------
-           SUBROUTINE deallocate_data_log()
+           SUBROUTINE deallocate_data_log(set)
                !
                ! Deallocates the data matrices for the logistic regression model.              
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                !**************************** OTHER VARIABLES **************************************
                
-               DEALLOCATE(mX,mY_log,mK,mC,k_norm_ind,k_norm_ind_k,hav)
+               DEALLOCATE(set%mX,set%mY_log,set%mK,set%mC,& 
+                           & set%k_norm_ind,set%k_norm_ind_k,set%hav)
            
            END SUBROUTINE deallocate_data_log
            !------------------------------------------------------------------------------------------
            
+
            
+           !******************************************************************************************
+           !                                                                                         *
+           !                 **** COX's proportional hazards model - SCALING ****                    *
+           !                                                                                         *
+           !******************************************************************************************
+           !
            !------------------------------------------------------------------------------------------                      
-           SUBROUTINE scaling_cox()
+           SUBROUTINE scaling_cox(set)
                !
                ! Scales the used data in the Cox's proportional hazards model.            
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                !**************************** OTHER VARIABLES **************************************
-               INTEGER(KIND=c_int) :: i, j         
+                INTEGER(KIND=c_int) :: i, j         
                 REAL(KIND=c_double) :: a                              ! help variable
                 REAL(KIND=c_double) :: b                              ! help variable
                
                ! mean input
-               DO i = 1, nft0
+               DO i = 1, set%nft0
                   a = 0.0_c_double
-                  DO j = 1, nrecord0
-                      a = a + mX(i,j)
+                  DO j = 1, set%nrecord0
+                      a = a + set%mX(i,j)
                   END DO
-                  b = 1.0_c_double / nrecord0
-                  hav(1,i) = a * b
+                  b = 1.0_c_double / set%nrecord0
+                  set%hav(1,i) = a * b
                
                END DO
                
                ! deviaition input
-               DO i = 1, nft0
+               DO i = 1, set%nft0
                   a = 0.0_c_double
-                  DO j = 1, nrecord0
-                      a = a + (mX(i,j)-hav(1,i))**2
+                  DO j = 1, set%nrecord0
+                      a = a + (set%mX(i,j)-set%hav(1,i))**2
                   END DO
-                  b = 1.0_c_double / (nrecord0)
+                  b = 1.0_c_double / (set%nrecord0)
                   a = a * b
-                  hav(2,i) = SQRT(a)               
+                  set%hav(2,i) = SQRT(a)               
                   
                END DO       
                
                ! Scaling of input
-               DO i = 1, nft0
-                  DO j = 1, nrecord0
-                      mX(i,j) = (mX(i,j)-hav(1,i))/hav(2,i)
+               DO i = 1, set%nft0
+                  DO j = 1, set%nrecord0
+                      set%mX(i,j) = (set%mX(i,j)-set%hav(1,i))/set%hav(2,i)
                   END DO
                END DO
                
            END SUBROUTINE scaling_cox   
-           !------------------------------------------------------------------------------------------                      
+           !------------------------------------------------------------------------------------------        
 
            !------------------------------------------------------------------------------------------                      
-           SUBROUTINE rescaling_cox()
+           SUBROUTINE scaling_matrix_cox(set, in_mX)
+               !
+               ! Stores scaled matrix of info_set 'set' to vector 'in_mX'.            
+               !
+               IMPLICIT NONE
+               !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(IN) :: set          ! The set of information            
+                               
+               REAL(KIND=c_double), DIMENSION(set%nft0,set%nrecord0), INTENT(INOUT) :: in_mX       ! scaled predictor matrix (column is an observation)
+               
+               !**************************** OTHER VARIABLES **************************************
+               INTEGER ::  i, j               
+
+                  DO j = 1, set%nrecord0
+                    DO i = 1, set%nft0
+                       in_mX(i,j) = set%mX(i,j) 
+                    END DO
+                  END DO
+                  
+               
+           END SUBROUTINE scaling_matrix_cox   
+           !------------------------------------------------------------------------------------------    
+           
+           !------------------------------------------------------------------------------------------                      
+           SUBROUTINE rescaling_cox(set)
                !
                ! Rescales the data to the original data in the Cox's proportional hazards model.                
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                !**************************** OTHER VARIABLES **************************************
                INTEGER(KIND=c_int) :: i, j                      ! help variables
    
                ! Rescaling of the data
-               DO i = 1, nft0
-                  DO j = 1, nrecord0
-                      mX(i,j) = mX(i,j)*hav(2,i)+hav(1,i)
+               DO i = 1, set%nft0
+                  DO j = 1, set%nrecord0
+                      set%mX(i,j) = set%mX(i,j)*set%hav(2,i)+set%hav(1,i)
                   END DO
                END DO
                        
            END SUBROUTINE rescaling_cox     
            !------------------------------------------------------------------------------------------                      
-           
-           
+                     
            !------------------------------------------------------------------------------------------                      
-           SUBROUTINE rescaling_beta_cox(y)
+           SUBROUTINE rescaling_beta_cox(set,y)
                !
                ! Rescales the solution point y to the original data in the Cox's proportional hazards model.               
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                 REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: y      ! a point which is rescaled
                !**************************** OTHER VARIABLES **************************************
                INTEGER(KIND=c_int) :: i                     ! help variables
            
                ! Rescaling of the solution y
-               DO i = 1, nft0
-                  y(i) = y(i) / hav(2,i)
+               DO i = 1, set%nft0
+                  y(i) = y(i) / set%hav(2,i)
                END DO
                
            END SUBROUTINE rescaling_beta_cox               
-           !------------------------------------------------------------------------------------------       
+           !------------------------------------------------------------------------------------------    
+           
 
+
+
+           !******************************************************************************************
+           !                                                                                         *
+           !                     **** Mean square error model - SCALING ****                         *
+           !                                                                                         *
+           !******************************************************************************************
+           !
            !------------------------------------------------------------------------------------------                      
-           SUBROUTINE scaling_mse()
+           SUBROUTINE scaling_mse(set)
                !
                ! Scales the used data in the mean square error model.            
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                !**************************** OTHER VARIABLES **************************************
                INTEGER(KIND=c_int) :: i, j         
                 REAL(KIND=c_double) :: a                              ! help variable
                 REAL(KIND=c_double) :: b                              ! help variable
                
                ! means input
-               DO i = 1, nft0
+               DO i = 1, set%nft0
                   a = 0.0_c_double
-                  DO j = 1, nrecord0
-                      a = a + mX(i,j)
+                  DO j = 1, set%nrecord0
+                      a = a + set%mX(i,j)
                   END DO
-                  b = 1.0_c_double / nrecord0
-                  hav(1,i) = a * b
+                  b = 1.0_c_double / set%nrecord0
+                  set%hav(1,i) = a * b
                
                END DO
                
                ! deviations input
-               DO i = 1, nft0
+               DO i = 1, set%nft0
                   a = 0.0_c_double
-                  DO j = 1, nrecord0
-                      a = a + (mX(i,j)-hav(1,i))**2
+                  DO j = 1, set%nrecord0
+                      a = a + (set%mX(i,j)-set%hav(1,i))**2
                   END DO
-                  b = 1.0_c_double / (nrecord0)
+                  b = 1.0_c_double / (set%nrecord0)
                   a = a * b
-                  hav(2,i) = SQRT(a)               
+                  set%hav(2,i) = SQRT(a)               
                   
                END DO       
                
                ! Scaling of input
-               DO i = 1, nft0
-                  DO j = 1, nrecord0
-                      mX(i,j) = (mX(i,j)-hav(1,i))/hav(2,i)
+               DO i = 1, set%nft0
+                  DO j = 1, set%nrecord0
+                      set%mX(i,j) = (set%mX(i,j)-set%hav(1,i))/set%hav(2,i)
                   END DO
                END DO
                
@@ -2042,57 +2291,79 @@
              !  END DO
                
            END SUBROUTINE scaling_mse  
-           !------------------------------------------------------------------------------------------                      
+           !------------------------------------------------------------------------------------------   
 
            !------------------------------------------------------------------------------------------                      
-           SUBROUTINE rescaling_mse()
+           SUBROUTINE scaling_matrix_mse(set, in_mX)
+               !
+               ! Stores scaled matrix of info_set 'set' to vector 'in_mX'.            
+               !
+               IMPLICIT NONE
+               !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(IN) :: set          ! The set of information            
+                               
+               REAL(KIND=c_double), DIMENSION(set%nft0,set%nrecord0), INTENT(INOUT) :: in_mX       ! scaled predictor matrix (column is an observation)
+               
+               !**************************** OTHER VARIABLES **************************************
+               INTEGER ::  i, j               
+
+                  DO j = 1, set%nrecord0
+                    DO i = 1, set%nft0
+                       in_mX(i,j) = set%mX(i,j) 
+                    END DO
+                  END DO
+                   
+               
+           END SUBROUTINE scaling_matrix_mse   
+           !------------------------------------------------------------------------------------------     
+
+           !------------------------------------------------------------------------------------------                      
+           SUBROUTINE rescaling_mse(set)
                !
                ! Rescales the data to the original data in the mean square error model.                
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                !**************************** OTHER VARIABLES **************************************
                INTEGER(KIND=c_int) :: i, j                      ! help variables
    
                ! Rescaling of the input data
-               DO i = 1, nft0
-                  DO j = 1, nrecord0
-                      mX(i,j) = mX(i,j)*hav(2,i)+hav(1,i)
+               DO i = 1, set%nft0
+                  DO j = 1, set%nrecord0
+                      set%mX(i,j) = set%mX(i,j)*set%hav(2,i)+set%hav(1,i)
                   END DO
                END DO
-               
-               ! Rescaling of the output
-              ! DO j = 1, nrecord0
-              !    mY_mse(j) = mY_mse(j)*hav(2,nft0+1)+hav(1,nft0+1)
-              ! END DO 
-                       
+                                 
            END SUBROUTINE rescaling_mse     
-           !------------------------------------------------------------------------------------------                      
+           !------------------------------------------------------------------------------------------             
            
            !------------------------------------------------------------------------------------------                      
-           SUBROUTINE rescaling_beta_mse(y)
+           SUBROUTINE rescaling_beta_mse(set,y)
                !
                ! Rescales the solution point y to the original data in the mean square error model.               
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                 REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: y      ! a point which is rescaled
                !**************************** OTHER VARIABLES **************************************
-                REAL(KIND=c_double), DIMENSION(nft0+1) :: x                ! a point which is rescaled             
-               INTEGER(KIND=c_int) :: i                                    ! help variables
+                REAL(KIND=c_double), DIMENSION(set%nft0+1) :: x                ! a point which is rescaled             
+               INTEGER(KIND=c_int) :: i, num                               ! help variables
                 
                x = 0.0_c_double
                
                ! Rescaling of the solution y
-               DO i = 1, nft0
-                  x(i) = y(i) / hav(2,i)
+               DO i = 1, set%nft0
+                  x(i) = y(i) / set%hav(2,i)
                   !x(i) = y(i)*hav(2,nft0+1)/ hav(2,i)
                END DO
 
-               DO i = 1, nft0
-                  x(nft0+1) = x(nft0+1) - hav(1,i)*y(i)/ hav(2,i)
+               num = set%nft0
+               DO i = 1, num
+                  x(num+1) = x(num+1) - set%hav(1,i)*y(i)/ set%hav(2,i)
                END DO
-               x(nft0+1) = x(nft0+1) + y(nft0+1)         
+               x(num+1) = x(num+1) + y(num+1)         
                y = x
 
                !DO i = 1, nft0
@@ -2103,47 +2374,54 @@
                
            END SUBROUTINE rescaling_beta_mse               
            !------------------------------------------------------------------------------------------
+           
 
-
+           !******************************************************************************************
+           !                                                                                         *
+           !                   **** Logistic regression model - SCALING  ****                        *
+           !                                                                                         *
+           !******************************************************************************************
+           !
            !------------------------------------------------------------------------------------------                      
-           SUBROUTINE scaling_log()
+           SUBROUTINE scaling_log(set)
                !
                ! Scales the used data in the logistic regression model.            
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                !**************************** OTHER VARIABLES **************************************
                INTEGER(KIND=c_int) :: i, j         
                 REAL(KIND=c_double) :: a                              ! help variable
                 REAL(KIND=c_double) :: b                              ! help variable
                
                ! means input
-               DO i = 1, nft0
+               DO i = 1, set%nft0
                   a = 0.0_c_double
-                  DO j = 1, nrecord0
-                      a = a + mX(i,j)
+                  DO j = 1, set%nrecord0
+                      a = a + set%mX(i,j)
                   END DO
-                  b = 1.0_c_double / nrecord0
-                  hav(1,i) = a * b
+                  b = 1.0_c_double / set%nrecord0
+                  set%hav(1,i) = a * b
                
                END DO
                
                ! deviations input
-               DO i = 1, nft0
+               DO i = 1, set%nft0
                   a = 0.0_c_double
-                  DO j = 1, nrecord0
-                      a = a + (mX(i,j)-hav(1,i))**2
+                  DO j = 1, set%nrecord0
+                      a = a + (set%mX(i,j)-set%hav(1,i))**2
                   END DO
-                  b = 1.0_c_double / (nrecord0)
+                  b = 1.0_c_double / (set%nrecord0)
                   a = a * b
-                  hav(2,i) = SQRT(a)               
+                  set%hav(2,i) = SQRT(a)               
                   
                END DO       
                
                ! Scaling of input
-               DO i = 1, nft0
-                  DO j = 1, nrecord0
-                      mX(i,j) = (mX(i,j)-hav(1,i))/hav(2,i)
+               DO i = 1, set%nft0
+                  DO j = 1, set%nrecord0
+                      set%mX(i,j) = (set%mX(i,j)-set%hav(1,i))/set%hav(2,i)
                   END DO
                END DO
                
@@ -2173,19 +2451,44 @@
            !------------------------------------------------------------------------------------------                      
 
            !------------------------------------------------------------------------------------------                      
-           SUBROUTINE rescaling_log()
+           SUBROUTINE scaling_matrix_log(set, in_mX)
+               !
+               ! Stores scaled matrixs of info_set 'set' to vector 'in_mX'.            
+               !
+               IMPLICIT NONE
+               !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(IN) :: set          ! The set of information            
+                               
+               REAL(KIND=c_double), DIMENSION(set%nft0,set%nrecord0), INTENT(INOUT) :: in_mX       ! scaled predictor matrix (column is an observation)
+               
+               !**************************** OTHER VARIABLES **************************************
+               INTEGER ::  i, j               
+
+                  DO j = 1, set%nrecord0
+                    DO i = 1, set%nft0
+                       in_mX(i,j) = set%mX(i,j) 
+                    END DO
+                  END DO
+                   
+               
+           END SUBROUTINE scaling_matrix_log   
+           !------------------------------------------------------------------------------------------ 
+
+           !------------------------------------------------------------------------------------------                      
+           SUBROUTINE rescaling_log(set)
                !
                ! Rescales the data to the original data in the logistic regression model.                
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                !**************************** OTHER VARIABLES **************************************
                INTEGER(KIND=c_int) :: i, j                      ! help variables
    
                ! Rescaling of the input data
-               DO i = 1, nft0
-                  DO j = 1, nrecord0
-                      mX(i,j) = mX(i,j)*hav(2,i)+hav(1,i)
+               DO i = 1, set%nft0
+                  DO j = 1, set%nrecord0
+                      set%mX(i,j) = set%mX(i,j)*set%hav(2,i)+set%hav(1,i)
                   END DO
                END DO
                
@@ -2198,29 +2501,31 @@
            !------------------------------------------------------------------------------------------                      
            
            !------------------------------------------------------------------------------------------                      
-           SUBROUTINE rescaling_beta_log(y)
+           SUBROUTINE rescaling_beta_log(set, y)
                !
                ! Rescales the solution point y to the original data in the logistic regression model.               
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                 REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: y      ! a point which is rescaled
                !**************************** OTHER VARIABLES **************************************
-                REAL(KIND=c_double), DIMENSION(nft0+1) :: x                ! a point which is rescaled             
-               INTEGER(KIND=c_int) :: i                                    ! help variables
+                REAL(KIND=c_double), DIMENSION(set%nft0+1) :: x                ! a point which is rescaled             
+               INTEGER(KIND=c_int) :: i, num                               ! help variables
                 
                x = 0.0_c_double
                
+               num = set%nft0
                ! Rescaling of the solution y
-               DO i = 1, nft0
-                  x(i) = y(i) / hav(2,i)
+               DO i = 1, num
+                  x(i) = y(i) / set%hav(2,i)
                   !x(i) = y(i)*hav(2,nft0+1)/ hav(2,i)
                END DO
 
-               DO i = 1, nft0
-                  x(nft0+1) = x(nft0+1) - hav(1,i)*y(i)/ hav(2,i)
+               DO i = 1, num
+                  x(num+1) = x(num+1) - set%hav(1,i)*y(i)/ set%hav(2,i)
                END DO
-               x(nft0+1) = x(nft0+1) + y(nft0+1)         
+               x(num+1) = x(num+1) + y(num+1)         
                y = x
 
                !DO i = 1, nft0
@@ -2230,46 +2535,49 @@
                !y = x
                
            END SUBROUTINE rescaling_beta_log              
-           !------------------------------------------------------------------------------------------           
+           !------------------------------------------------------------------------------------------   
+
+           
 
            !------------------------------------------------------------------------------------------
-           SUBROUTINE failures()
+           SUBROUTINE failures(set)
                !
                ! Allocates the failure matrix and initializes its values in the Cox's proportional hazards model.            
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                !**************************** OTHER VARIABLES **************************************
                INTEGER(KIND=c_int) :: a1, a2, m, eka, fsum, d, place           
                INTEGER(KIND=c_int) :: i, unique, ind 
                LOGICAL :: cont             
                
                m = 0
-               DO i = nrecord0,1,-1
-                 IF (mY(2,i)==1) THEN 
+               DO i = set%nrecord0,1,-1
+                 IF (set%mY(2,i)==1) THEN 
                    m = m+1
                    eka = i
                  END IF
                END DO
                
-               nfail = m
+               set%nfail = m
                
-               ALLOCATE(mFail(2,nfail))         
+               ALLOCATE(set%mFail(2,set%nfail))         
                
-               mFail = 0
+               set%mFail = 0
                
                m = 0
-               a1 = mY(1,eka)            ! Time for the first failure
+               a1 = set%mY(1,eka)            ! Time for the first failure
                eka = 1                   ! The place of the first failure
                fsum = 0                  ! One failure at this time
                unique = 1
-               DO i = 1, nrecord0
-                  IF (mY(2,i)==1) THEN
+               DO i = 1, set%nrecord0
+                  IF (set%mY(2,i)==1) THEN
                       m = m + 1
-                      mFail(1,m) = i     ! Index for the observation i                
-                      a2 = mY(1,i)       ! Time for the failure at observation i
+                      set%mFail(1,m) = i     ! Index for the observation i                
+                      a2 = set%mY(1,i)       ! Time for the failure at observation i
                       IF (a1 < a2 ) THEN 
-                         mFail(2,eka) = fsum
+                         set%mFail(2,eka) = fsum
                          a1 = a2
                          fsum = 1
                          eka = m
@@ -2279,30 +2587,30 @@
                       END IF
                    END IF
                END DO
-               mFail(2,eka)=fsum
-               nfailunique = unique
+               set%mFail(2,eka)=fsum
+               set%nfailunique = unique
                
-               ALLOCATE(mUnique(2,nfailunique))
+               ALLOCATE(set%mUnique(2,set%nfailunique))
  
                ind = 1
-               DO i = 1, nfailunique
+               DO i = 1, set%nfailunique
                   
-                  place = mFail(1,ind)
-                  d = mFail(2,ind)
+                  place = set%mFail(1,ind)
+                  d = set%mFail(2,ind)
                   cont = .TRUE. 
                   
                   DO WHILE (cont)
                     IF (place > 1) THEN
-                      IF (mY(1,place-1)==mY(1,place)) THEN
+                      IF (set%mY(1,place-1)==set%mY(1,place)) THEN
                          place = place - 1
                       ELSE
-                         mUnique(1,i) = place 
-                         mUnique(2,i) = d
+                         set%mUnique(1,i) = place 
+                         set%mUnique(2,i) = d
                          cont = .FALSE.                  
                       END IF
                     ELSE
-                     mUnique(1,i) = place
-                     mUnique(2,i) = d
+                     set%mUnique(1,i) = place
+                     set%mUnique(2,i) = d
                      cont = .FALSE.                                      
                     END IF                    
                   END DO
@@ -2320,7 +2628,7 @@
         !                                                                               |
         !********************************************************************************
 
-           SUBROUTINE f1_sub(y, problem1, user_n, f, grad)        
+           SUBROUTINE f1_sub(set, y, problem1, user_n, f, grad)        
                 !
                 ! Calculates the function value and subgradient of the DC component f_1 at a point 'y'.
                 ! Variable 'problem1' identifies the objective function used.
@@ -2332,6 +2640,7 @@
                 !
                 IMPLICIT NONE
                 !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                 REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: y      ! a point where the function value of the DC component f_1 is calculated
                 REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: grad  ! a subgradient of the DC component f_1 is calculated
                 INTEGER(KIND=c_int), INTENT(IN) :: problem1             ! the objective function f_1 for which the value is calculated
@@ -2339,7 +2648,7 @@
                 REAL(KIND=c_double), INTENT(OUT) :: f                   ! the function value of the DC component f_1 at a point 'y'               
                 !**************************** OTHER VARIABLES **************************************
                 REAL(KIND=c_double) :: a                              ! help variable
-                REAL(KIND=c_double), DIMENSION(nft0) :: mG            ! help variable                        
+                REAL(KIND=c_double), DIMENSION(set%nft0) :: mG            ! help variable                        
                 REAL(KIND=c_double) :: sum_r, apu, div                ! help variables
                 REAL(KIND=c_double) :: apu1, apu2                       ! help variables
                 REAL(KIND=c_double) :: exp_term                       ! help variables
@@ -2361,13 +2670,13 @@
                       
                       ! linear term in Cox model
                       ind = 1                       ! Position of the first failure at time t_1 in mFail
-                      DO i = 1, nfailunique
-                         d = mFail(2,ind)           ! the number of failures at time t_ind
+                      DO i = 1, set%nfailunique
+                         d = set%mFail(2,ind)           ! the number of failures at time t_ind
                          DO j = ind, ind+d-1
-                            place = mFail(1,j)      ! Position of the failure in mX
-                            DO k = 1, nft0
-                               f = f - mX(k,place)*y(k)
-                               grad(k) = grad(k) - mX(k,place)
+                            place = set%mFail(1,j)      ! Position of the failure in mX
+                            DO k = 1, set%nft0
+                               f = f - set%mX(k,place)*y(k)
+                               grad(k) = grad(k) - set%mX(k,place)
                             END DO                          
                          END DO
                          ind = ind + d
@@ -2375,14 +2684,14 @@
                       
                       use_log = .TRUE.   
                       apu = 0.0_c_double
-                      DO j = 1, nft0
-                          apu = apu + mX(j,1)*y(j)
+                      DO j = 1, set%nft0
+                          apu = apu + set%mX(j,1)*y(j)
                       END DO
                        
-                      a = user_a 
-                      IF (ABS(apu)>=user_a) THEN 
-                        IF (ABS(apu)<(user_a+1.0_c_double)) THEN
-                           a = user_a + 1.0_c_double
+                      a = set%user_a 
+                      IF (ABS(apu)>=set%user_a) THEN 
+                        IF (ABS(apu)<(set%user_a+1.0_c_double)) THEN
+                           a = set%user_a + 1.0_c_double
                         END IF
                       END IF    
                          
@@ -2396,45 +2705,45 @@
                       mG = 0.0_c_double
                       sum_r = 0.0_c_double
                       
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                          apu = 0.0_c_double
-                         DO j = 1, nft0
-                           apu = apu + mX(j,i)*y(j) 
+                         DO j = 1, set%nft0
+                           apu = apu + set%mX(j,i)*y(j) 
                          END DO     
 
                          apu = Exp(apu)                      
                          sum_r = sum_r + apu
 
-                         DO j = 1, nft0
-                            mG(j) = mG(j) + mX(j,i) * apu                    
+                         DO j = 1, set%nft0
+                            mG(j) = mG(j) + set%mX(j,i) * apu                    
                          END DO                         
                       END DO
                       
                       ind = 1                              ! The first failure happens at time t_1
                       time1 = 1       
                      
-                      DO k = 1, nfailunique
-                         time2 = mUnique(1,k)              ! The first failure at time t_ind 
-                         d = mFail(2,ind)                  ! The number of failures for time t_ind
+                      DO k = 1, set%nfailunique
+                         time2 = set%mUnique(1,k)              ! The first failure at time t_ind 
+                         d = set%mFail(2,ind)                  ! The number of failures for time t_ind
                          IF (time1<time2) THEN 
                             DO i = time1, time2-1
                               apu = 0.0_c_double
-                              DO j = 1, nft0
-                                apu = apu + mX(j,i)*y(j) 
+                              DO j = 1, set%nft0
+                                apu = apu + set%mX(j,i)*y(j) 
                               END DO       
                               apu = Exp(apu)
                               
                               sum_r = sum_r - apu
                               
-                              DO j = 1, nft0
-                                 mG(j) = mG(j) - mX(j,i) * apu                   
+                              DO j = 1, set%nft0
+                                 mG(j) = mG(j) - set%mX(j,i) * apu                   
                               END DO                                  
                             END DO
                        
                             f = f + d * Log(sum_r)
                       
                             div = 1.0_c_double / sum_r
-                            DO j = 1, nft0
+                            DO j = 1, set%nft0
                                grad(j) = grad(j) + d * mG(j) * div
                             END DO
                         
@@ -2444,7 +2753,7 @@
                             f = f + d * Log(sum_r)
                   
                             div = 1.0_c_double / sum_r
-                            DO j = 1, nft0
+                            DO j = 1, set%nft0
                                grad(j) = grad(j) + d * mG(j) * div
                             END DO
                         
@@ -2455,27 +2764,27 @@
                       ELSE
                       ! maximum term is used instead of ln-exp-term
                       
-                      ind2 = nrecord0
+                      ind2 = set%nrecord0
                       largest = -(10.0_c_double)**10
-                      DO k = nfailunique, 1, -1
-                         ind1 = mUnique(1,k)               ! The first failure at time t_k 
-                         d = mUnique(2,k)                  ! The number of failures for time t_k
+                      DO k = set%nfailunique, 1, -1
+                         ind1 = set%mUnique(1,k)               ! The first failure at time t_k 
+                         d = set%mUnique(2,k)                  ! The number of failures for time t_k
                          DO i = ind1, ind2
                             apu = 0.0_c_double
-                            DO j = 1, nft0
-                              apu = apu + mX(j,i)*y(j) 
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX(j,i)*y(j) 
                             END DO  
                             IF (apu > largest) THEN         
                                 largest = apu
-                                DO j = 1, nft0
-                                 mG(j) =  mX(j,i)                
+                                DO j = 1, set%nft0
+                                 mG(j) =  set%mX(j,i)                
                                 END DO      
                             END IF                          
                          END DO
     
-                         reaali = 1.0_c_double * nft0                                     
+                         reaali = 1.0_c_double * set%nft0                                     
                          f = f + d * largest + Log(reaali)
-                         DO j = 1, nft0
+                         DO j = 1, set%nft0
                             grad(j) = grad(j) + d * mG(j) 
                          END DO
                         
@@ -2484,17 +2793,17 @@
                       
                      END IF
                       
-                     div = 2.0_c_double/nrecord0
+                     div = 2.0_c_double/set%nrecord0
                      f = f * div
                      grad = grad * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         f = f + user_lambda * y(i)
-                         grad(i) = grad(i) + user_lambda
+                         f = f + set%user_lambda * y(i)
+                         grad(i) = grad(i) + set%user_lambda
                        ELSE
-                         f = f - user_lambda * y(i)
-                         grad(i) = grad(i) - user_lambda
+                         f = f - set%user_lambda * y(i)
+                         grad(i) = grad(i) - set%user_lambda
                       END IF
                      END DO    
                      
@@ -2510,13 +2819,13 @@
                       
                       ! linear term in Cox model
                       ind = 1                       ! Position of the first failure at time t_1 in mFail
-                      DO i = 1, nfailunique
-                         d = mFail(2,ind)           ! the number of failures at time t_ind
+                      DO i = 1, set%nfailunique
+                         d = set%mFail(2,ind)           ! the number of failures at time t_ind
                          DO j = ind, ind+d-1
-                            place = mFail(1,j)      ! Position of the failure in mX
-                            DO k = 1, nft0
-                               f = f - mX(k,place)*y(k)
-                               grad(k) = grad(k) - mX(k,place)
+                            place = set%mFail(1,j)      ! Position of the failure in mX
+                            DO k = 1, set%nft0
+                               f = f - set%mX(k,place)*y(k)
+                               grad(k) = grad(k) - set%mX(k,place)
                             END DO                          
                          END DO
                          ind = ind + d
@@ -2524,14 +2833,14 @@
                       
                       use_log = .TRUE.   
                       apu = 0.0_c_double
-                      DO j = 1, nft0
-                          apu = apu + mX(j,1)*y(j)
+                      DO j = 1, set%nft0
+                          apu = apu + set%mX(j,1)*y(j)
                       END DO
                        
-                      a = user_a 
-                      IF (ABS(apu)>=user_a) THEN 
-                        IF (ABS(apu)<(user_a+1.0_c_double)) THEN
-                           a = user_a + 1.0_c_double
+                      a = set%user_a 
+                      IF (ABS(apu)>=set%user_a) THEN 
+                        IF (ABS(apu)<(set%user_a+1.0_c_double)) THEN
+                           a = set%user_a + 1.0_c_double
                         END IF
                       END IF    
                          
@@ -2545,45 +2854,45 @@
                       mG = 0.0_c_double
                       sum_r = 0.0_c_double
                       
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                          apu = 0.0_c_double
-                         DO j = 1, nft0
-                           apu = apu + mX(j,i)*y(j) 
+                         DO j = 1, set%nft0
+                           apu = apu + set%mX(j,i)*y(j) 
                          END DO     
 
                          apu = Exp(apu)                  
                          sum_r = sum_r + apu
 
-                         DO j = 1, nft0
-                            mG(j) = mG(j) + mX(j,i) * apu                    
+                         DO j = 1, set%nft0
+                            mG(j) = mG(j) + set%mX(j,i) * apu                    
                          END DO                         
                       END DO
                       
                       ind = 1                              ! The first failure happens at time t_1
                       time1 = 1       
                      
-                      DO k = 1, nfailunique
-                         time2 = mUnique(1,k)              ! The first failure at time t_ind 
-                         d = mFail(2,ind)                  ! The number of failures for time t_ind
+                      DO k = 1, set%nfailunique
+                         time2 = set%mUnique(1,k)              ! The first failure at time t_ind 
+                         d = set%mFail(2,ind)                  ! The number of failures for time t_ind
                          IF (time1<time2) THEN 
                             DO i = time1, time2-1
                               apu = 0.0_c_double
-                              DO j = 1, nft0
-                                apu = apu + mX(j,i)*y(j) 
+                              DO j = 1, set%nft0
+                                apu = apu + set%mX(j,i)*y(j) 
                               END DO       
                               apu = Exp(apu)
                               
                               sum_r = sum_r - apu
                               
-                              DO j = 1, nft0
-                                 mG(j) = mG(j) - mX(j,i) * apu                   
+                              DO j = 1, set%nft0
+                                 mG(j) = mG(j) - set%mX(j,i) * apu                   
                               END DO                                  
                             END DO
          
                             f = f + d * Log(sum_r)
                       
                             div = 1.0_c_double / sum_r
-                            DO j = 1, nft0
+                            DO j = 1, set%nft0
                                grad(j) = grad(j) + d * mG(j) * div
                             END DO
                         
@@ -2593,7 +2902,7 @@
                             f = f + d * Log(sum_r)
                   
                             div = 1.0_c_double / sum_r
-                            DO j = 1, nft0
+                            DO j = 1, set%nft0
                                grad(j) = grad(j) + d * mG(j) * div
                             END DO
                         
@@ -2604,27 +2913,27 @@
                       ELSE
                       ! maximum term is used instead of ln-exp-term
                       
-                      ind2 = nrecord0
+                      ind2 = set%nrecord0
                       largest = -(10.0_c_double)**10
-                      DO k = nfailunique, 1, -1
-                         ind1 = mUnique(1,k)               ! The first failure at time t_k 
-                         d = mUnique(2,k)                  ! The number of failures for time t_k
+                      DO k = set%nfailunique, 1, -1
+                         ind1 = set%mUnique(1,k)               ! The first failure at time t_k 
+                         d = set%mUnique(2,k)                  ! The number of failures for time t_k
                          DO i = ind1, ind2
                             apu = 0.0_c_double
-                            DO j = 1, nft0
-                              apu = apu + mX(j,i)*y(j) 
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX(j,i)*y(j) 
                             END DO  
                             IF (apu > largest) THEN         
                                 largest = apu
-                                DO j = 1, nft0
-                                 mG(j) =  mX(j,i)                
+                                DO j = 1, set%nft0
+                                 mG(j) = set%mX(j,i)                
                                 END DO      
                             END IF                          
                          END DO
  
-                         reaali = 1.0_c_double * nft0                                     
+                         reaali = 1.0_c_double * set%nft0                                     
                          f = f + d * largest + Log(reaali)
-                         DO j = 1, nft0
+                         DO j = 1, set%nft0
                             grad(j) = grad(j) + d * mG(j) 
                          END DO
                         
@@ -2633,17 +2942,17 @@
                       
                      END IF
                       
-                     div = 2.0_c_double/nrecord0
+                     div = 2.0_c_double/set%nrecord0
                      f = f * div
                      grad = grad * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         f = f + user_rho * y(i)
-                         grad(i) = grad(i) + user_rho
+                         f = f + set%user_rho * y(i)
+                         grad(i) = grad(i) + set%user_rho
                        ELSE
-                         f = f - user_rho * y(i)
-                         grad(i) = grad(i) - user_rho
+                         f = f - set%user_rho * y(i)
+                         grad(i) = grad(i) - set%user_rho
                       END IF
                      END DO 
     
@@ -2659,13 +2968,13 @@
                       
                       ! linear term in Cox model
                       ind = 1                       ! Position of the first failure at time t_1 in mFail
-                      DO i = 1, nfailunique
-                         d = mFail(2,ind)           ! the number of failures at time t_ind
+                      DO i = 1, set%nfailunique
+                         d = set%mFail(2,ind)           ! the number of failures at time t_ind
                          DO j = ind, ind+d-1
-                            place = mFail(1,j)      ! Position of the failure in mX
-                            DO k = 1, nft0
-                               f = f - mX(k,place)*y(k)
-                               grad(k) = grad(k) - mX(k,place)
+                            place = set%mFail(1,j)      ! Position of the failure in mX
+                            DO k = 1, set%nft0
+                               f = f - set%mX(k,place)*y(k)
+                               grad(k) = grad(k) - set%mX(k,place)
                             END DO                          
                          END DO
                          ind = ind + d
@@ -2673,14 +2982,14 @@
                       
                       use_log = .TRUE.   
                       apu = 0.0_c_double
-                      DO j = 1, nft0
-                          apu = apu + mX(j,1)*y(j)
+                      DO j = 1, set%nft0
+                          apu = apu + set%mX(j,1)*y(j)
                       END DO
                        
-                      a = user_a 
-                      IF (ABS(apu)>=user_a) THEN 
-                        IF (ABS(apu)<(user_a+1.0_c_double)) THEN
-                           a = user_a + 1.0_c_double
+                      a = set%user_a 
+                      IF (ABS(apu)>=set%user_a) THEN 
+                        IF (ABS(apu)<(set%user_a+1.0_c_double)) THEN
+                           a = set%user_a + 1.0_c_double
                         END IF
                       END IF    
                          
@@ -2694,45 +3003,45 @@
                       mG = 0.0_c_double
                       sum_r = 0.0_c_double
                       
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                          apu = 0.0_c_double
-                         DO j = 1, nft0
-                           apu = apu + mX(j,i)*y(j) 
+                         DO j = 1, set%nft0
+                           apu = apu + set%mX(j,i)*y(j) 
                          END DO     
 
                          apu = Exp(apu)                  
                          sum_r = sum_r + apu
 
-                         DO j = 1, nft0
-                            mG(j) = mG(j) + mX(j,i) * apu                    
+                         DO j = 1, set%nft0
+                            mG(j) = mG(j) + set%mX(j,i) * apu                    
                          END DO                         
                       END DO
                       
                       ind = 1                              ! The first failure happens at time t_1
                       time1 = 1       
                      
-                      DO k = 1, nfailunique
-                         time2 = mUnique(1,k)              ! The first failure at time t_ind 
-                         d = mFail(2,ind)                  ! The number of failures for time t_ind
+                      DO k = 1, set%nfailunique
+                         time2 = set%mUnique(1,k)              ! The first failure at time t_ind 
+                         d = set%mFail(2,ind)                  ! The number of failures for time t_ind
                          IF (time1<time2) THEN 
                             DO i = time1, time2-1
                               apu = 0.0_c_double
-                              DO j = 1, nft0
-                                apu = apu + mX(j,i)*y(j) 
+                              DO j = 1, set%nft0
+                                apu = apu + set%mX(j,i)*y(j) 
                               END DO       
                               apu = Exp(apu)
                               
                               sum_r = sum_r - apu
                               
-                              DO j = 1, nft0
-                                 mG(j) = mG(j) - mX(j,i) * apu                   
+                              DO j = 1, set%nft0
+                                 mG(j) = mG(j) - set%mX(j,i) * apu                   
                               END DO                                  
                             END DO
                  
                             f = f + d * Log(sum_r)
                       
                             div = 1.0_c_double / sum_r
-                            DO j = 1, nft0
+                            DO j = 1, set%nft0
                                grad(j) = grad(j) + d * mG(j) * div
                             END DO
                         
@@ -2742,7 +3051,7 @@
                             f = f + d * Log(sum_r)
                   
                             div = 1.0_c_double / sum_r
-                            DO j = 1, nft0
+                            DO j = 1, set%nft0
                                grad(j) = grad(j) + d * mG(j) * div
                             END DO
                         
@@ -2753,27 +3062,27 @@
                       ELSE
                       ! maximum term is used instead of ln-exp-term
                       
-                      ind2 = nrecord0
+                      ind2 = set%nrecord0
                       largest = -(10.0_c_double)**10
-                      DO k = nfailunique, 1, -1
-                         ind1 = mUnique(1,k)               ! The first failure at time t_k 
-                         d = mUnique(2,k)                  ! The number of failures for time t_k
+                      DO k = set%nfailunique, 1, -1
+                         ind1 = set%mUnique(1,k)               ! The first failure at time t_k 
+                         d = set%mUnique(2,k)                  ! The number of failures for time t_k
                          DO i = ind1, ind2
                             apu = 0.0_c_double
-                            DO j = 1, nft0
-                              apu = apu + mX(j,i)*y(j) 
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX(j,i)*y(j) 
                             END DO  
                             IF (apu > largest) THEN         
                                 largest = apu
-                                DO j = 1, nft0
-                                 mG(j) =  mX(j,i)                
+                                DO j = 1, set%nft0
+                                 mG(j) =  set%mX(j,i)                
                                 END DO      
                             END IF                          
                          END DO
                  
-                         reaali = 1.0_c_double * nft0                                     
+                         reaali = 1.0_c_double * set%nft0                                     
                          f = f + d * largest + Log(reaali)
-                         DO j = 1, nft0
+                         DO j = 1, set%nft0
                             grad(j) = grad(j) + d * mG(j) 
                          END DO
                         
@@ -2782,17 +3091,17 @@
                       
                      END IF
                       
-                     div = 2.0_c_double/nrecord0
+                     div = 2.0_c_double/set%nrecord0
                      f = f * div
                      grad = grad * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         f = f + user_rho * y(i)
-                         grad(i) = grad(i) + user_rho
+                         f = f + set%user_rho * y(i)
+                         grad(i) = grad(i) + set%user_rho
                        ELSE
-                         f = f - user_rho * y(i)
-                         grad(i) = grad(i) - user_rho
+                         f = f - set%user_rho * y(i)
+                         grad(i) = grad(i) - set%user_rho
                       END IF
                      END DO 
  
@@ -2809,33 +3118,33 @@
                       grad = 0.0_c_double
                       
                       ! mean square error
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                       
                          apu = 0.0_c_double
-                         apu = mY_mse(i)-y(user_n)
-                         DO j = 1, nft0
-                            apu = apu - y(j)*mX(j,i)
+                         apu = set%mY_mse(i)-y(user_n)
+                         DO j = 1, set%nft0
+                            apu = apu - y(j)*set%mX(j,i)
                          END DO
                          
                          f = f + apu**2         
                          grad(user_n) = grad(user_n) - 2.0_c_double * apu
-                         DO j = 1, nft0
-                            grad(j) = grad(j) - 2.0_c_double*mX(j,i)*apu
+                         DO j = 1, set%nft0
+                            grad(j) = grad(j) - 2.0_c_double*set%mX(j,i)*apu
                          END DO
                          
                       END DO 
                       
-                     div = 0.5_c_double/nrecord0
+                     div = 0.5_c_double/set%nrecord0
                      f = f * div
                      grad = grad * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         f = f + user_rho * y(i)
-                         grad(i) = grad(i) + user_rho
+                         f = f + set%user_rho * y(i)
+                         grad(i) = grad(i) + set%user_rho
                        ELSE
-                         f = f - user_rho * y(i)
-                         grad(i) = grad(i) - user_rho
+                         f = f - set%user_rho * y(i)
+                         grad(i) = grad(i) - set%user_rho
                       END IF
                      END DO 
                  
@@ -2855,18 +3164,18 @@
                       apu2 = 0.0_c_double
                       
                       ! The logistic regression model
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                          
                        ! The linear term
                          apu = y(user_n)
-                         DO j = 1, nft0
-                            apu = apu + y(j)*mX(j,i)
+                         DO j = 1, set%nft0
+                            apu = apu + y(j)*set%mX(j,i)
                          END DO
                          
-                         f = f + mY_log(i)*apu
+                         f = f + set%mY_log(i)*apu
                          f = f - Log(1.0_c_double+Exp(apu))
                          
-                         grad(user_n) = grad(user_n) + mY_log(i)
+                         grad(user_n) = grad(user_n) + set%mY_log(i)
                          exp_term = Exp(apu)/(1.0_c_double+Exp(apu))
                          
                          IF (exp_term > 100000.0_c_double) THEN
@@ -2874,24 +3183,24 @@
                          END IF 
                          
                          grad(user_n) = grad(user_n) - exp_term
-                         DO j = 1, nft0
-                            grad(j) = grad(j) + mX(j,i)*mY_log(i)
-                            grad(j) = grad(j) - mX(j,i)*exp_term
+                         DO j = 1, set%nft0
+                            grad(j) = grad(j) + set%mX(j,i)*set%mY_log(i)
+                            grad(j) = grad(j) - set%mX(j,i)*exp_term
                          END DO
                          
                       END DO 
 
-                     div = 1.0_c_double/nrecord0
+                     div = 1.0_c_double/set%nrecord0
                      f = - f * div
                      grad = - grad * div
                         
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         f = f + user_rho * y(i)
-                         grad(i) = grad(i) + user_rho
+                         f = f + set%user_rho * y(i)
+                         grad(i) = grad(i) + set%user_rho
                        ELSE
-                         f = f - user_rho * y(i)
-                         grad(i) = grad(i) - user_rho
+                         f = f - set%user_rho * y(i)
+                         grad(i) = grad(i) - set%user_rho
                       END IF
                      END DO 
                  
@@ -2909,7 +3218,7 @@
         !                   FUNCTION VALUE OF THE DC COMPONENT f_1                      |
         !                                                                               |
         !******************************************************************************** 
-           FUNCTION f1(y, problem1, user_n) RESULT(f)           
+           FUNCTION f1(set, y, problem1, user_n) RESULT(f)           
                 !
                 ! Calculates the function value of DC component f_1 at a point 'y'.
                 ! Variable 'problem1' identifies the objective function used.
@@ -2919,6 +3228,7 @@
                 !
                 IMPLICIT NONE
                 !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                 REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: y    ! a point where the function value of the DC component f_1 is calculated
                 INTEGER(KIND=c_int), INTENT(IN) :: problem1                 ! the objective function f_1 for which the value is calculated   
                 INTEGER(KIND=c_int), INTENT(IN) :: user_n                   ! the dimension of the problem              
@@ -2927,6 +3237,7 @@
                 REAL(KIND=c_double) :: a                              ! help variable
                 REAL(KIND=c_double) :: sum_r, apu, div                ! help variables
                 REAL(KIND=c_double) :: largest, reaali                ! help variables
+                REAL(KIND=c_double) :: testaus                        ! help variables
                 INTEGER(KIND=c_int) :: time1, time2                         ! help variables                
                 INTEGER(KIND=c_int) :: i, j, k, ind, d, place               ! help variable
                 INTEGER(KIND=c_int) :: ind1, ind2                           ! help variable
@@ -2943,12 +3254,12 @@
                       
                       ! linear term in Cox model
                       ind = 1                       ! Position of the first failure at time t_1 in mFail
-                      DO i = 1, nfailunique
-                         d = mFail(2,ind)           ! the number of failures at time t_ind
+                      DO i = 1, set%nfailunique
+                         d = set%mFail(2,ind)           ! the number of failures at time t_ind
                          DO j = ind, ind+d-1
-                            place = mFail(1,j)      ! Position of the failure in mX
-                            DO k = 1, nft0
-                               f = f - mX(k,place)*y(k)
+                            place = set%mFail(1,j)      ! Position of the failure in mX
+                            DO k = 1, set%nft0
+                               f = f - set%mX(k,place)*y(k)
                             END DO                          
                          END DO
                          ind = ind + d
@@ -2956,14 +3267,14 @@
                       
                       use_log = .TRUE.   
                       apu = 0.0_c_double
-                      DO j = 1, nft0
-                          apu = apu + mX(j,1)*y(j)
+                      DO j = 1, set%nft0
+                          apu = apu + set%mX(j,1)*y(j)
                       END DO
                        
-                      a = user_a 
-                      IF (ABS(apu)>=user_a) THEN 
-                        IF (ABS(apu)<(user_a+1.0_c_double)) THEN
-                           a = user_a + 1.0_c_double
+                      a = set%user_a 
+                      IF (ABS(apu)>=set%user_a) THEN 
+                        IF (ABS(apu)<(set%user_a+1.0_c_double)) THEN
+                           a = set%user_a + 1.0_c_double
                         END IF
                       END IF    
                          
@@ -2976,10 +3287,10 @@
                       
                       sum_r = 0.0_c_double
                       
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                          apu = 0.0_c_double
-                         DO j = 1, nft0
-                           apu = apu + mX(j,i)*y(j) 
+                         DO j = 1, set%nft0
+                           apu = apu + set%mX(j,i)*y(j) 
                          END DO     
 
                          apu = Exp(apu)                  
@@ -2990,14 +3301,14 @@
                       ind = 1                              ! The first failure happens at time t_1
                       time1 = 1       
                      
-                      DO k = 1, nfailunique
-                         time2 = mUnique(1,k)              ! The first failure at time t_ind 
-                         d = mFail(2,ind)                  ! The number of failures for time t_ind
+                      DO k = 1, set%nfailunique
+                         time2 = set%mUnique(1,k)              ! The first failure at time t_ind 
+                         d = set%mFail(2,ind)                  ! The number of failures for time t_ind
                          IF (time1<time2) THEN 
                             DO i = time1, time2-1
                               apu = 0.0_c_double
-                              DO j = 1, nft0
-                                apu = apu + mX(j,i)*y(j) 
+                              DO j = 1, set%nft0
+                                apu = apu + set%mX(j,i)*y(j) 
                               END DO       
                               apu = Exp(apu)
                               sum_r = sum_r - apu
@@ -3015,22 +3326,22 @@
                       ELSE
                       ! maximum term is used instead of ln-exp-term
                       
-                      ind2 = nrecord0
+                      ind2 = set%nrecord0
                       largest = -(10.0_c_double)**10
-                      DO k = nfailunique, 1, -1
-                         ind1 = mUnique(1,k)               ! The first failure at time t_k 
-                         d = mUnique(2,k)                  ! The number of failures for time t_k
+                      DO k = set%nfailunique, 1, -1
+                         ind1 = set%mUnique(1,k)               ! The first failure at time t_k 
+                         d = set%mUnique(2,k)                  ! The number of failures for time t_k
                          DO i = ind1, ind2
                             apu = 0.0_c_double
-                            DO j = 1, nft0
-                              apu = apu + mX(j,i)*y(j) 
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX(j,i)*y(j) 
                             END DO  
                             IF (apu > largest) THEN         
                                 largest = apu
                             END IF                          
                          END DO
         
-                         reaali = 1.0_c_double * nft0                                     
+                         reaali = 1.0_c_double * set%nft0                                     
                          f = f + d * largest + Log(reaali)
                         
                          ind2 = ind1-1
@@ -3038,14 +3349,14 @@
                       
                      END IF
                       
-                     div = 2.0_c_double/nrecord0
+                     div = 2.0_c_double/set%nrecord0
                      f = f * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         f = f + user_lambda * y(i)
+                         f = f + set%user_lambda * y(i)
                        ELSE
-                         f = f - user_lambda * y(i)
+                         f = f - set%user_lambda * y(i)
                       END IF
                      END DO 
  
@@ -3060,12 +3371,12 @@
                       
                       ! linear term in Cox model
                       ind = 1                       ! Position of the first failure at time t_1 in mFail
-                      DO i = 1, nfailunique
-                         d = mFail(2,ind)           ! the number of failures at time t_ind
+                      DO i = 1, set%nfailunique
+                         d = set%mFail(2,ind)           ! the number of failures at time t_ind
                          DO j = ind, ind+d-1
-                            place = mFail(1,j)      ! Position of the failure in mX
-                            DO k = 1, nft0
-                               f = f - mX(k,place)*y(k)
+                            place = set%mFail(1,j)      ! Position of the failure in mX
+                            DO k = 1, set%nft0
+                               f = f - set%mX(k,place)*y(k)
                             END DO                          
                          END DO
                          ind = ind + d
@@ -3073,14 +3384,14 @@
                       
                       use_log = .TRUE.   
                       apu = 0.0_c_double
-                      DO j = 1, nft0
-                          apu = apu + mX(j,1)*y(j)
+                      DO j = 1, set%nft0
+                          apu = apu + set%mX(j,1)*y(j)
                       END DO
                        
-                      a = user_a 
-                      IF (ABS(apu)>=user_a) THEN 
-                        IF (ABS(apu)<(user_a+1.0_c_double)) THEN
-                           a = user_a + 1.0_c_double
+                      a = set%user_a 
+                      IF (ABS(apu)>=set%user_a) THEN 
+                        IF (ABS(apu)<(set%user_a+1.0_c_double)) THEN
+                           a = set%user_a + 1.0_c_double
                         END IF
                       END IF    
                          
@@ -3093,10 +3404,10 @@
                       
                       sum_r = 0.0_c_double
                       
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                          apu = 0.0_c_double
-                         DO j = 1, nft0
-                           apu = apu + mX(j,i)*y(j) 
+                         DO j = 1, set%nft0
+                           apu = apu + set%mX(j,i)*y(j) 
                          END DO     
 
                          apu = Exp(apu)                  
@@ -3107,14 +3418,14 @@
                       ind = 1                              ! The first failure happens at time t_1
                       time1 = 1       
                      
-                      DO k = 1, nfailunique
-                         time2 = mUnique(1,k)              ! The first failure at time t_ind 
-                         d = mFail(2,ind)                  ! The number of failures for time t_ind
+                      DO k = 1, set%nfailunique
+                         time2 = set%mUnique(1,k)              ! The first failure at time t_ind 
+                         d = set%mFail(2,ind)                  ! The number of failures for time t_ind
                          IF (time1<time2) THEN 
                             DO i = time1, time2-1
                               apu = 0.0_c_double
-                              DO j = 1, nft0
-                                apu = apu + mX(j,i)*y(j) 
+                              DO j = 1, set%nft0
+                                apu = apu + set%mX(j,i)*y(j) 
                               END DO       
                               apu = Exp(apu)
                               sum_r = sum_r - apu
@@ -3132,22 +3443,22 @@
                       ELSE
                       ! maximum term is used instead of ln-exp-term
                       
-                      ind2 = nrecord0
+                      ind2 = set%nrecord0
                       largest = -(10.0_c_double)**10
-                      DO k = nfailunique, 1, -1
-                         ind1 = mUnique(1,k)               ! The first failure at time t_k 
-                         d = mUnique(2,k)                  ! The number of failures for time t_k
+                      DO k = set%nfailunique, 1, -1
+                         ind1 = set%mUnique(1,k)               ! The first failure at time t_k 
+                         d = set%mUnique(2,k)                  ! The number of failures for time t_k
                          DO i = ind1, ind2
                             apu = 0.0_c_double
-                            DO j = 1, nft0
-                              apu = apu + mX(j,i)*y(j) 
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX(j,i)*y(j) 
                             END DO  
                             IF (apu > largest) THEN         
                                 largest = apu
                             END IF                          
                          END DO
              
-                         reaali = 1.0_c_double * nft0                                     
+                         reaali = 1.0_c_double * set%nft0                                     
                          f = f + d * largest + Log(reaali)
                         
                          ind2 = ind1-1
@@ -3155,14 +3466,14 @@
                       
                      END IF
                       
-                     div = 2.0_c_double/nrecord0
+                     div = 2.0_c_double/set%nrecord0
                      f = f * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         f = f + user_rho * y(i)
+                         f = f + set%user_rho * y(i)
                        ELSE
-                         f = f - user_rho * y(i)
+                         f = f - set%user_rho * y(i)
                       END IF
                      END DO 
                    
@@ -3177,12 +3488,12 @@
                       
                       ! linear term in Cox model
                       ind = 1                       ! Position of the first failure at time t_1 in mFail
-                      DO i = 1, nfailunique
-                         d = mFail(2,ind)           ! the number of failures at time t_ind
+                      DO i = 1, set%nfailunique
+                         d = set%mFail(2,ind)           ! the number of failures at time t_ind
                          DO j = ind, ind+d-1
-                            place = mFail(1,j)      ! Position of the failure in mX
-                            DO k = 1, nft0
-                               f = f - mX(k,place)*y(k)
+                            place = set%mFail(1,j)      ! Position of the failure in mX
+                            DO k = 1, set%nft0
+                               f = f - set%mX(k,place)*y(k)
                             END DO                          
                          END DO
                          ind = ind + d
@@ -3190,14 +3501,14 @@
                       
                       use_log = .TRUE.   
                       apu = 0.0_c_double
-                      DO j = 1, nft0
-                          apu = apu + mX(j,1)*y(j)
+                      DO j = 1, set%nft0
+                          apu = apu + set%mX(j,1)*y(j)
                       END DO
                        
-                      a = user_a 
-                      IF (ABS(apu)>=user_a) THEN 
-                        IF (ABS(apu)<(user_a+1.0_c_double)) THEN
-                           a = user_a + 1.0_c_double
+                      a = set%user_a 
+                      IF (ABS(apu)>=set%user_a) THEN 
+                        IF (ABS(apu)<(set%user_a+1.0_c_double)) THEN
+                           a = set%user_a + 1.0_c_double
                         END IF
                       END IF    
                          
@@ -3210,10 +3521,10 @@
                       
                       sum_r = 0.0_c_double
                       
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                          apu = 0.0_c_double
-                         DO j = 1, nft0
-                           apu = apu + mX(j,i)*y(j) 
+                         DO j = 1, set%nft0
+                           apu = apu + set%mX(j,i)*y(j) 
                          END DO     
 
                          apu = Exp(apu)                  
@@ -3224,14 +3535,14 @@
                       ind = 1                              ! The first failure happens at time t_1
                       time1 = 1       
                      
-                      DO k = 1, nfailunique
-                         time2 = mUnique(1,k)              ! The first failure at time t_ind 
-                         d = mFail(2,ind)                  ! The number of failures for time t_ind
+                      DO k = 1, set%nfailunique
+                         time2 = set%mUnique(1,k)              ! The first failure at time t_ind 
+                         d = set%mFail(2,ind)                  ! The number of failures for time t_ind
                          IF (time1<time2) THEN 
                             DO i = time1, time2-1
                               apu = 0.0_c_double
-                              DO j = 1, nft0
-                                apu = apu + mX(j,i)*y(j) 
+                              DO j = 1, set%nft0
+                                apu = apu + set%mX(j,i)*y(j) 
                               END DO       
                               apu = Exp(apu)
                               sum_r = sum_r - apu
@@ -3249,22 +3560,22 @@
                       ELSE
                       ! maximum term is used instead of ln-exp-term
                       
-                      ind2 = nrecord0
+                      ind2 = set%nrecord0
                       largest = -(10.0_c_double)**10
-                      DO k = nfailunique, 1, -1
-                         ind1 = mUnique(1,k)               ! The first failure at time t_k 
-                         d = mUnique(2,k)                  ! The number of failures for time t_k
+                      DO k = set%nfailunique, 1, -1
+                         ind1 = set%mUnique(1,k)               ! The first failure at time t_k 
+                         d = set%mUnique(2,k)                  ! The number of failures for time t_k
                          DO i = ind1, ind2
                             apu = 0.0_c_double
-                            DO j = 1, nft0
-                              apu = apu + mX(j,i)*y(j) 
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX(j,i)*y(j) 
                             END DO  
                             IF (apu > largest) THEN         
                                 largest = apu
                             END IF                          
                          END DO
                                                         
-                         reaali = 1.0_c_double * nft0                                     
+                         reaali = 1.0_c_double * set%nft0                                     
                          f = f + d * largest + Log(reaali)
                         
                          ind2 = ind1-1
@@ -3272,14 +3583,14 @@
                       
                      END IF
                       
-                     div = 2.0_c_double/nrecord0
+                     div = 2.0_c_double/set%nrecord0
                      f = f * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         f = f + user_rho * y(i)
+                         f = f + set%user_rho * y(i)
                        ELSE
-                         f = f - user_rho * y(i)
+                         f = f - set%user_rho * y(i)
                       END IF
                      END DO 
                                 
@@ -3292,30 +3603,31 @@
                    ! beta_0 = y(user_n) and beta_1,...,beta_nft = y(1),...,y(nft=user_n-1)
                    CASE(4)  
                       f = 0.0_c_double
-                      
+  
                       ! mean square error
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                       
                          apu = 0.0_c_double
-                         apu = mY_mse(i)-y(user_n)
-                         DO j = 1, nft0
-                            apu = apu - y(j)*mX(j,i)
+                         apu = set%mY_mse(i)-y(user_n)
+                         DO j = 1, set%nft0
+                            apu = apu - y(j)*set%mX(j,i)
                          END DO
                          
                          f = f + apu**2         
                          
-                      END DO 
+                      END DO                      
                       
-                     div = 0.5_c_double/nrecord0
+                     div = 0.5_c_double/set%nrecord0
                      f = f * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         f = f + user_rho * y(i)
+                         f = f + set%user_rho * y(i)
                        ELSE
-                         f = f - user_rho * y(i)
+                         f = f - set%user_rho * y(i)
                       END IF
                      END DO 
+                     
                  
                    !-------------------------------------  
                    
@@ -3328,27 +3640,27 @@
                       f = 0.0_c_double
                       
                       ! The logistic regression model
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                          
                        ! The linear term
                          apu = y(user_n)
-                         DO j = 1, nft0
-                            apu = apu + y(j)*mX(j,i)
+                         DO j = 1, set%nft0
+                            apu = apu + y(j)*set%mX(j,i)
                          END DO
                          
-                         f = f + mY_log(i)*apu
+                         f = f + set%mY_log(i)*apu
                          f = f - Log(1.0_c_double+Exp(apu))
                         
                       END DO 
 
-                     div = 1.0_c_double/nrecord0
+                     div = 1.0_c_double/set%nrecord0
                      f = - f * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         f = f + user_rho * y(i)
+                         f = f + set%user_rho * y(i)
                        ELSE
-                         f = f - user_rho * y(i)
+                         f = f - set%user_rho * y(i)
                       END IF
                      END DO 
                  
@@ -3366,7 +3678,7 @@
         !                   FUNCTION VALUE OF THE DC COMPONENT f_2                      |
         !                                                                               |
         !********************************************************************************            
-           FUNCTION f2(y, problem2, user_n) RESULT(f)           
+           FUNCTION f2(set, y, problem2, user_n) RESULT(f)           
                 !
                 ! Calculates the function value of DC component f_2 at a point 'y'.
                 ! Variable 'problem2' identifies the objective function used.
@@ -3376,15 +3688,16 @@
                 !
                 IMPLICIT NONE
                 !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                 REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: y    ! a point where the function value of the DC component f_2 is calculated
                 INTEGER(KIND=c_int), INTENT(IN) :: problem2                 ! the objective function f_2 for which the value is calculated   
                 INTEGER(KIND=c_int), INTENT(IN) :: user_n                   ! the dimension of the problem              
                 !**************************** OTHER VARIABLES **************************************
                 REAL(KIND=c_double) :: f                             ! the function value of the DC component f_2 at a point 'y'
                 REAL(KIND=c_double), DIMENSION(user_n) :: absterm    ! the absolute values of the beta vector
-                REAL(KIND=c_double), DIMENSION(nkits0) :: absterm_k  ! the absolute values of the beta vector
+                REAL(KIND=c_double), DIMENSION(set%nkits0) :: absterm_k  ! the absolute values of the beta vector
                 INTEGER(KIND=c_int), DIMENSION(user_n) :: absind           ! the indices of the absolute values
-                INTEGER(KIND=c_int), DIMENSION(nkits0) :: absind_k         ! the indices of the absolute values
+                INTEGER(KIND=c_int), DIMENSION(set%nkits0) :: absind_k         ! the indices of the absolute values
                 INTEGER(KIND=c_int) :: i, j                                ! help variables
                 
 
@@ -3408,20 +3721,20 @@
                    CASE(2)  
                       f = 0.0_c_double
                       
-                      DO i = 1, nft0
+                      DO i = 1, set%nft0
                          absterm(i) = ABS(y(i))
                          absind(i) = i
                       END DO
                       
-                      CALL heapsort_k(absterm,absind,nk0)
+                      CALL heapsort_k(absterm,absind,set%nk0)
                       
-                      DO i = user_n-nk0+1, user_n
+                      DO i = user_n-set%nk0+1, user_n
                         f = f + absterm(i)
                       END DO
-                      f = f * user_rho
+                      f = f * set%user_rho
                       
                       ! the indices of the k largest absolute values of beta
-                      k_norm_ind = absind
+                      set%k_norm_ind = absind
                       
                    !------------------------------------- 
                    
@@ -3433,22 +3746,22 @@
                       f = 0.0_c_double
                       absterm_k = 0.0_c_double
                       
-                      DO i = 1, nkits0
-                        DO j = 1, nft0
-                          absterm_k(i) = absterm_k(i) + mK(j,i) * ABS(y(j))
+                      DO i = 1, set%nkits0
+                        DO j = 1, set%nft0
+                          absterm_k(i) = absterm_k(i) + set%mK(j,i) * ABS(y(j))
                         END DO  
                         absind_k(i) = i
                       END DO
                       
-                      CALL heapsort_k(absterm_k,absind_k,nk0)
+                      CALL heapsort_k(absterm_k,absind_k,set%nk0)
                       
-                      DO i = nkits0-nk0+1, nkits0
+                      DO i = set%nkits0-set%nk0+1, set%nkits0
                         f = f + absterm_k(i)
                       END DO
-                      f = f * user_rho
+                      f = f * set%user_rho
                       
                       ! the indices of the k largest absolute values of beta for kit structure
-                      k_norm_ind_k = absind_k
+                      set%k_norm_ind_k = absind_k
                       
                    !-------------------------------------   
 
@@ -3460,22 +3773,22 @@
                       f = 0.0_c_double
                       absterm_k = 0.0_c_double
                       
-                      DO i = 1, nkits0
-                        DO j = 1, nft0
-                          absterm_k(i) = absterm_k(i) + mK(j,i) * ABS(y(j))
+                      DO i = 1, set%nkits0
+                        DO j = 1, set%nft0
+                          absterm_k(i) = absterm_k(i) + set%mK(j,i) * ABS(y(j))
                         END DO  
                         absind_k(i) = i
                       END DO
                       
-                      CALL heapsort_k(absterm_k,absind_k,nk0)
+                      CALL heapsort_k(absterm_k,absind_k,set%nk0)
                       
-                      DO i = nkits0-nk0+1, nkits0
+                      DO i = set%nkits0-set%nk0+1, set%nkits0
                         f = f + absterm_k(i)
                       END DO
-                      f = f * user_rho
+                      f = f * set%user_rho
                       
                       ! the indices of the k largest absolute values of beta for kit structure
-                      k_norm_ind_k = absind_k
+                      set%k_norm_ind_k = absind_k
                       
                    !------------------------------------- 
 
@@ -3487,22 +3800,22 @@
                       f = 0.0_c_double
                       absterm_k = 0.0_c_double
                       
-                      DO i = 1, nkits0
-                        DO j = 1, nft0
-                          absterm_k(i) = absterm_k(i) + mK(j,i) * ABS(y(j))
+                      DO i = 1, set%nkits0
+                        DO j = 1, set%nft0
+                          absterm_k(i) = absterm_k(i) + set%mK(j,i) * ABS(y(j))
                         END DO  
                         absind_k(i) = i
                       END DO
                       
-                      CALL heapsort_k(absterm_k,absind_k,nk0)
+                      CALL heapsort_k(absterm_k,absind_k,set%nk0)
                       
-                      DO i = nkits0-nk0+1, nkits0
+                      DO i = set%nkits0-set%nk0+1, set%nkits0
                         f = f + absterm_k(i)
                       END DO
-                      f = f * user_rho
+                      f = f * set%user_rho
                       
                       ! the indices of the k largest absolute values of beta for kit structure
-                      k_norm_ind_k = absind_k
+                      set%k_norm_ind_k = absind_k
                       
                    !-------------------------------------                  
                    
@@ -3522,7 +3835,7 @@
         !                                                                               |       
         !********************************************************************************       
         
-           FUNCTION subgradient_f1(y, problem1, user_n) RESULT(grad)
+           FUNCTION subgradient_f1(set, y, problem1, user_n) RESULT(grad)
                 !
                 ! Calculates a subgradient of the DC component f_1 at a point 'y'.
                 ! Variable 'problem1' identifies the objective function used.
@@ -3533,13 +3846,14 @@
                 !
                 IMPLICIT NONE
                 !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                 REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: y    ! a point where the subgradient of the DC component f_1 is calculated
                 INTEGER(KIND=c_int), INTENT(IN) :: problem1                 ! the objective function f_1 for which the subgradient is calculated      
                 INTEGER(KIND=c_int), INTENT(IN) :: user_n                   ! the dimension of the problem              
                 !**************************** OTHER VARIABLES **************************************
                 REAL(KIND=c_double), DIMENSION(SIZE(y)) :: grad       ! the subgradient of the DC component f_1 at a point 'y'
                 REAL(KIND=c_double) :: a                              ! help variable
-                REAL(KIND=c_double), DIMENSION(nft0) :: mG            ! help variable                        
+                REAL(KIND=c_double), DIMENSION(set%nft0) :: mG            ! help variable                        
                 REAL(KIND=c_double) :: sum_r, apu, div                ! help variables
                 REAL(KIND=c_double) :: exp_term                       ! help variables
                 REAL(KIND=c_double) :: largest                        ! help variables
@@ -3559,12 +3873,12 @@
                       
                       ! linear term in Cox model
                       ind = 1                       ! Position of the first failure at time t_1 in mFail
-                      DO i = 1, nfailunique
-                         d = mFail(2,ind)           ! the number of failures at time t_ind
+                      DO i = 1, set%nfailunique
+                         d = set%mFail(2,ind)           ! the number of failures at time t_ind
                          DO j = ind, ind+d-1
-                            place = mFail(1,j)      ! Position of the failure in mX
-                            DO k = 1, nft0
-                               grad(k) = grad(k) - mX(k,place)
+                            place = set%mFail(1,j)      ! Position of the failure in mX
+                            DO k = 1, set%nft0
+                               grad(k) = grad(k) - set%mX(k,place)
                             END DO                          
                          END DO
                          ind = ind + d
@@ -3572,14 +3886,14 @@
                       
                       use_log = .TRUE.   
                       apu = 0.0_c_double
-                      DO j = 1, nft0
-                          apu = apu + mX(j,1)*y(j)
+                      DO j = 1, set%nft0
+                          apu = apu + set%mX(j,1)*y(j)
                       END DO
                        
-                      a = user_a 
-                      IF (ABS(apu)>=user_a) THEN 
-                        IF (ABS(apu)<(user_a+1.0_c_double)) THEN
-                           a = user_a + 1.0_c_double
+                      a = set%user_a 
+                      IF (ABS(apu)>=set%user_a) THEN 
+                        IF (ABS(apu)<(set%user_a+1.0_c_double)) THEN
+                           a = set%user_a + 1.0_c_double
                         END IF
                       END IF    
                          
@@ -3593,43 +3907,43 @@
                       mG = 0.0_c_double
                       sum_r = 0.0_c_double
                       
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                          apu = 0.0_c_double
-                         DO j = 1, nft0
-                           apu = apu + mX(j,i)*y(j) 
+                         DO j = 1, set%nft0
+                           apu = apu + set%mX(j,i)*y(j) 
                          END DO     
 
                          apu = Exp(apu)                  
                          sum_r = sum_r + apu
 
-                         DO j = 1, nft0
-                            mG(j) = mG(j) + mX(j,i) * apu                    
+                         DO j = 1, set%nft0
+                            mG(j) = mG(j) + set%mX(j,i) * apu                    
                          END DO                         
                       END DO
                       
                       ind = 1                              ! The first failure happens at time t_1
                       time1 = 1       
                      
-                      DO k = 1, nfailunique
-                         time2 = mUnique(1,k)              ! The first failure at time t_ind 
-                         d = mFail(2,ind)                  ! The number of failures for time t_ind
+                      DO k = 1, set%nfailunique
+                         time2 = set%mUnique(1,k)              ! The first failure at time t_ind 
+                         d = set%mFail(2,ind)                  ! The number of failures for time t_ind
                          IF (time1<time2) THEN 
                             DO i = time1, time2-1
                               apu = 0.0_c_double
-                              DO j = 1, nft0
-                                apu = apu + mX(j,i)*y(j) 
+                              DO j = 1, set%nft0
+                                apu = apu + set%mX(j,i)*y(j) 
                               END DO       
                               apu = Exp(apu)
                               
                               sum_r = sum_r - apu
                               
-                              DO j = 1, nft0
-                                 mG(j) = mG(j) - mX(j,i) * apu                   
+                              DO j = 1, set%nft0
+                                 mG(j) = mG(j) - set%mX(j,i) * apu                   
                               END DO                                  
                             END DO
                             
                             div = 1.0_c_double / sum_r
-                            DO j = 1, nft0
+                            DO j = 1, set%nft0
                                grad(j) = grad(j) + d * mG(j) * div
                             END DO
                         
@@ -3638,7 +3952,7 @@
                          ELSE 
                   
                             div = 1.0_c_double / sum_r
-                            DO j = 1, nft0
+                            DO j = 1, set%nft0
                                grad(j) = grad(j) + d * mG(j) * div
                             END DO
                         
@@ -3649,25 +3963,25 @@
                       ELSE
                       ! maximum term is used instead of ln-exp-term
                       
-                      ind2 = nrecord0
+                      ind2 = set%nrecord0
                       largest = -(10.0_c_double)**10
-                      DO k = nfailunique, 1, -1
-                         ind1 = mUnique(1,k)               ! The first failure at time t_k 
-                         d = mUnique(2,k)                  ! The number of failures for time t_k
+                      DO k = set%nfailunique, 1, -1
+                         ind1 = set%mUnique(1,k)               ! The first failure at time t_k 
+                         d = set%mUnique(2,k)                  ! The number of failures for time t_k
                          DO i = ind1, ind2
                             apu = 0.0_c_double
-                            DO j = 1, nft0
-                              apu = apu + mX(j,i)*y(j) 
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX(j,i)*y(j) 
                             END DO  
                             IF (apu > largest) THEN         
                                 largest = apu
-                                DO j = 1, nft0
-                                 mG(j) =  mX(j,i)                
+                                DO j = 1, set%nft0
+                                 mG(j) =  set%mX(j,i)                
                                 END DO      
                             END IF                          
                          END DO
                          
-                         DO j = 1, nft0
+                         DO j = 1, set%nft0
                             grad(j) = grad(j) + d * mG(j) 
                          END DO
                         
@@ -3676,14 +3990,14 @@
                       
                      END IF
                       
-                     div = 2.0_c_double/nrecord0
+                     div = 2.0_c_double/set%nrecord0
                      grad = grad * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         grad(i) = grad(i) + user_lambda
+                         grad(i) = grad(i) + set%user_lambda
                        ELSE
-                         grad(i) = grad(i) - user_lambda
+                         grad(i) = grad(i) - set%user_lambda
                       END IF
                      END DO 
                      
@@ -3698,12 +4012,12 @@
                       
                       ! linear term in Cox model
                       ind = 1                       ! Position of the first failure at time t_1 in mFail
-                      DO i = 1, nfailunique
-                         d = mFail(2,ind)           ! the number of failures at time t_ind
+                      DO i = 1, set%nfailunique
+                         d = set%mFail(2,ind)           ! the number of failures at time t_ind
                          DO j = ind, ind+d-1
-                            place = mFail(1,j)      ! Position of the failure in mX
-                            DO k = 1, nft0
-                               grad(k) = grad(k) - mX(k,place)
+                            place = set%mFail(1,j)      ! Position of the failure in mX
+                            DO k = 1, set%nft0
+                               grad(k) = grad(k) - set%mX(k,place)
                             END DO                          
                          END DO
                          ind = ind + d
@@ -3711,14 +4025,14 @@
                       
                       use_log = .TRUE.   
                       apu = 0.0_c_double
-                      DO j = 1, nft0
-                          apu = apu + mX(j,1)*y(j)
+                      DO j = 1, set%nft0
+                          apu = apu + set%mX(j,1)*y(j)
                       END DO
                        
-                      a = user_a 
-                      IF (ABS(apu)>=user_a) THEN 
-                        IF (ABS(apu)<(user_a+1.0_c_double)) THEN
-                           a = user_a + 1.0_c_double
+                      a = set%user_a 
+                      IF (ABS(apu)>=set%user_a) THEN 
+                        IF (ABS(apu)<(set%user_a+1.0_c_double)) THEN
+                           a = set%user_a + 1.0_c_double
                         END IF
                       END IF    
                          
@@ -3732,43 +4046,43 @@
                       mG = 0.0_c_double
                       sum_r = 0.0_c_double
                       
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                          apu = 0.0_c_double
-                         DO j = 1, nft0
-                           apu = apu + mX(j,i)*y(j) 
+                         DO j = 1, set%nft0
+                           apu = apu + set%mX(j,i)*y(j) 
                          END DO     
 
                          apu = Exp(apu)                  
                          sum_r = sum_r + apu
 
-                         DO j = 1, nft0
-                            mG(j) = mG(j) + mX(j,i) * apu                    
+                         DO j = 1, set%nft0
+                            mG(j) = mG(j) + set%mX(j,i) * apu                    
                          END DO                         
                       END DO
                       
                       ind = 1                              ! The first failure happens at time t_1
                       time1 = 1       
                      
-                      DO k = 1, nfailunique
-                         time2 = mUnique(1,k)              ! The first failure at time t_ind 
-                         d = mFail(2,ind)                  ! The number of failures for time t_ind
+                      DO k = 1, set%nfailunique
+                         time2 = set%mUnique(1,k)              ! The first failure at time t_ind 
+                         d = set%mFail(2,ind)                  ! The number of failures for time t_ind
                          IF (time1<time2) THEN 
                             DO i = time1, time2-1
                               apu = 0.0_c_double
-                              DO j = 1, nft0
-                                apu = apu + mX(j,i)*y(j) 
+                              DO j = 1, set%nft0
+                                apu = apu + set%mX(j,i)*y(j) 
                               END DO       
                               apu = Exp(apu)
                               
                               sum_r = sum_r - apu
                               
-                              DO j = 1, nft0
-                                 mG(j) = mG(j) - mX(j,i) * apu                   
+                              DO j = 1, set%nft0
+                                 mG(j) = mG(j) - set%mX(j,i) * apu                   
                               END DO                                  
                             END DO
                    
                             div = 1.0_c_double / sum_r
-                            DO j = 1, nft0
+                            DO j = 1, set%nft0
                                grad(j) = grad(j) + d * mG(j) * div
                             END DO
                         
@@ -3777,7 +4091,7 @@
                          ELSE 
                   
                             div = 1.0_c_double / sum_r
-                            DO j = 1, nft0
+                            DO j = 1, set%nft0
                                grad(j) = grad(j) + d * mG(j) * div
                             END DO
                         
@@ -3788,25 +4102,25 @@
                       ELSE
                       ! maximum term is used instead of ln-exp-term
                       
-                      ind2 = nrecord0
+                      ind2 = set%nrecord0
                       largest = -(10.0_c_double)**10
-                      DO k = nfailunique, 1, -1
-                         ind1 = mUnique(1,k)               ! The first failure at time t_k 
-                         d = mUnique(2,k)                  ! The number of failures for time t_k
+                      DO k = set%nfailunique, 1, -1
+                         ind1 = set%mUnique(1,k)               ! The first failure at time t_k 
+                         d = set%mUnique(2,k)                  ! The number of failures for time t_k
                          DO i = ind1, ind2
                             apu = 0.0_c_double
-                            DO j = 1, nft0
-                              apu = apu + mX(j,i)*y(j) 
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX(j,i)*y(j) 
                             END DO  
                             IF (apu > largest) THEN         
                                 largest = apu
-                                DO j = 1, nft0
-                                 mG(j) =  mX(j,i)                
+                                DO j = 1, set%nft0
+                                 mG(j) =  set%mX(j,i)                
                                 END DO      
                             END IF                          
                          END DO
  
-                         DO j = 1, nft0
+                         DO j = 1, set%nft0
                             grad(j) = grad(j) + d * mG(j) 
                          END DO
                         
@@ -3815,14 +4129,14 @@
                       
                      END IF
                       
-                     div = 2.0_c_double/nrecord0
+                     div = 2.0_c_double/set%nrecord0
                      grad = grad * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         grad(i) = grad(i) + user_rho
+                         grad(i) = grad(i) + set%user_rho
                        ELSE
-                         grad(i) = grad(i) - user_rho
+                         grad(i) = grad(i) - set%user_rho
                       END IF
                      END DO 
                 
@@ -3837,12 +4151,12 @@
                       
                       ! linear term in Cox model
                       ind = 1                       ! Position of the first failure at time t_1 in mFail
-                      DO i = 1, nfailunique
-                         d = mFail(2,ind)           ! the number of failures at time t_ind
+                      DO i = 1, set%nfailunique
+                         d = set%mFail(2,ind)           ! the number of failures at time t_ind
                          DO j = ind, ind+d-1
-                            place = mFail(1,j)      ! Position of the failure in mX
-                            DO k = 1, nft0
-                               grad(k) = grad(k) - mX(k,place)
+                            place = set%mFail(1,j)      ! Position of the failure in mX
+                            DO k = 1, set%nft0
+                               grad(k) = grad(k) - set%mX(k,place)
                             END DO                          
                          END DO
                          ind = ind + d
@@ -3850,14 +4164,14 @@
                       
                       use_log = .TRUE.   
                       apu = 0.0_c_double
-                      DO j = 1, nft0
-                          apu = apu + mX(j,1)*y(j)
+                      DO j = 1, set%nft0
+                          apu = apu + set%mX(j,1)*y(j)
                       END DO
                        
-                      a = user_a 
-                      IF (ABS(apu)>=user_a) THEN 
-                        IF (ABS(apu)<(user_a+1.0_c_double)) THEN
-                           a = user_a + 1.0_c_double
+                      a = set%user_a 
+                      IF (ABS(apu)>=set%user_a) THEN 
+                        IF (ABS(apu)<(set%user_a+1.0_c_double)) THEN
+                           a = set%user_a + 1.0_c_double
                         END IF
                       END IF    
                          
@@ -3871,43 +4185,43 @@
                       mG = 0.0_c_double
                       sum_r = 0.0_c_double
                       
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                          apu = 0.0_c_double
-                         DO j = 1, nft0
-                           apu = apu + mX(j,i)*y(j) 
+                         DO j = 1, set%nft0
+                           apu = apu + set%mX(j,i)*y(j) 
                          END DO     
 
                          apu = Exp(apu)                  
                          sum_r = sum_r + apu
 
-                         DO j = 1, nft0
-                            mG(j) = mG(j) + mX(j,i) * apu                    
+                         DO j = 1, set%nft0
+                            mG(j) = mG(j) + set%mX(j,i) * apu                    
                          END DO                         
                       END DO
                       
                       ind = 1                              ! The first failure happens at time t_1
                       time1 = 1       
                      
-                      DO k = 1, nfailunique
-                         time2 = mUnique(1,k)              ! The first failure at time t_ind 
-                         d = mFail(2,ind)                  ! The number of failures for time t_ind
+                      DO k = 1, set%nfailunique
+                         time2 = set%mUnique(1,k)              ! The first failure at time t_ind 
+                         d = set%mFail(2,ind)                  ! The number of failures for time t_ind
                          IF (time1<time2) THEN 
                             DO i = time1, time2-1
                               apu = 0.0_c_double
-                              DO j = 1, nft0
-                                apu = apu + mX(j,i)*y(j) 
+                              DO j = 1, set%nft0
+                                apu = apu + set%mX(j,i)*y(j) 
                               END DO       
                               apu = Exp(apu)
                               
                               sum_r = sum_r - apu
                               
-                              DO j = 1, nft0
-                                 mG(j) = mG(j) - mX(j,i) * apu                   
+                              DO j = 1, set%nft0
+                                 mG(j) = mG(j) - set%mX(j,i) * apu                   
                               END DO                                  
                             END DO
                             
                             div = 1.0_c_double / sum_r
-                            DO j = 1, nft0
+                            DO j = 1, set%nft0
                                grad(j) = grad(j) + d * mG(j) * div
                             END DO
                         
@@ -3916,7 +4230,7 @@
                          ELSE 
                   
                             div = 1.0_c_double / sum_r
-                            DO j = 1, nft0
+                            DO j = 1, set%nft0
                                grad(j) = grad(j) + d * mG(j) * div
                             END DO
                         
@@ -3927,25 +4241,25 @@
                       ELSE
                       ! maximum term is used instead of ln-exp-term
                       
-                      ind2 = nrecord0
+                      ind2 = set%nrecord0
                       largest = -(10.0_c_double)**10
-                      DO k = nfailunique, 1, -1
-                         ind1 = mUnique(1,k)               ! The first failure at time t_k 
-                         d = mUnique(2,k)                  ! The number of failures for time t_k
+                      DO k = set%nfailunique, 1, -1
+                         ind1 = set%mUnique(1,k)               ! The first failure at time t_k 
+                         d = set%mUnique(2,k)                  ! The number of failures for time t_k
                          DO i = ind1, ind2
                             apu = 0.0_c_double
-                            DO j = 1, nft0
-                              apu = apu + mX(j,i)*y(j) 
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX(j,i)*y(j) 
                             END DO  
                             IF (apu > largest) THEN         
                                 largest = apu
-                                DO j = 1, nft0
-                                 mG(j) =  mX(j,i)                
+                                DO j = 1, set%nft0
+                                 mG(j) =  set%mX(j,i)                
                                 END DO      
                             END IF                          
                          END DO
                        
-                         DO j = 1, nft0
+                         DO j = 1, set%nft0
                             grad(j) = grad(j) + d * mG(j) 
                          END DO
                         
@@ -3954,14 +4268,14 @@
                       
                      END IF
                       
-                     div = 2.0_c_double/nrecord0
+                     div = 2.0_c_double/set%nrecord0
                      grad = grad * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         grad(i) = grad(i) + user_rho
+                         grad(i) = grad(i) + set%user_rho
                        ELSE
-                         grad(i) = grad(i) - user_rho
+                         grad(i) = grad(i) - set%user_rho
                       END IF
                      END DO 
                
@@ -3976,29 +4290,29 @@
                       grad = 0.0_c_double
                       
                       ! mean square error
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                       
                          apu = 0.0_c_double
-                         apu = mY_mse(i)-y(user_n)
-                         DO j = 1, nft0
-                            apu = apu - y(j)*mX(j,i)
+                         apu = set%mY_mse(i)-y(user_n)
+                         DO j = 1, set%nft0
+                            apu = apu - y(j)*set%mX(j,i)
                          END DO
                          
                          grad(user_n) = grad(user_n) - 2.0_c_double * apu
-                         DO j = 1, nft0
-                            grad(j) = grad(j) - 2.0_c_double*mX(j,i)*apu
+                         DO j = 1, set%nft0
+                            grad(j) = grad(j) - 2.0_c_double*set%mX(j,i)*apu
                          END DO
                          
                       END DO 
                       
-                     div = 0.5_c_double/nrecord0
+                     div = 0.5_c_double/set%nrecord0
                      grad = grad * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         grad(i) = grad(i) + user_rho
+                         grad(i) = grad(i) + set%user_rho
                        ELSE
-                         grad(i) = grad(i) - user_rho
+                         grad(i) = grad(i) - set%user_rho
                       END IF
                      END DO 
                  
@@ -4013,32 +4327,32 @@
                       grad = 0.0_c_double
                       
                       ! The logistic regression model
-                      DO i = 1, nrecord0
+                      DO i = 1, set%nrecord0
                          
                        ! The linear term
                          apu = y(user_n)
-                         DO j = 1, nft0
-                            apu = apu + y(j)*mX(j,i)
+                         DO j = 1, set%nft0
+                            apu = apu + y(j)*set%mX(j,i)
                          END DO
               
-                         grad(user_n) = grad(user_n) + mY_log(i)
+                         grad(user_n) = grad(user_n) + set%mY_log(i)
                          exp_term = Exp(apu)/(1.0_c_double+Exp(apu))
                          grad(user_n) = grad(user_n) - exp_term
-                         DO j = 1, nft0
-                            grad(j) = grad(j) + mX(j,i)*mY_log(i)
-                            grad(j) = grad(j) - mX(j,i)*exp_term
+                         DO j = 1, set%nft0
+                            grad(j) = grad(j) + set%mX(j,i)*set%mY_log(i)
+                            grad(j) = grad(j) - set%mX(j,i)*exp_term
                          END DO
                          
                       END DO 
 
-                     div = 1.0_c_double/nrecord0
+                     div = 1.0_c_double/set%nrecord0
                      grad = - grad * div
                       
-                     DO i = 1, nft0
+                     DO i = 1, set%nft0
                        IF (y(i)>=0.0_c_double) THEN 
-                         grad(i) = grad(i) + user_rho
+                         grad(i) = grad(i) + set%user_rho
                        ELSE
-                         grad(i) = grad(i) - user_rho
+                         grad(i) = grad(i) - set%user_rho
                       END IF
                      END DO 
                  
@@ -4055,7 +4369,7 @@
         !                    SUBGRADIENT OF THE DC COMPONENT f_2                        |
         !                                                                               |       
         !********************************************************************************    
-           FUNCTION subgradient_f2(y, problem2, user_n) RESULT(grad)                
+           FUNCTION subgradient_f2(set, y, problem2, user_n) RESULT(grad)                
                 !
                 ! Calculate a subgradient of the DC component f_2 at a point 'y'.
                 ! Variable 'problem2' identifies the objective function used.
@@ -4066,6 +4380,7 @@
                 !
                 IMPLICIT NONE
                 !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
                 REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: y    ! a point where the subgradient of the DC component f_2 is calculated
                 INTEGER(KIND=c_int), INTENT(IN) :: problem2           ! the objective function f_2 for which the subgradient is calculated
                 INTEGER(KIND=c_int), INTENT(IN) :: user_n             ! the dimension of the problem              
@@ -4093,12 +4408,12 @@
                    CASE(2)              
                       grad = 0.0_c_double    
 
-                      DO i = user_n-nk0+1, user_n
-                        ind = k_norm_ind(i)
+                      DO i = user_n-set%nk0+1, user_n
+                        ind = set%k_norm_ind(i)
                         IF (y(ind)>=0.0_c_double) THEN 
-                          grad(ind) = grad(ind) + user_rho
+                          grad(ind) = grad(ind) + set%user_rho
                         ELSE
-                          grad(ind) = grad(ind) - user_rho                      
+                          grad(ind) = grad(ind) - set%user_rho                      
                         END IF
                       END DO
 
@@ -4111,14 +4426,14 @@
                    CASE(3)  
                       grad = 0.0_c_double    
 
-                      DO i = nkits0-nk0+1, nkits0
-                        ind = k_norm_ind_k(i)
-                        DO j = 1, nft0
-                          IF(mK(j,ind)==1) THEN
+                      DO i = set%nkits0-set%nk0+1, set%nkits0
+                        ind = set%k_norm_ind_k(i)
+                        DO j = 1, set%nft0
+                          IF(set%mK(j,ind)==1) THEN
                             IF (y(j)>=0.0_c_double) THEN 
-                               grad(j) = grad(j) + user_rho
+                               grad(j) = grad(j) + set%user_rho
                             ELSE
-                               grad(j) = grad(j) - user_rho                     
+                               grad(j) = grad(j) - set%user_rho                     
                             END IF                            
                           END IF  
                         END DO
@@ -4133,14 +4448,14 @@
                    CASE(4)  
                       grad = 0.0_c_double    
 
-                      DO i = nkits0-nk0+1, nkits0
-                        ind = k_norm_ind_k(i)
-                        DO j = 1, nft0
-                          IF(mK(j,ind)==1) THEN
+                      DO i = set%nkits0-set%nk0+1, set%nkits0
+                        ind = set%k_norm_ind_k(i)
+                        DO j = 1, set%nft0
+                          IF(set%mK(j,ind)==1) THEN
                             IF (y(j)>=0.0_c_double) THEN 
-                               grad(j) = grad(j) + user_rho
+                               grad(j) = grad(j) + set%user_rho
                             ELSE
-                               grad(j) = grad(j) - user_rho                     
+                               grad(j) = grad(j) - set%user_rho                     
                             END IF                            
                           END IF  
                         END DO
@@ -4155,14 +4470,14 @@
                    CASE(5)  
                       grad = 0.0_c_double    
 
-                      DO i = nkits0-nk0+1,nkits0
-                        ind = k_norm_ind_k(i)
-                        DO j = 1, nft0
-                          IF(mK(j,ind)==1) THEN
+                      DO i = set%nkits0-set%nk0+1,set%nkits0
+                        ind = set%k_norm_ind_k(i)
+                        DO j = 1, set%nft0
+                          IF(set%mK(j,ind)==1) THEN
                             IF (y(j)>=0.0_c_double) THEN 
-                               grad(j) = grad(j) + user_rho
+                               grad(j) = grad(j) + set%user_rho
                             ELSE
-                               grad(j) = grad(j) - user_rho                     
+                               grad(j) = grad(j) - set%user_rho                     
                             END IF                            
                           END IF  
                         END DO
@@ -4340,13 +4655,12 @@
  
            END SUBROUTINE heapsort_k          
 
+          
+           
+           
            
       END MODULE functions     
-
-
-
-
-        
+       
 
       MODULE dbdc
       
@@ -4372,11 +4686,10 @@
         !|                                                                                      |
         !| .**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**. |
         !*..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..**..*
-                
+
+
         USE, INTRINSIC :: iso_c_binding
-        
-        USE omp_lib
-        
+       
         USE bundle1                    ! The BUNDLE of the DC component f_1
         USE bundle2                    ! The BUNDLE of the DC component f_2
         USE functions                  ! Contains INFORMATION from the USER
@@ -4432,7 +4745,7 @@
            SUBROUTINE DBDC_algorithm( f_solution, x_solution, x_0, rho, lambda, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUTime,  &
                             & agg_used, stepsize_used, iprint, problem1, problem2, user_n, &
-							& max_threads)
+                            & set)
             ! 
             ! Solves the unconstrained nonsmooth DC minimization problem
             !
@@ -4450,12 +4763,17 @@
             !         * 'lambda'         : the penalization parameter for L1-norm
             !
             !         * 'x_0'            : the starting point 
+            !         
             !
             ! OUTPUT: * 'f_solution' : The objective function value at the solution 'x_solution'  
             !         * 'x_solution' : The solution obtained to the minimizatin problem
             !         * 'termination': The cause of the termination in the algorithm
             !         * 'counter'    : Gives the values of different counters
             !         * 'CPUtime'    : the CPU time
+            !
+            ! INOUT:
+            !
+            !         * 'set'            : the set of information 
             !
             ! NOTICE: * The dimension of vectors 'x_0' and 'x_solution' has to be 'nft' ('nft' is defined by USER in MODULE functions)
             !         * The dimension of the vector 'counter' has to be 8.
@@ -4468,15 +4786,17 @@
             !***********************************************************************************
                IMPLICIT NONE
             !**************************** NEEDED FROM USER ************************************* 
+               TYPE(set_info), INTENT(INOUT) :: set          ! The set of information               
+                
                REAL(KIND=c_double), DIMENSION(user_n), INTENT(OUT) :: x_solution  ! the solution obtained to the problem
 
                REAL(KIND=c_double), DIMENSION(user_n), INTENT(IN) :: x_0          ! the starting point (the dimension 'user_n' is the number of variables)
  
-               REAL(KIND=c_double), INTENT(OUT) :: f_solution                ! the objective function value at the solution 'x_solution'
-               REAL(KIND=c_double), INTENT(OUT) :: CPUtime                   ! the CPU time 
+               REAL(KIND=c_double), INTENT(OUT) :: f_solution             ! the objective function value at the solution 'x_solution'
+               REAL(KIND=c_double), INTENT(OUT) :: CPUtime                ! the CPU time 
                
-               REAL(KIND=c_double), INTENT(IN) :: rho                        ! the penalization parameter
-               REAL(KIND=c_double), INTENT(IN) :: lambda                        ! the penalization parameter
+               REAL(KIND=c_double), INTENT(IN) :: rho                     ! the penalization parameter
+               REAL(KIND=c_double), INTENT(IN) :: lambda                  ! the penalization parameter
                
                INTEGER(KIND=c_int), INTENT(IN) :: problem1                ! the f1 in problem
                INTEGER(KIND=c_int), INTENT(IN) :: problem2                ! the f2 in problem
@@ -4517,12 +4837,8 @@
                                                 !   iprint = -3: basic print of intermediate results and extended print of final results (without the solution vector)
                                                 !   iprint = 4 : extended print of intermediate results and extended print of final results 
                                                 !   iprint = -4: extended print of intermediate results and extended print of final results (without the solution vectors)
-              
-			  INTEGER(KIND=c_int), INTENT(IN) :: max_threads           ! the maximum number of threads that can be used in parallellization
-           
-           
-               !LOGICAL, INTENT(IN) ::  scale_in_use  ! If .TRUE. data is scaled
-           
+                       
+                      
            !***************************** LOCAL VARIABLES ************************************  
 
                TYPE(kimppu1) :: B1             ! The bundle B_1 for the DC component f_1
@@ -4592,23 +4908,12 @@
                                                 ! 3 - the biggest possible number of rounds executed in the 'main iteration'
                                                 ! 5 - the biggest possible number of rounds executed in the 'Clarke stationary' algorithm
                
-               ! Needed in parallellization
-
-              ! TDL: Already read in from C
-              ! INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
-               INTEGER(KIND=c_int) :: threads               ! the number of threads used in parallellization
-               INTEGER(KIND=c_int) :: max_sub_prob          ! the maximum number of subproblems solved at the same time
-               
-               INTEGER(KIND=c_int) :: i                     ! help variables 
-                                                    
+               INTEGER(KIND=c_int) :: i         ! help variables 
+                 
                LOGICAL :: stop_alg              ! .TRUE. if the proximal double bundle algorithm DBDC can be terminated                                             
 
                REAL(KIND=c_double) :: apuf  ! variable which can beused to relax the descent condition          
-
-
-
-               !CHARACTER*30 outfi/'results.txt'/
-               !OPEN(40,file=outfi)             
+        
                
                CALL cpu_time(start_time)                ! Start CPU timing     
 
@@ -4627,28 +4932,28 @@
  
                 ! ***** penalization parameter 'lambda' for L1-norm *****
                IF ( (lambda<0.0_c_double) ) THEN
-                   user_lambda = 0.0_c_double
+                   set%user_lambda = 0.0_c_double
                ELSE       
-                   user_lambda = lambda 
+                   set%user_lambda = lambda 
                END IF
  
                ! ***** penalization parameter 'rho' for L0-norm *****
                IF ( (rho<0.0_c_double) ) THEN
-                   user_rho = 0.0_c_double
+                   set%user_rho = 0.0_c_double
                ELSE       
-                   user_rho = rho 
+                   set%user_rho = rho 
                END IF
                
                                      
                ! ***** descent parameter 'm' *****
-               IF ( (user_m<=0.0_c_double) .OR. (user_m>=1.0_c_double) ) THEN
+               IF ( (set%user_m<=0.0_c_double) .OR. (set%user_m>=1.0_c_double) ) THEN
                    m = 0.2_c_double
                ELSE       
-                   m = user_m 
+                   m = set%user_m 
                END IF
               
                ! ***** stopping tolerance 'crit_tol' *****
-               IF (user_crit_tol <= 0.0_c_double) THEN
+               IF (set%user_crit_tol <= 0.0_c_double) THEN
                
                    IF (user_n < 50) THEN
                        crit_tol = (10.0_c_double)**(-5)
@@ -4659,18 +4964,18 @@
                    END IF
                    
                ELSE 
-                   crit_tol = user_crit_tol
+                   crit_tol = set%user_crit_tol
                END IF
               
                ! ***** enlargement parameter 'eps' *****
-               IF (user_eps_1 <= 0.0_c_double) THEN
+               IF (set%user_eps_1 <= 0.0_c_double) THEN
                    eps = 5*(10.0_c_double)**(-5)
                ELSE
-                   eps = user_eps_1
+                   eps = set%user_eps_1
                END IF
               
                ! ***** decrease parameter 'r_dec' *****
-               IF ((user_r_dec <= 0.0_c_double) .OR. (user_r_dec >= 1.0_c_double) ) THEN
+               IF ((set%user_r_dec <= 0.0_c_double) .OR. (set%user_r_dec >= 1.0_c_double) ) THEN
                    
                    IF( user_n < 10) THEN 
                       r_dec = 0.75_c_double
@@ -4737,56 +5042,57 @@
                    END IF 
                    
                ELSE
-                   r_dec = user_r_dec
+                   r_dec = set%user_r_dec
                END IF
 
                ! ***** increase parameter 'r_inc' *****
-               IF ( user_r_inc <= 1.0_c_double ) THEN
+               IF ( set%user_r_inc <= 1.0_c_double ) THEN
                    r_inc = (10.0_c_double)**(7) 
                ELSE
-                   r_inc = user_r_inc
+                   r_inc = set%user_r_inc
                END IF
 
                ! ***** bundle B1 size *****
-               IF ( user_size_b1 <= 0 ) THEN
+               IF ( set%user_size_b1 <= 0 ) THEN
                    size_b1 = MIN(user_n+5,1000) 
                ELSE
-                   size_b1 = user_size_b1
+                   size_b1 = set%user_size_b1
                END IF
 
                ! ***** bundle B2 size *****
-               IF ( user_size_b2 <= 0 ) THEN
+               IF ( set%user_size_b2 <= 0 ) THEN
                    size_b2 = 3
                ELSE
-                   size_b2 = user_size_b2
+                   size_b2 = set%user_size_b2
                END IF      
 
                ! ***** decrease parameter 'c' *****               
-               IF ((user_c<=0.0_c_double) .OR. (user_c>1.0_c_double)) THEN
+               IF ((set%user_c<=0.0_c_double) .OR. (set%user_c>1.0_c_double)) THEN
                    c = 0.1_c_double
                ELSE
-                   c = user_c
+                   c = set%user_c
                END IF              
                
                !--------------------------------------------------------------------------
                !                      CLARKE STATIONARY ALGORITHM
                !--------------------------------------------------------------------------
                ! ***** descent paramter 'm_clarke' ***** 
-               IF ((user_m_clarke<=0.0_c_double) .OR. (user_m_clarke>=1.0_c_double)) THEN
+               IF ((set%user_m_clarke<=0.0_c_double) .OR. (set%user_m_clarke>=1.0_c_double)) THEN
                    m_clarke = 0.01_c_double
                ELSE
-                   m_clarke = user_m_clarke
+                   m_clarke = set%user_m_clarke
                END IF
                
                ! ***** step-lenght tolerance 'step_tol' ***** 
-               IF (user_eps <= 0.0_c_double) THEN
+               IF (set%user_eps <= 0.0_c_double) THEN
                    IF (user_n < 50) THEN
                        step_tol = 0.000001_c_double
                    ELSE
                        step_tol = 0.00001_c_double               
                    END IF
+
                ELSE
-                   step_tol = user_eps
+                   step_tol = set%user_eps
                END IF 
                
                !----------------------------------------------------------------------------
@@ -4800,7 +5106,7 @@
                    mrounds = 5000
                END IF   
                
-               ! ***** maximum number of rounds 'mrounds_clakre' in the Clarke stationary algorithm *****
+               ! ***** maximum number of rounds 'mrounds_clarke' in the Clarke stationary algorithm *****
                IF ( mrounds_clarke <= 0 ) THEN
                    mrounds_clarke = 5000
                END IF                  
@@ -4814,35 +5120,19 @@
            !_______________________________________________________________________________
            !************************ STEP 0: PARAMETER INITIALIZATION *********************                
            
-               x_current = x_0                           ! the current iteration point is the starting point x_0
-               !!!f1_current = f1(x_0, problem1, user_n) ! the value of the DC component f_1 at x_0
-               f2_current = f2(x_0, problem2, user_n)    ! the value of the DC component f_2 at x_0
-               f_counter = 1                             ! one function value evaluated for both f_1 and f_2
-               
-               !!!!
-               !DO i = 1, nft0
-               !WRITE(*,*) x_0(i)
-               !END DO
-               !WRITE(*,*) 'help', f1_current,f2_current
-               
-               !!! ! ** -- ** -- **
-               CALL f1_sub(x_0, problem1, user_n, f1_current, grad1)
-               !WRITE(*,*) f1_current
-               !WRITE(*,*) grad1
-               
-               !!!CALL f2_sub(x_0, problem1, user_n, f2_current, grad2)
-               !!!f_counter = 1
-               !!!subgrad1_counter = 1                             ! one subgradient calculated for f_1
-               !!subgrad2_counter = 1                              ! one subgradient calculated for f_1
-               !!! ! ** -- ** -- **
-               
+               x_current = x_0                                ! the current iteration point is the starting point x_0
+               f2_current = f2(set, x_0, problem2, user_n)    ! the value of the DC component f_2 at x_0
+               f_counter = 1                                  ! one function value evaluated for both f_1 and f_2
+              
+               CALL f1_sub(set, x_0, problem1, user_n, f1_current, grad1)   ! the subgradient and function value at x_0
+               subgrad1_counter = 1                                         ! one subgradient calculated for f_1
+
                f_0 = f1_current - f2_current     ! the value of the objective function at the starting point x_0 
                
-               !!!grad1 = subgradient_f1(x_0, problem1, user_n)    ! the subgradient of f_1 at x_0
-               subgrad1_counter = 1                             ! one subgradient calculated for f_1
-               grad2 = subgradient_f2(x_0, problem2, user_n)    ! the subgradient of f_2 at x_0
-               subgrad2_counter = 1                             ! one subgradient calculated for f_1
-               
+               grad2 = subgradient_f2(set, x_0, problem2, user_n)    ! the subgradient of f_2 at x_0
+               subgrad2_counter = 1                                  ! one subgradient calculated for f_1
+ 
+ 
                ! The bundles B_1 and B_2 are initialized
                CALL init_bundle_b1(B1, size_b1, user_n)    
                CALL init_bundle_b2(B2, size_b2, user_n)
@@ -4860,14 +5150,6 @@
                clarke_sub_counter = 0       ! the initialization of subgradient counter for 'Clarke stationary' algorithm
                
                delta = 0.0_c_double              
-               
-! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
-
-               !max_threads = omp_get_max_threads()
-               max_sub_prob = give_max_size_b2(B2)+1
-               threads = MIN(max_threads, max_sub_prob)
-               CALL omp_set_num_threads(threads)   
-! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
               
                IF ( (ABS(iprint) >= 3) .AND. (ABS(iprint) <= 4) ) THEN        ! the basic/extended print of indermediate results     
@@ -4883,7 +5165,7 @@
            !----------------------------------------------------------------------------------  
            
             DO WHILE ( ( .NOT. stop_alg) .AND. (iter_counter < mit )  )  ! is repeated until the bundle algorithm DBDC can be terminated 
-                                                                         
+             
                !_______________________________________________________________________________
                !************************ STEP 1: MAIN ITERATION ******************************* 
 
@@ -4899,7 +5181,7 @@
                             & help_subprob_counter, help_f_counter, help_subgrad1_counter, &
                             & help_subgrad2_counter, help_stop_cond_counter, &
                             & help_clarke_f_counter, help_clarke_sub_counter, &
-                            & agg_used, stepsize_used, problem1, problem2)  
+                            & agg_used, stepsize_used, problem1, problem2, set)  
 
 
                 CALL cpu_time(finish_time_main_it)
@@ -4922,15 +5204,15 @@
                !************************ STEP 2: BUNDLE UPDATE*******************************
                 
                     ! Subgradients of f_1 and f_2 at the new point x_new
-                    grad1 = subgradient_f1(x_new, problem1, user_n)
+                    grad1 = subgradient_f1(set, x_new, problem1, user_n)
                     subgrad1_counter = subgrad1_counter + 1
                     change1 = f1_new - f1_current
                     
                     IF (problem2==2) THEN                                  ! L0-norm (parametric) 
-                      apuf = f2(x_new, problem2, user_n)                   ! Calculated in order to have correct order in k-norm
+                      apuf = f2(set, x_new, problem2, user_n)                   ! Calculated in order to have correct order in k-norm
                     END IF
                     
-                    grad2 = subgradient_f2(x_new, problem2, user_n)
+                    grad2 = subgradient_f2(set, x_new, problem2, user_n)
                     subgrad2_counter = subgrad2_counter + 1
                     change2 = f2_new - f2_current
                     
@@ -4941,18 +5223,13 @@
                     CALL update_b2(B2, grad2, dd, change2)              ! bundle update for B_2
                                         
                     x_current = x_new                                   ! update of the current iteration point
-                    
-                    !!!
-                    !WRITE(*,*) x_current
+        
                     
                     f1_current = f1_new                                 ! update of the function value f_1
                     f2_current = f2_new                                 ! update of the function value f_2
                     
                     norm = SQRT(DOT_PRODUCT(dd,dd))                     ! Distance between two consecutive iteration points
-                    
-                    !!!
-                    !WRITE(*,*) 'norm', SQRT(DOT_PRODUCT(grad1,grad1))
-            
+                               
                     IF ( (ABS(iprint) >= 3) .AND. (ABS(iprint) <= 4) ) THEN        ! the basic/extended print of indermediate results
                         
                         WRITE(*,*) 'Main Iter:', iter_counter, 'f(x):', f1_current-f2_current, '  change:', change, 'norm: ', norm
@@ -5118,33 +5395,6 @@
                WRITE(*,*) '---------------------------------------------------------------------------'                
            END IF 
            
-      ! WRITE(40,*) 'The value of the objective at initial point:  ', f_0
-      ! WRITE(40,*) 'The value of the objective at final point:    ',f_solution 
-        ! WRITE(40,*) '-----------------------------------------------------------------------------&
-         ! &---------------------------'            
-      ! WRITE(40,42) subprob_counter
-  ! 42  FORMAT(' The total number of subproblems solved:         ',i12)  
-      ! WRITE(40,43) f_counter  
-  ! 43  FORMAT(' The total number of the objective evaluations in main iterations:  ',i12)
-      ! WRITE(40,44) subgrad1_counter
-  ! 44  FORMAT(' The total number of subgradient evaluations for f1 in main iterations:',i12)
-      ! WRITE(40,45) subgrad2_counter  
-  ! 45  FORMAT(' The total number of subgradient evaluations for f2 in main iterations:',i12)
-        ! WRITE(40,*) '-----------------------------------------------------------------------------&
-         ! &---------------------------'        
-      ! WRITE(40,46) clarke_f_counter  
-  ! 46  FORMAT(' The total number of the objective evaluations in Clarke stationary algorithms:  ',i12)
-      ! WRITE(40,47) clarke_sub_counter
-  ! 47  FORMAT(' The total number of subgradient evaluations for f1 in Clarke stationary algorithms:',i12)         
-        ! WRITE(40,*) '-----------------------------------------------------------------------------&
-         ! &---------------------------'    
-      ! WRITE(40,48) finish_time-start_time
-  ! 48  FORMAT(' The CPU time:                                 ',f10.4)
-      ! WRITE(40,49) elapsed_time
-  ! 49  FORMAT(' The elapsed time:                             ',f10.4)
-
-           
-           ! CLOSE(40)   
 
 
            CALL deallocation_b1(B1)        
@@ -5182,7 +5432,7 @@
                             & mrounds_clarke, reason_for_stop, iter_counter, &
                             & subprob_counter, fi_counter, subgrad1_counter, subgrad2_counter,&
                             & stop_cond_counter, clarke_f_counter, clarke_sub_counter, &
-                            & agg_in_use, stepsize_used, problem1, problem2)                    
+                            & agg_in_use, stepsize_used, problem1, problem2, set)                    
             !
             ! Executes the 'main iteration' algorithm. It is needed to find the search direction at the current iteration point. 
             !
@@ -5223,6 +5473,7 @@
             !         * 'clarke_sub_counter' : the number of subgradients evaluated for f in 'Clarke stationary' algorithm
             !
             ! INOUT: * 'B_1' and B_2'        : the bundles of the DC components f_1 and f_2
+            !        * 'set'                 : The set of information
             !
             ! NOTICE: The dimensions of vectors 'x_k' and 'x_new' has to be same. (i.e. the dimensio of 'x_k' and 'x_new' has to be
             !         'user_n' when SUBROUTINE main_iteration is used in SUBROUTINE bundle_method.
@@ -5230,6 +5481,8 @@
             !***********************************************************************************
                IMPLICIT NONE
             !**************************** NEEDED FROM THE USER *********************************  
+               
+               TYPE(set_info), INTENT(INOUT) :: set          ! The set of information               
             
                TYPE(kimppu1), INTENT(INOUT) :: B1                   ! the bundle B_1 for the DC component f_1
                TYPE(kimppu2), INTENT(INOUT) :: B2                   ! the bundle B_2 for the DC component f_2
@@ -5353,7 +5606,7 @@
                             & x_new , f1_new, f2_new, d_t, &
                             & crit_tol, m_clarke, step_tol, mrounds_clarke, &
                             & clarke_iter_counter, f_counter, sub_counter, &
-                            & problem1, problem2, user_n)
+                            & problem1, problem2, user_n, set)
                     
                    ! Counters are updated   
                    clarke_f_counter = clarke_f_counter + f_counter                  
@@ -5421,7 +5674,8 @@
                    CALL add_glob_index(B2)              ! calculates the index of the subproblem yielding the global solution        
                    d_t = give_solution(B2)              ! the global solution d_t is selected   
                    d_norm = SQRT(DOT_PRODUCT(d_t,d_t))  ! the norm ||d_t|| of the solution d_t is calculated
-
+                   
+                   !WRITE(*,*) 'd_norm', d_norm
 
                    ! Aggregated element is calculated. 
                    ! NOTICE: The aggregated element (if used) is now always added into bundle B_1 (also in those cases when the bundle B_1 is not full)
@@ -5458,7 +5712,7 @@
                             & x_new , f1_new, f2_new, d_t, &
                             & crit_tol, m_clarke, step_tol, mrounds_clarke, &
                             & clarke_iter_counter, f_counter, sub_counter, &
-                            & problem1, problem2, user_n)
+                            & problem1, problem2, user_n, set)
                        
                         !Counters are updated
                         clarke_f_counter = clarke_f_counter + f_counter                 
@@ -5481,36 +5735,21 @@
                        IF (SQRT(DOT_PRODUCT(d_t,d_t))>1.0_c_double) THEN 
                           d_norm = SQRT(DOT_PRODUCT(d_t,d_t))
                           d_t = d_t / d_norm
-                          !IF (SQRT(DOT_PRODUCT(d_t,d_t))>10.0_c_double) THEN
-                          !    IF (SQRT(DOT_PRODUCT(d_t,d_t))>100.0_c_double) THEN
-                          !      d_t = 0.001_c_double*d_t  
-                          !   ELSE
-                          !      d_t = 0.01_c_double*d_t  
-                          !       END IF
-                          !ELSE
-                          !    d_t = 0.1_c_double*d_t    
-                          !END IF                         
+                           
                        END IF     
                           
  
                        y = x_k + d_t                      ! a new auxilary point y
-                       f1_y = f1(y, problem1,user_n)      ! the value of f_1 at y
-                       f2_y = f2(y, problem2,user_n)      ! the value of f_2 at y             
+                       f1_y = f1(set, y, problem1,user_n)      ! the value of f_1 at y
+                       f2_y = f2(set, y, problem2,user_n)      ! the value of f_2 at y             
                        
                        fi_counter = fi_counter + 1        ! one more objective function value calculated for a DC component
                
                        real_decrease = ( f1_y - f2_y ) -  f_k  ! the real decrease in the value of f    
-                       
-                       !!!
-                       !WRITE(*,*) 'y', y
-                       !WRITE(*,*) 'f_y', f1_y-f2_y, 'decrease', real_decrease, 'prec_dec', give_decrease(B2), &
-                       !           & SQRT(DOT_PRODUCT(d_t,d_t))
 
                        
                        IF (give_decrease(B2)>0.0_c_double) THEN 
                          WRITE(*,*) "Problems! Positive value of predicted decrease!", give_decrease(B2)
-                         !WRITE(*,*) "Objective value at y:", f1_y-f2_y
-                         !CALL reset_b1(B1)
                          real_decrease = 100000_c_double
                        END IF
                    
@@ -5524,8 +5763,8 @@
                               stop_linesearch = .FALSE.
                               DO WHILE((.NOT. stop_linesearch))
                                  test_y = y + d_t
-                                 test_f1 = f1(test_y, problem1,user_n)     ! the value of f_1 at test_y
-                                 test_f2 = f2(test_y, problem2,user_n)     ! the value of f_2 at test_y   
+                                 test_f1 = f1(set, test_y, problem1,user_n)     ! the value of f_1 at test_y
+                                 test_f2 = f2(set, test_y, problem2,user_n)     ! the value of f_2 at test_y   
                                  fi_counter = fi_counter + 1    
                                  IF ( (test_f1 - test_f2 - f_k) <= ( 0.7_c_double * m * give_decrease(B2))) THEN 
                                     stepsize = stepsize + 1.0_c_double
@@ -5571,7 +5810,7 @@
                               delta2 = - DOT_PRODUCT(vect, d_t) + give_linerr_b2(B2,i)  ! the value of delta_2
                               delta1 = give_decrease(B2) - delta2                       ! the value of delta_1
                               
-                              new_grad1 = subgradient_f1(y, problem1,user_n)              ! a subgradient of f_1 at y
+                              new_grad1 = subgradient_f1(set, y, problem1,user_n)              ! a subgradient of f_1 at y
                               subgrad1_counter = subgrad1_counter + 1              ! a new subgradient was evaluated for f_1            
 
                               lin_err1 = f1_k - f1_y + DOT_PRODUCT(d_t,new_grad1)  ! a new linearization error for f_1
@@ -5603,7 +5842,7 @@
                             bundle2: IF( delta2 >= 0 .AND. (give_max_size_b2(B2)>0) ) THEN   ! bundle B_2 is updated (happens only when delta2 >= 0 and bundle size is larger than 1) (SOME OTHER INSERTION RULES ALSO POSSIBLE TO APPLY!)
 
  
-                                  new_grad2 = subgradient_f2(y, problem2,user_n)       ! a subgradient of f_2 at y  
+                                  new_grad2 = subgradient_f2(set, y, problem2,user_n)       ! a subgradient of f_2 at y  
                                   subgrad2_counter = subgrad2_counter + 1              ! a new subgradient was evaluated for f_2
                                   lin_err2 = f2_k - f2_y + DOT_PRODUCT(d_t,new_grad2)  ! a new linearization error for f_2  
                                 
@@ -5720,8 +5959,8 @@
                             & x_new , f1_new, f2_new, d_cause,&
                             & crit_tol, m, step_tol, mrounds, &
                             & iter_counter, f_counter, subgrad_counter, &
-                            & problem1, problem2, user_n)
-                                                
+                            & problem1, problem2, user_n, set)
+               
             !
             ! Executes the 'Clarke stationary' algorithm. It is needed to guarantee Clarke stationarity at the current iteration point. 
             ! If the current point is not Clarke stationary, then this algorithm generates a descent direction.
@@ -5749,12 +5988,19 @@
             !         * 'f_counter'          : the number of function values evaluated for f in 'Clarke stationary' algorithm (same for f_1 and f_2)
             !         * 'subgrad_counter'    : the number of subgradients calculated for f in 'Clarke stationary' algorithm (same for f_1 and f_2)
             !
+            !
+            ! INOUT   * 'set'                : The set of information
+            !
+            !
             ! NOTICE: The dimensions of vectors 'x_k' and 'x_new' has to be same. (i.e. the dimensio of 'x_k' and 'x_new' has to be
             !         'user_n' when SUBROUTINE guaranteeing_clarke is used in SUBROUTINE main_iteration.
             !
             !***********************************************************************************
                IMPLICIT NONE
             !**************************** NEEDED FROM THE USER ********************************* 
+        
+               TYPE(set_info), INTENT(INOUT) :: set          ! The set of information
+               
                REAL(KIND=c_double), DIMENSION(:), INTENT(IN)  :: x_k      ! the current iteration point
                REAL(KIND=c_double), DIMENSION(:), INTENT(IN)  :: d_cause  ! the search direction
                REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: x_new    ! the new iteration point if 'reason_for_stop'=0 in the 'Clarke stationary' algorithm
@@ -5822,11 +6068,11 @@
            !************************ STEP 0: INITIALIZATION *******************************              
                         
             ! the size of the bundle B
-               IF (user_size < 2) THEN
+               IF (set%user_size < 2) THEN
                    !size_b = user_n + 3 
                    size_b = user_n *2 
                ELSE
-                   size_b = user_size
+                   size_b = set%user_size
                END IF
                
                eps = (10.0_c_double)**(-4)     ! Stepsize used when subgradient is calculated
@@ -5867,12 +6113,12 @@
            
                x_d = x_k + (eps) * d                      ! Auxialiary point 'x_d' is calculated
                
-               new_grad1 = subgradient_f1(x_d, problem1, user_n)  ! Subgradient of f_1 at 'x_d'
+               new_grad1 = subgradient_f1(set, x_d, problem1, user_n)  ! Subgradient of f_1 at 'x_d'
                
                IF (problem2==2) THEN                                  ! L0-norm (parametric) 
-                 apuf = f2(x_new, problem2, user_n)                   ! Calculated in order to have correct order in k-norm
+                 apuf = f2(set, x_new, problem2, user_n)                   ! Calculated in order to have correct order in k-norm
                END IF
-               new_grad2 = subgradient_f2(x_d, problem2, user_n)  ! Subgradient of f_2 at 'x_d'
+               new_grad2 = subgradient_f2(set, x_d, problem2, user_n)  ! Subgradient of f_2 at 'x_d'
                
                ! new subgradient for f at x_k 
                new_grad = new_grad1 - new_grad2
@@ -5901,8 +6147,6 @@
     
                norm_u = SQRT( DOT_PRODUCT(u_k,u_k))
                
-               !!!
-               !WRITE(*,*) norm_u
             
                IF (norm_u < crit_tol) THEN  
                   
@@ -5920,8 +6164,8 @@
                d =  u_k / norm_u          ! New search direction
                y = x_k + eps * d          ! New auxialiary point    
                
-               f1_y = f1(y,problem1, user_n)      ! f_1 at 'y'
-               f2_y = f2(y,problem2, user_n)      ! f_2 at 'y'
+               f1_y = f1(set,y,problem1, user_n)      ! f_1 at 'y'
+               f2_y = f2(set, y,problem2, user_n)      ! f_2 at 'y'
                f_counter = f_counter +1 
                
                real_decrease = f1_y - f2_y - f_k      ! Real decraese in the objective function f
@@ -5953,8 +6197,8 @@
                   stop_step_det = .FALSE.                ! stepsize determination cannot be stopped
                   DO WHILE((.NOT. stop_step_det))
                       test_y = x_k + stepsize * d        ! auxiliary test point
-                      test_f1 = f1(test_y, problem1, user_n)     ! the value of f_1 at test_y
-                      test_f2 = f2(test_y, problem2, user_n)     ! the value of f_2 at test_y   
+                      test_f1 = f1(set,test_y, problem1, user_n)     ! the value of f_1 at test_y
+                      test_f2 = f2(set,test_y, problem2, user_n)     ! the value of f_2 at test_y   
                       f_counter = f_counter + 1          
                       descent_app = -(10.0_c_double)**(-4)     ! sufficient descent 
                       IF ( (test_f1 - test_f2 - f_k) > MIN(-m * stepsize * norm_u,descent_app )) THEN 
@@ -6256,16 +6500,8 @@
                END IF
                
                subprob_counter = give_size_b2(B2) 
-              
-
-               !$OMP PARALLEL DO PRIVATE(grad_b2,alpha_b2,direction,a,obj) & 
-               !$OMP FIRSTPRIVATE(NA,X,IX,XL,XU,AFD,IA,IAA) &
-               !$OMP FIRSTPRIVATE(AR,AZ,CF,IC,CL,CU,CG,G,H,S,KBF) &
-               !$OMP FIRSTPRIVATE(KBC,XNORM,UMAX,GMAX,N,ITERQ) &
-               !$OMP PRIVATE(i, AG, AF ) &
-               !$OMP SHARED(grad_m_b1,alpha_m_b1,B2)               
                     
-                       
+                    
                !->->->->->->->->->->->->->-> EACH SUBPROBLEM SOLVED <-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-
                     subproblems1: DO i = 0, subprob_counter   ! each subproblem is looked through
                     
@@ -6273,8 +6509,6 @@
                         grad_b2  = give_subgrad_b2(B2, i)  ! subgradient of B_2 in the subproblem i
                         alpha_b2 = give_linerr_b2(B2, i)   ! linearization error of B_2 in the subproblem i
 
-                        
-                        !$OMP CRITICAL (do1)
                         DO j = 1, NA
                            k = (j-1)*NF
                            DO l = 1, NF
@@ -6282,7 +6516,6 @@
                            END DO
                            AF(j) = - alpha_m_b1(j) + alpha_b2 
                         END DO
-                        !$OMP END CRITICAL (do1)
                         
                         !Calls PLQDF1 by Ladislav Luksan
                         CALL PLQDF1(NF,NA,NC,X,IX,XL,XU,AF,AFD,IA,IAA, &
@@ -6298,13 +6531,10 @@
                         a = DOT_PRODUCT(direction, direction)           
 
                         obj =   XNORM + (a * u) / 2
-                        !$OMP CRITICAL (call1)
                         CALL add_solution(B2, i , direction, XNORM, obj )   
-                        !$OMP END CRITICAL (call1)
                     
                     END DO subproblems1
                !->->->->->->->->->->->->->-> EACH SUBPROBLEM SOLVED END <-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-<-                      
-               !$OMP END PARALLEL DO
 
                subprob_counter = subprob_counter + 1 
                
@@ -6322,9 +6552,10 @@
 
 
   MODULE oscar
+    
      USE, INTRINSIC :: iso_c_binding
-	 USE omp_lib
- 
+     USE omp_lib
+
      USE functions                 ! INFORMATION from the USER
      USE bundle1                   ! Bundle 1
      USE bundle2                   ! Bundle 2
@@ -6373,9 +6604,9 @@
     ! ^^^^ START: IF Fortran code is used with R-C-interface ^^^^
     !--------------------------------------------------------------------------        
           SUBROUTINE oscar_cox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
-		& in_print, in_start, in_k_max, &
-		& in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-		& in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol ) &
+       & in_print, in_start, in_k_max, &
+       & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+       & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol ) &
         & BIND(C, name = "oscar_cox_f_")               
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -6387,7 +6618,9 @@
           !--------------------------------------------------------------------------    
           ! SUBROUTINE oscar_cox(infileX, infileY, infileK, infileC,  &
           !                     & nrow, ncol, nkits, &
-          !                     & beta, fperk, in_print, in_start)  
+          !                     & beta, fperk, in_print, in_start, in_k_max, &
+          !                     & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+          !                     & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol )    
           !--------------------------------------------------------------------------            
           ! ^^^^ END: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------   
@@ -6404,8 +6637,6 @@
             !                          (parametric approach since the number of nonzero elements is fixed) 
             !
             !   Solves in a loop all L0-norm problems with the fixed number of k=1,...,in_k_max of kits    (if in_start > 0)
-			!                                                OR
-            !   Solves in a loop all L0-norm problems with the fixed number of k=nkits,....nkits-in_k_max+1 of kits    (if in_start < 0)
             ! 
             ! Solves the unconstrained nonsmooth DC minimization problem
             !
@@ -6417,17 +6648,17 @@
             !         * 'in_start'    : specifies how starting points are selected when the L0-norm problem is solved for  
             !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
             !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
-			!         
-			!         PARAMETERS in DBDC method:
-			!
+            !         
+            !         PARAMETERS in DBDC method:
+            !
             !         * in_mrounds     : the maximum number of rounds in one main iteratioin
             !         * in_mit         : the maximum number of main iterations
             !         * in_mrounds_esc : the maximum number of rounds in escape procedure
-			!
+            !
             !         * in_b1          : the size of bundle B1
             !         * in_b2          : the size of bundle B2
             !         * in_b           : the size of bundle in escape procedure
-			!
+            !
             !         * in_m           : the descent parameter in main iteration
             !         * in_m_clarke    : the descent parameter in escape procedure
             !         * in_c           : the extra decrease parameter in main iteration
@@ -6435,7 +6666,7 @@
             !         * in_r_inc       : the increase parameter in main iteration
             !         * in_eps1        : the enlargement parameter
             !         * in_eps         : the stopping tolerance: proximity measure  
-            !         * in_crit_tol    : the stopping tolerance: criticality tolerance 			
+            !         * in_crit_tol    : the stopping tolerance: criticality tolerance          
             !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vectors one after another
             !
@@ -6467,38 +6698,38 @@
             !         * 'CPUtime'       : the CPU time (in seconds) REAL
             !
             ! NOTICE: * 'in_print' has to be 0, 1, 2 or 3. If it is NOT then DEFAULT value 1 is used.             
-            !         * 'in_start' has to be -4, -3, -2, -1, 1, 2, 3 or 4. If it is NOT then DEFAULT value 1 is used.             
+            !         * 'in_start' has to be  1, 2, 3 or 4. If it is NOT then DEFAULT value 2 is used.             
             
             !***********************************************************************************
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow       ! Number of rows in x (i.e. records)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol       ! Number of cols in x (i.e. features)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits      ! Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN) :: nrow                  ! Number of rows in x (i.e. records)
+               INTEGER(KIND = c_int), INTENT(IN) :: ncol                  ! Number of cols in x (i.e. features)
+               INTEGER(KIND = c_int), INTENT(IN) :: nkits                 ! Number of kits for features
                
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start   ! Starting point procedure used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print   ! Print used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_k_max   ! The maximum number of kits in the loop
-			   
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds              ! the maximum number of rounds in one main iteration
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mit                  ! the maximum number of main iterations
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds_esc      ! the maximum number of rounds in one escape procedure
-			   
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b1                   ! the size of bundle B1
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b2                   ! the size of bundle B2
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b                    ! the size of bundle in escape procedure
-			   
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m                    ! the descent parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m_clarke             ! the descent parameter in escape procedure
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_c                    ! the extra decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_dec                ! the decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_inc                ! the increase parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps1                 ! the enlargement parameter
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps                  ! the stopping tolerance: proximity measure  
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance 			   
-        
-        
+               INTEGER(KIND = c_int), INTENT(IN) :: in_start              ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN) :: in_print              ! Print used
+               INTEGER(KIND = c_int), INTENT(IN) :: in_k_max              ! The maximum number of kits in the loop
+               
+               INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds              ! the maximum number of rounds in one main iteration
+               INTEGER(KIND=c_int), INTENT(IN) :: in_mit                  ! the maximum number of main iterations
+               INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
+               
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+               
+               REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+
+                
             !--------------------------------------------------------------------------
             ! ^^^^ START: If Fortran code is used with R-C-interface ^^^^
             !--------------------------------------------------------------------------
@@ -6528,6 +6759,8 @@
                
            
            !***************************** LOCAL VARIABLES ************************************      
+           
+               TYPE(set_info) :: info                         ! The set of information                     
  
                REAL(KIND=c_double) :: CPUtime                 ! the CPU time (in seconds)
 
@@ -6537,25 +6770,31 @@
                INTEGER(KIND=c_int) :: nk_max                  ! the maximum number of kits in the loop 
    
                REAL(KIND=c_double), DIMENSION(ncol) :: beta_solution    ! the solution vector beta obtained for the problem
-               REAL(KIND=c_double) :: f_solution                        ! the objective function value at the solution 'beta_solution'
 
                REAL(KIND=c_double), DIMENSION(ncol,nkits) :: points     ! the beta_solutions for problem 3 for fixed k ('nkits' different starting points) 
                REAL(KIND=c_double), DIMENSION(nkits) ::      f_points   ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
                REAL(KIND=c_double), DIMENSION(ncol) ::       x_koe      ! The solution to Cox's proportional hazard model without regularization
                REAL(KIND=c_double), DIMENSION(ncol) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
                
+               REAL(KIND=c_double), DIMENSION(ncol,nkits) :: x_solution    ! the beta solutions for the problem with fixed starting points and number of kits 
+               REAL(KIND=c_double), DIMENSION(nkits) :: f_solution         ! the objective function valuse at the solution 'x_solution'
+               REAL(KIND=c_double) :: f_solution_DBDC                      ! the f_solution obtained from DBDC method
+               
                REAL(KIND=c_double), DIMENSION(nrow,ncol) :: in_mX      ! predictor matrix (row is an observation)
                INTEGER(KIND=c_int), DIMENSION(nrow,2) :: in_mY         ! observed times and labels matrix (row is an observation)  
                INTEGER(KIND=c_int), DIMENSION(nkits,ncol) :: in_mK     ! kit matrix (row is a kit)
-               REAL(KIND=c_double), DIMENSION(nkits) :: in_mC          ! kit costs                   
+               REAL(KIND=c_double), DIMENSION(nkits) :: in_mC          ! kit costs          
+       
+               REAL(KIND=c_double), DIMENSION(ncol,nrow) :: mXt        ! predictor matrix (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(2,nrow) :: mYt           ! observed times and labels matrix (column is an observation)  
 
-               INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta     ! indices of kits in the solution 'beta_solution'
-               INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
+               INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta      ! indices of kits in the solution 'beta_solution'
+               INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed   ! indices of kits in the previous solution 'x_ed'
 
-               REAL(KIND=c_double), DIMENSION(ncol) :: x_0            ! the starting point
+               REAL(KIND=c_double), DIMENSION(ncol) :: x_0             ! the starting point
                
-               REAL(KIND=c_double), DIMENSION(nrow) :: mTimes        ! Times for the observations   
-               INTEGER(KIND=c_int), DIMENSION(nrow) :: mTimesInd     ! Labels of times for the observations (0=alive, 1=death)  
+               REAL(KIND=c_double), DIMENSION(nrow) :: mTimes          ! Times for the observations   
+               INTEGER(KIND=c_int), DIMENSION(nrow) :: mTimesInd       ! Labels of times for the observations (0=alive, 1=death)  
               
                REAL(KIND=c_double), DIMENSION(8) :: mrho        ! Vector containing the values of rho parameter used in the method 
               
@@ -6590,19 +6829,6 @@
                
                INTEGER(KIND=c_int) :: mrounds_clarke     ! the maximum number of rounds during one 'Clarke stationary' algorithm
                                                          ! If 'mrounds_clarke' <=0 then DEFAULT value 'mrounds_clarke'=5000 is used
-               
-               INTEGER(KIND=c_int) :: iprint_DBDC  ! variable that specifies print option in DBDC method:
-                                                !   iprint = 0 : print is suppressed
-                                                !   iprint = 1 : basic print of final result 
-                                                !   iprint = -1: basic print of final result (without the solution vector)
-                                                !   iprint = 2 : extended print of final result 
-                                                !   iprint = -2: extended print of final result (without the solution vector)
-                                                !   iprint = 3 : basic print of intermediate results and extended print of final results
-                                                !   iprint = -3: basic print of intermediate results and extended print of final results (without the solution vector)
-                                                !   iprint = 4 : extended print of intermediate results and extended print of final results 
-                                                !   iprint = -4: extended print of intermediate results and extended print of final results (without the solution vectors)
-                                                
-                                                ! If 'iprint' <= -5 .OR. 'iprint' >= 5 then DEFAULT value 'iprint'=1 is used    
 
                ! Possible USER PARAMETER
                INTEGER(KIND=c_int) :: iprint   ! specifies the print
@@ -6652,9 +6878,10 @@
                LOGICAL :: run_stop              ! If .TRUE. run is stopped for selected k
                LOGICAL :: mukana                ! If .TRUE. specific kit is in the solution
                
-               LOGICAL :: ed_sol_in_pen         ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
                LOGICAL :: new_start             ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
-       
+ 
+               LOGICAL :: ed_sol_in_pen         ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
+ 
                REAL(KIND=c_double) :: rho             ! The parameter rho used in L0-norm
                REAL(KIND=c_double) :: cost            ! The cost of solution beta
                REAL(KIND=c_double) :: small           ! The cost of solution beta
@@ -6664,16 +6891,29 @@
                
                REAL(KIND=c_double) :: f1_current      ! The value of f1
                REAL(KIND=c_double) :: f2_current      ! The value of f2
-               
+
                REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
-               
+                              
                REAL(KIND=c_double) :: random_num                     ! Random number
                REAL(KIND=c_double), DIMENSION(nkits) :: mRand        ! Random number matrix
                INTEGER(KIND=c_int), DIMENSION(nkits) :: mRandInd     ! Original indices of random numbers in matrix
                
                INTEGER(KIND=c_int) :: problem1              ! The DC component f1 
                INTEGER(KIND=c_int) :: problem2              ! The DC component f2 
-        
+
+               INTEGER(KIND=c_int) :: iprint_DBDC  ! variable that specifies print option in DBDC method:
+                                                !   iprint = 0 : print is suppressed
+                                                !   iprint = 1 : basic print of final result 
+                                                !   iprint = -1: basic print of final result (without the solution vector)
+                                                !   iprint = 2 : extended print of final result 
+                                                !   iprint = -2: extended print of final result (without the solution vector)
+                                                !   iprint = 3 : basic print of intermediate results and extended print of final results
+                                                !   iprint = -3: basic print of intermediate results and extended print of final results (without the solution vector)
+                                                !   iprint = 4 : extended print of intermediate results and extended print of final results 
+                                                !   iprint = -4: extended print of intermediate results and extended print of final results (without the solution vectors)
+                                                
+                                                ! If 'iprint' <= -5 .OR. 'iprint' >= 5 then DEFAULT value 'iprint'=1 is used    
+                       
                INTEGER(KIND=c_int) :: help_counter
                INTEGER(KIND=c_int) :: num_rho
                INTEGER(KIND=c_int) :: nremoved
@@ -6681,30 +6921,46 @@
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
                INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
 
+               
+               INTEGER(KIND=c_int), DIMENSION(nkits) :: mPrNum   ! The number of problems for threads
+               INTEGER(KIND=c_int) :: tread_num                  ! The number of thread
+               INTEGER(KIND=c_int) :: jaannos                    ! The residue in division
+               INTEGER(KIND=c_int) :: kokoosa                    ! The integer obtained in division
+               INTEGER(KIND=c_int) :: startind, j3               ! Help variables
+
                REAL(KIND=c_double) :: elapsed_time                  ! elapsed 'clock' time in seconds
                INTEGER(KIND=c_int) :: clock_start, clock_end, clock_rate  ! start and finish 'clock' time 
                 
                CALL cpu_time(s_time)   ! Start CPU timing
                CALL SYSTEM_CLOCK(COUNT_RATE=clock_rate) ! Find the rate
                CALL SYSTEM_CLOCK(COUNT=clock_start)     ! Start timing 'clock' time     
- 
- 
+
+
+              ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
+               
                ! Maximum number of possible treads in parallellization
                max_threads = omp_get_max_threads()
-			   !max_threads = 1
                
-			   ! The initialization of parametrs used in DBDC methods
-			   CALL allocate_parameters(in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-		                                   & in_b, in_m_clarke, in_eps, in_crit_tol)
+               !max_threads = 1
                
-			   ! Set the number of rows and columns inside Fortran  + kits           
-			   nrecord = nrow
+               CALL omp_set_num_threads(max_threads)
+               tread_num = max_threads
+
+               WRITE(*,*) 'The number of threads', max_threads             
+               ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
+
+               ! The initialization of parametrs used in DBDC methods
+               CALL allocate_parameters(info, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                           & in_b, in_m_clarke, in_eps, in_crit_tol)
+               
+               ! Set the number of rows and columns inside Fortran  + kits           
+               nrecord = nrow
                nft = ncol
                nk = nkits
-			   
-			   ! The maximum number of kits in the loop
-			   nk_max = min(nk,in_k_max)         ! Cannot be greater than nk
-			   nk_max = max(1,nk_max)            ! Cannot be smaller than 1
+            
+               ! The maximum number of kits in the loop
+               nk_max = min(nk,in_k_max)         ! Cannot be greater than nk
+               nk_max = max(1,nk_max)            ! Cannot be smaller than 1               
               
                start = in_start       ! Starting point generation procedure
                iprint = in_print      ! Print option
@@ -6715,7 +6971,7 @@
                END IF   
 
                ! The default start is used if user specifieed value is not acceptable
-               IF ((ABS(start)> 4) .OR. (start == 0)) THEN
+               IF ((start> 4) .OR. (start <= 0)) THEN
                   start = 2_c_int
                END IF              
                
@@ -6725,17 +6981,12 @@
                mrounds = in_mrounds            ! maximum number of rounds during one 'main iterations'
                mit = in_mit                    ! maximum number of 'main iteration'
                mrounds_clarke = in_mrounds_esc ! maximum number of rounds during one 'Clarke stationary' algorithm
-          
-               iprint_DBDC = 0_c_int           ! basic print of intermediate results and extended print of final results
-          
+                    
                agg_used = .TRUE.         ! Aggregation is used
                stepsize_used = .FALSE.   ! Simple stepsize determination is not used
           
                scale_in_use = .TRUE.     ! The scaling of data is used
             
-               ed_sol_in_pen = .FALSE.
-               !ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem
-
                !Values for parameter rho used in penalization problem 
                !mrho = (/0.1_c_double, 0.2_c_double, 0.5_c_double, 1.0_c_double &
                !      & 2.0_c_double, 5.0_c_double, 10.0_c_double, 20.0_c_double /) 
@@ -6746,9 +6997,12 @@
                 problem1 = 3_c_int
                 problem2 = 3_c_int                
                
-                user_n = nft
-                
-                tol_zero = (10.0_c_double)**(-6)
+                user_n = nft   ! The dimension of the problem
+
+                ed_sol_in_pen = .FALSE.
+               !ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem      
+
+                tol_zero = (10.0_c_double)**(-6)               
        
                IF ( (iprint > 0) .OR. (iprint == -1) ) THEN 
                  IF (ed_sol_in_pen) THEN 
@@ -6770,7 +7024,7 @@
                
                END IF                 
                
-              !--------------------------------------------------------------------------------------
+              !--------------------------------------------------------------------------------------         
           
               ! The starting point
         
@@ -6786,29 +7040,29 @@
               !                       READING DATA MATRICES
               !---------------------------------------------------------------------------
           
-               ! OPEN(78,file=infileX,status='old',form='formatted')
-               ! DO i=1,nrecord
-                  ! READ(78,*) (in_mX(i,j),j=1,nft)
-               ! END DO
-               ! CLOSE(78)
+                ! OPEN(78,file=infileX,status='old',form='formatted')
+                ! DO i=1,nrecord
+                   ! READ(78,*) (in_mX(i,j),j=1,nft)
+                ! END DO
+                ! CLOSE(78)
             
-               ! OPEN(78,file=infileY,status='old',form='formatted')
-               ! DO i=1,nrecord
-                  ! READ(78,*) (in_mY(i,j),j=1,2)
-               ! END DO
-               ! CLOSE(78)        
+                ! OPEN(78,file=infileY,status='old',form='formatted')
+                ! DO i=1,nrecord
+                   ! READ(78,*) (in_mY(i,j),j=1,2)
+                ! END DO
+                ! CLOSE(78)        
 
-               ! OPEN(78,file=infileK,status='old',form='formatted')      
-               ! DO i=1,nkits
-                  ! READ(78,*) (in_mK(i,j),j=1,nft)
-               ! END DO
-               ! CLOSE(78)
+                ! OPEN(78,file=infileK,status='old',form='formatted')      
+                ! DO i=1,nkits
+                   ! READ(78,*) (in_mK(i,j),j=1,nft)
+                ! END DO
+                ! CLOSE(78)
             
-               ! OPEN(78,file=infileC,status='old',form='formatted')
-               ! DO i=1,nkits
-                  ! READ(78,*) in_mC(i)
-               ! END DO
-               ! CLOSE(78)  
+                ! OPEN(78,file=infileC,status='old',form='formatted')
+                ! DO i=1,nkits
+                   ! READ(78,*) in_mC(i)
+                ! END DO
+                ! CLOSE(78)  
               !--------------------------------------------------------------------------
               ! ^^^^ END: IF Fortran code is used without R-C-interface ^^^^
               !---------------------------------------------------------------------------
@@ -6858,45 +7112,7 @@
               !^^^^ END: IF Fortran code is used with R-C-interface ^^^^
               !---------------------------------------------------------------------------
                
-            
-               ! WRITE(*,*) 'Matrix X populated:', in_mX
-               ! WRITE(*,*) 'Matrix Y populated:', in_mY
-               ! WRITE(*,*) 'Matrix K populated:', in_mK
-               ! WRITE(*,*) 'Vector C populated:', in_mC
-           
-               ! write(*,*) 'Values of nr, nc, and nk:'
-               ! write(*,*) nrecord
-               ! write(*,*) nft
-               ! write(*,*) nk
-
-               ! WRITE(*,*)
-               ! write(*,*) 'Matrix X (input features):'
-               ! DO i = 1, nrecord
-               !    write(*,*) 'row', i, ':', in_mX(i,:)
-               !    write(*,*) '------------------------' 
-               ! END DO
-
-               ! WRITE(*,*)
-               ! write(*,*) 'Matrix Y (time and label):'
-               ! DO i = 1, nrecord
-               !    write(*,*) 'row', i, ':', in_mY(i,:)
-               !    write(*,*) '------------------------' 
-               ! END DO
-                
-               ! WRITE(*,*)
-               ! write(*,*) 'Matrix K (kit structure):'
-               ! DO i = 1, nk
-               !    write(*,*) 'row', i, ':', in_mK(i,:)
-               !    write(*,*) '------------------------' 
-               ! END DO
-                
-               ! WRITE(*,*)
-               ! WRITE(*,*) 'costs:', in_mC
-               ! WRITE(*,*)
-
-               ! write(*,*) 'End of initialization'    
-
-           
+          
               !---------------------------------------------------------------------------
               !               ORDERING DATA IN INCREASING ORDER BASED ON time 
               !---------------------------------------------------------------------------
@@ -6906,68 +7122,74 @@
                    mTimesInd(i) = i
                END DO        
             
-               CALL heapsort_ind(mTimes,mTimesInd)
-                      
-               ! Allocation of data matrices in function.f95
-               CALL allocate_data_cox(nft,nrecord,nk,user_n)   
+               CALL heapsort_ind(mTimes,mTimesInd)      
+
                
+               !Transpose of matrix mX
+               DO i = 1, nrecord
+                 ind = mTimesInd(i)
+                 DO j = 1, nft
+                    mXt(j,i) = in_mX(ind,j)
+                 END DO
+               END DO
+            
+               !Transpose of matrix mY          
+               DO i = 1, nrecord
+                 ind = mTimesInd(i)        
+                 DO j = 1, 2
+                    mYt(j,i) = in_mY(ind,j)
+                 END DO
+               END DO                  
+               
+      
+               ! Allocation of sizes of matrices in function.f95
+               CALL allocate_data_cox(info,nft,nrecord,nk,user_n)   
+                           
               !---------------------------------------------------------------------------
               !                     STORING DATA MATRICES 
               !---------------------------------------------------------------------------
-              ! Notice: Matrices are transposed! => Each column presents either an observation or a kit!
+              ! Notice: Matrices are transposed above! => Each column presents either an observation or a kit!
           
-              DO i = 1, nrecord
-                ind = mTimesInd(i)
-                DO j = 1, nft
-                    mX(j,i) = in_mX(ind,j)
-                END DO
-              END DO
-                  
-              DO i = 1, nrecord
-                ind = mTimesInd(i)        
-                DO j = 1, 2
-                    mY(j,i) = in_mY(ind,j)
-                END DO
-              END DO    
-          
-              DO i = 1, nk
-                DO j = 1, nft
-                    mK(j,i) = in_mK(i,j)
-                END DO
-              END DO          
-          
-              DO i = 1, nk         
-                 mC(i) = in_mC(i)
-              END DO
-          
-              CALL failures()
-              
-              ! Scaling
+              CALL allocate_matrices_cox(info, mXt, mYt, in_mK, in_mC,  & 
+                                      & nrecord, nft, nk)
+
+              ! Scaling of data 
               IF (scale_in_use) THEN
-                 CALL scaling_cox()
-              END IF               
-			  
-			  ! The initialization of beta vector
-			  beta = 0.0_c_double
+                  CALL scaling_cox(info)
+                  
+                 ! Original data matrices mXt and mYt are changed to the scaled ones 
+                  CALL scaling_matrix_cox(info, mXt)
+                  
+              END IF  
+
               
+              ! The initialization of beta vector
+              beta = 0.0_c_double
+			  
+			  ! The print in DBDC method is supressed
+              iprint_DBDC = 0
+              
+              !-------------------------------------------------------------------------------------------------
               ! The best beta_solution for Cox's proportional hazard model without regularization/penalization                    
                       
-              CALL set_k(nkits)           ! All kits can be used
+              CALL set_k(info, nkits)           ! All kits can be used
                       
-              CALL DBDC_algorithm( f_solution, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
+              CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
                             & agg_used, stepsize_used, iprint_DBDC, 3_c_int, 3_c_int, user_n, &
-							& max_threads)            
+                            & info)            
                             
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
-              !         * x_koe is utilized in formation of starting points   
+              !         * x_koe is utilized in formation of starting points 
+
+              !-------------------------------------------------------------------------------------------------              
               
                x_ed = 0.01_c_double    ! We initialize the previous solution, since we do not have a value for it 
                
                
                IF ((iprint > 0) .OR. (iprint == -1)) THEN
                  WRITE(*,*) 
-                 WRITE(*,*) 'Value of Cox proportional hazard model without regularization:', f_solution
+                 WRITE(*,*) 'Value of Cox proportional hazard model without regularization:', f_solution_DBDC
                  WRITE(*,*) 
                END IF 
                
@@ -6989,8 +7211,9 @@
               !---------------------------------------------------------               
                IF (start > 0) THEN   ! problem are solved in order k=1,2,...,nkits
                
-                 kit_num_ed = 0        ! The number of kits in the previous solution
-                 kits_beta_ed = 0      ! The kits in the previous solution
+                 kit_num_ed = 0           ! The number of kits in the previous solution
+                 kits_beta_ed = 0         ! The kits in the previous solution
+                 small = (10_c_double)**9 ! There is no previous solution known
                  
                  IF (start == 1) THEN
                     nstart = 1
@@ -6999,8 +7222,10 @@
                  ELSE IF (start == 4) THEN 
                     nstart = start_max        ! The number of random starting points
                  END IF 
-               
-                 !DO k = 1, nk                 ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
+                 
+                 !---------------------------------------------------------------------------------------------
+                 ! Solves in a loop all L0-norm problems with the fixed number of k=1,..., nk_max of kits    
+                 !---------------------------------------------------------------------------------------------
                  DO k = 1, nk_max              ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to nk_max
                   
                   IF (iprint>=2 .OR. iprint == -1) THEN
@@ -7009,184 +7234,62 @@
                        
                   END IF
                   
-                  CALL set_k(k)                  ! The number of nonzero kits is fixed
-                  f_solution = (10.0_c_double)**10     ! The best value for this solution is not yet known (therefore a big value is set)
-                
-                   DO i = 1, nstart              ! Different starting points are looked through to solve the problem 3 with fixed number of nonzero kits
-                     x_0 = x_ed                  ! The base of the starting point is the previous solution (k-1 nonzero kits)
-                     mukana = .FALSE.           
-                     IF (start == 2 .OR. start == 3) THEN          ! Only nkits-k+1 starting points used             
-                       DO ii = 1, kit_num_ed       ! Then we check if the kit i belongs to the previous solution
-                         IF (i == kits_beta_ed(ii)) THEN   
-                           mukana = .TRUE.         ! 'mukana' tells if the kit i is in solution     
-                         END IF
-                       END DO
-                     END IF
-                     
-                     ! Is a new starting point generated?
-                     IF (start == 2) THEN
-                        IF(mukana) THEN
-                           new_start = .FALSE.
-                        ELSE
-                           new_start = .TRUE.
-                        END IF               
-                     ELSE
-                        new_start = .TRUE.
-                     END IF                  
-                                         
-                     
-                   IF ( new_start ) THEN       ! .TRUE. if a new starting point is generated
+                  CALL set_k(info, k)            ! The number of nonzero kits is fixed 
+                  
+                  jaannos = MOD(nk,tread_num)    ! The residue in the division
+                  kokoosa = nk/tread_num         ! The integer part obtained from the division
+                  
+                  mPrNum = kokoosa               ! The initialization of the number of problems for threads
+                  DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
+                     mPrNum(i) = mPrNum(i)+1                  
+                  END DO
+
+                  !----------------------------------------------------------
+                  ! Starting points for problem with fixed number of k kits 
+                  !----------------------------------------------------------
+                  
+                  !$OMP PARALLEL DO PRIVATE(x_solution, f_solution, i) & 
+                  !$OMP FIRSTPRIVATE(x_ed, x_koe, kits_beta_ed, kit_num_ed)  &             
+                  !$OMP FIRSTPRIVATE(small, k, iprint, mrho)                 &  
+                  !$OMP FIRSTPRIVATE(mit, mrounds, mrounds_clarke)           &    
+                  !$OMP FIRSTPRIVATE(agg_used, stepsize_used)                &
+                  !$OMP FIRSTPRIVATE(problem1, problem2)                     &  
+                  !$OMP FIRSTPRIVATE(in_b1, in_b2, in_m, in_c, in_r_dec)     &  
+                  !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
+                  !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
+                  !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
+                  !$OMP FIRSTPRIVATE(mXt, mYt, in_mK, in_mC)                 &  
+                  !$OMP SHARED(points, f_points, mPrNum)               
+                  
+                   DO i = 1, tread_num              ! Different starting points in threads are looked through to solve the problem 3 with fixed number of nonzero kits                   
                     
-                    IF ((start == 2) .OR. (start == 3)) THEN 
-                      DO ii = 1, nft 
-                        IF (mK(ii,i)==1) THEN
-                           x_0(ii) = x_koe(ii)    ! In starting poitnt x_0, we initialize features in kit i with values from solution x_koe
-                        END IF   
-                      END DO
-                    END IF  
+                      CALL solution_with_k_kits_cox( x_solution, f_solution, k, i, small, &
+                                               & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
+                                               & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
+                                               & agg_used, stepsize_used, user_n, problem1, problem2, &
+                                               & mXt, mYt, in_mK, in_mC, nrecord,  & 
+                                               & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum)
                     
-                    IF (start == 4) THEN ! A random starting point is generated
-                       x_0 = 0.01_c_double
-                       DO ii = 1, nk
-                         CALL RANDOM_NUMBER(random_num)
-                         mRand(ii) = random_num
-                         mRandInd(ii) = ii
-                       END DO 
-                       CALL heapsort_ind(mRand,mRandInd)
-                       !WRITE(*,*) mRand
-                       !WRITE(*,*) mRandInd                     
-                       DO ii = 1, k
-                          DO i2 = 1, nft 
-                            IF (mK(i2,mRandInd(ii))==1) THEN
-                              x_0(i2) = x_koe(i2)    ! In starting point x_0, we initialize features in kit i with values from solution x_koe
-                            END IF   
-                          END DO     
-                       END DO
-                    END IF                  
-                      
-                    run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
-                    num_rho = 0                 ! The selection of the first value of penalization parameter rho
-                  
-                    IF (iprint >= 2) THEN
-                       WRITE(*,*) '-------------------------------------' 
-                       WRITE(*,*) 'New start point used.' 
-                    END IF
-                  
-                    DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
-                  
-                    num_rho = num_rho + 1       ! The update of the parameter rho
-                    
-                    IF (num_rho < 9) THEN
-                     SELECT CASE(num_rho)        ! The selection of the parameter rho
-                  
-                      CASE(1)
-                        rho = mrho(1)
-                      CASE(2)
-                        rho = mrho(2)                  
-                      CASE(3)
-                        rho = mrho(3)                  
-                      CASE(4)
-                        rho = mrho(4)              
-                      CASE(5)
-                        rho = mrho(5)                  
-                      CASE(6)
-                        rho = mrho(6)                  
-                      CASE(7)
-                        rho = mrho(7)                 
-                      CASE(8)
-                        rho = mrho(8)                             
-                     END SELECT 
-                    ELSE
-                      rho = 10.0_c_double * rho
-                      
-                      IF (num_rho>=24) THEN 
-                      run_stop = .TRUE.         ! Forced stop in optimization
-                      END IF 
-                    END IF
-                
-                    ! The optimization problem is solved fot the current rho and x_0
-     
-                    CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
-                            & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
-							& max_threads) 
-            
-                    IF (ed_sol_in_pen) THEN 
-                      x_0 = beta_solution   ! Starting point for the next round
-                    END IF    
-                
-                    help_counter = 0           
-                    DO j = 1, user_n         ! The number of zero components in beta vector is computed
-                      IF ( ABS(beta_solution(j)) < tol_zero) THEN
-                        help_counter = help_counter +1
-                        beta_solution(j) = 0.0_c_double
-                      END IF
-                    END DO
-              
-                    cost = 0.0_c_double      ! The initialization of the cost of 'beta_solution'
-                    kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
-                    kits_beta = 0            ! The initialization of kits in 'beta_solution'
-                  
-                    !Calculation of kits in solution
-                    DO j1 = 1, nk        ! Each kit is looked through
-                      kit_in_use = .FALSE.  
-                      DO j2 = 1, nft
-                        IF (mk(j2,j1)==1) THEN 
-                          IF ( ABS(beta_solution(j2)) >= tol_zero) THEN    ! If the condition is satisfied the kit j1 is in solution 'beta_solution'
-                             kit_in_use = .TRUE.                                  
-                          END IF
-                        END IF
-                      END DO
-                      IF (kit_in_use) THEN       ! Executed if kit j1 is in solution 'beta_solution'
-                        cost = cost + mC(j1)     ! The cost of kit j1 is taken into account
-                        kit_num = kit_num + 1    ! The number of kits is updated
-                        kits_beta(kit_num) = j1  ! The index of kit j1 is updated to table kits_beta                      
-                      END IF 
-                    END DO
-    
-                    ! We check if the optimization of problem 3 with k kits can be stopped            
-                    IF (kit_num <= k .OR. run_stop) THEN 
-                       IF (run_stop) THEN 
-                         f_solution = (10.0_c_double)**10
-                       END IF
-                       run_stop = .TRUE.     ! The optimization can be stopped
-                       DO j = 1, nft
-                         points(j,i) = beta_solution(j)        ! We store the solution
-                       END DO       
-                       f1_current = f1(beta_solution,3,user_n)
-                       f2_current = f2(beta_solution,3,user_n)
-                       f_points(i) = f1_current-f2_current      ! We store the objective funtion value without penalization
-                    END IF               
+                    ! Storing of the obtained solutions and the corresponding objective values
+                     !$OMP CRITICAL 
+                     startind = 1
+                     IF (i > 1) THEN    
+                       DO j3 = 1, i-1
+                          startind = startind + mPrNum(j3)
+                       END DO   
+                     END IF                        
+                        
+                     DO j3 = 1, mPrNum(i)   
+                        DO j = 1, user_n
+                            points(j,startind+(j3-1)) = x_solution(j,startind+(j3-1))
+                        END DO                            
+                         f_points(startind+j3-1) = f_solution(startind+j3-1)
+                     END DO  
+                     !$OMP END CRITICAL                  
                    
-                    f1_current = f1(beta_solution,3,user_n)
-                    f2_current = f2(beta_solution,3,user_n)
-    
-                    IF (iprint > 2) THEN
-                       WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-                    END IF
-                    
-                    IF (run_stop) THEN
-                      IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
-                        WRITE(*,*)
-                        WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                      END IF  
-                      IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
-                        WRITE(*,*)
-                        WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-                      END IF
-                    END IF
-                    
-                    END DO
-                    
-                   ELSE
-                     !ind = (k-1)*nft       ! Solution with k nonzero features/kits is taken down
-                     DO j = 1, nft
-                        points(j,i) = x_ed(j)
-                     END DO     
-                     f_points(i) = small
-                   END IF           
-             
-                   END DO
+                   END DO          
+                  !$OMP END PARALLEL DO   
                    
                    IF (start == 1) THEN 
                       small = f_points(1)
@@ -7196,8 +7299,8 @@
                    IF (start == 2 .OR. start == 3) THEN 
                      ! The selection of the best solution for problem 3 with k kits
                      small = (10.0_c_double)**9      ! The initialization of the smallest objective function values in table 'f_points'
-                     min_ind = 0               ! The index of 'f_points' yielding the smallest value 
-                     DO i = 1, nk           ! The determination of the smallest objective function value
+                     min_ind = 0                     ! The index of 'f_points' yielding the smallest value 
+                     DO i = 1, nk                    ! The determination of the smallest objective function value
                        IF (small >= f_points(i)) THEN
                          small = f_points(i)
                          min_ind = i
@@ -7208,8 +7311,8 @@
                    IF (start == 4) THEN 
                      ! The selection of the best solution for problem 3 with k kits
                      small = (10.0_c_double)**9      ! The initialization of the smallest objective function values in table 'f_points'
-                     min_ind = 0               ! The index of 'f_points' yielding the smallest value 
-                     DO i = 1, nstart          ! The determination of the smallest objective function value
+                     min_ind = 0                     ! The index of 'f_points' yielding the smallest value 
+                     DO i = 1, nstart                ! The determination of the smallest objective function value
                        IF (small >= f_points(i)) THEN
                          small = f_points(i)
                          min_ind = i
@@ -7217,25 +7320,20 @@
                      END DO
                    END IF        
                    
-                   ind = (k-1)*nft  
-                   DO i = 1, nft
+                   ind = (k-1)*user_n  
+                   DO i = 1, user_n
                      x_ed(i) = points(i,min_ind)            ! The beta solution yielding the smallest objective function value is set as the previous solution
                      beta(ind+i) = points(i,min_ind)        ! The beta solution yielding the smallest objective function value is stored to solution vector 
                    END DO
               
-                   IF (iprint >= 1) THEN
-                     !WRITE(*,*) 'Objective function value for problem 3 with', k, 'nonzero kits:' , small
-                   END IF
-              
                    help_counter = 0           
-                   DO j = 1, user_n         ! The number of zero components in the previous beta vector is computed
+                   DO j = 1, nft         ! The number of zero components in the previous beta vector is computed
                       IF ( ABS(x_ed(j)) < tol_zero ) THEN
                         help_counter = help_counter+1
                       END IF
                    END DO
 
-
-                   cost = 0.0_c_double               ! The initialization of the previous solution
+                   cost = 0.0_c_double         ! The initialization of the previous solution
                    kit_num_ed = 0              ! The initialization of the number of kits in the previous solution
                    kits_beta_ed = 0            ! The initialization of kits in the previous solution                    
 
@@ -7243,14 +7341,14 @@
                    DO j1 = 1, nk    ! Each kit is looked through
                      kit_in_use = .FALSE.
                      DO j2 = 1, nft
-                       IF (mk(j2,j1)==1) THEN 
+                       IF (info%mk(j2,j1)==1) THEN 
                          IF ( ABS(x_ed(j2)) >= tol_zero ) THEN 
                            kit_in_use = .TRUE.           
                          END IF
                        END IF
                      END DO
                      IF (kit_in_use) THEN              ! Executed if kit j1 is in the previous solution
-                       cost = cost + mC(j1)            ! The cost of kit j1 is taken into account
+                       cost = cost + info%mC(j1)            ! The cost of kit j1 is taken into account
                        kit_num_ed = kit_num_ed + 1     ! The number of kits is updated
                        kits_beta_ed(kit_num_ed) = j1   ! The index of kit j1 is updated to table kits_beta                 
                      END IF 
@@ -7281,337 +7379,7 @@
                    
                  END DO
               
-              !---------------------------------------------------------
-              ! problems are solved in order k=nkits,nkits-1,...,1
-              !---------------------------------------------------------      
-              ELSE     
-
-                 kit_num_ed = 0        ! The number of kits in the previous solution
-                 kits_beta_ed = 0      ! The kits in the previous solution
-                 small = 100000.0_c_double
-                 
-                 IF (start == -1) THEN
-                    nstart = 1
-                 ELSE IF (start == -2 .OR. start == -3 ) THEN
-                    nstart = nk
-                 ELSE IF (start == -4) THEN     
-                    nstart = start_max
-                 END IF 
-               
-                 !DO k = nk, 1, -1                     ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from k to 1
-                 DO k = nk, (nk-nk_max+1), -1          ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from k to k-nk_max+1
-                  
-                  IF ((iprint>=2) .OR. (iprint==-1)) THEN
-                       WRITE(*,*)
-                       WRITE(*,*) '-------------------------------------' 
-                       WRITE(*,*) 'PROBLEM with', k, 'kits' 
-                  END IF                  
-                  CALL set_k(k)                 ! The number of nonzero kits is fixed
-                  f_solution = 1000000.0_c_double     ! The best value for this solution is not yet known (therefore a big value is set)
-                
-                   DO i = 1, nstart              ! Different starting points are looked through to solve the problem 3 with fixed number of nonzero kits
-                     x_0 = x_ed                  ! The base of the starting point is the previous solution 
-                     mukana = .FALSE.
-                     IF (start == -2 .OR. start == -3 ) THEN              
-                       DO ii = 1, kit_num_ed       ! Then we check if the kit i belongs to the previous solution
-                         IF (i == kits_beta_ed(ii)) THEN   
-                           mukana = .TRUE.         ! 'mukana' tells if the kit i is in solution  
-                         END IF
-                       END DO
-                     END IF
-                     
-                     IF (start == -2) THEN
-                        IF(mukana .OR. (nk==k .AND. i==1)) THEN
-                           new_start = .TRUE.
-                        ELSE
-                           new_start = .FALSE.
-                        END IF
-                     ELSE 
-                        new_start = .TRUE.
-                     END IF
-                    
-                     
-                   IF (new_start) THEN    ! .TRUE. if new starting point is generated
-                     
-                     IF (k==nk) THEN   ! All the kits are in the solution. Thus, the solution x_koe is the optimal solution for the problem and a good starting point
-                        x_0 = x_koe
-                     END IF                  
-                     
-                     IF (mukana) THEN 
-                        DO ii = 1, nft 
-                           IF (mK(ii,i)==1) THEN
-                             x_0(ii) = 0.0_c_double        ! In starting point x_0, we initialize features in kit i with value 0
-                           END IF   
-                        END DO
-                     END IF
-                     
-                    IF (start == -3 .AND. (.NOT. mukana)) THEN
-                       DO ii = 1, nft 
-                         IF (mK(ii,i)==1) THEN
-                           x_0(ii) = x_koe(ii)        ! In starting poitnt x_0, we initialize features in kit i with values from x_koe belonging to kit i
-                         END IF   
-                       END DO                    
-                    END IF  
-                    
-                    IF (start == -4 .AND. (.NOT. k==nk) ) THEN
-                       DO ii = 1, nk
-                         CALL RANDOM_NUMBER(random_num)
-                         mRand(ii) = random_num
-                         mRandInd(ii) = ii
-                       END DO 
-                       CALL heapsort_ind(mRand,mRandInd)
-                       !!!WRITE(*,*) mRandInd                      
-                       IF (k > 3) THEN
-                         nremoved = 0
-                         ii = 1
-                         DO WHILE (nremoved < 2 .AND. ii <= nk) 
-                            DO i2 = 1, kit_num_ed       ! Then we check if the kit i belongs to the previous solution
-                              IF (mRandInd(ii) == kits_beta_ed(i2)) THEN 
-                                 DO iii = 1, nft 
-                                   IF (mK(iii,mRandInd(ii))==1) THEN
-                                      x_0(iii) = 0.0_c_double    ! In starting point x_0, we initialize features in kit mRandInd(ii) with value 0
-                                   END IF   
-                                 END DO 
-                                 nremoved = nremoved + 1
-                              END IF
-                            END DO                          
-                            ii = ii + 1
-                         END DO   
-                       ELSE 
-                         nremoved = 0
-                         ii = 1
-                         DO WHILE (nremoved < 1 .AND. ii <= nk) 
-                            DO i2 = 1, kit_num_ed       ! Then we check if the kit i belongs to the previous solution
-                              IF (mRandInd(ii) == kits_beta_ed(i2)) THEN 
-                                 DO iii = 1, nft 
-                                   IF (mK(iii,mRandInd(ii))==1) THEN
-                                      x_0(iii) = 0.0_c_double    ! In starting point x_0, we initialize features in kit mRandInd(ii) with value 0
-                                   END IF   
-                                 END DO
-                                 nremoved = nremoved + 1
-                              END IF
-                            END DO                          
-                            ii = ii + 1
-                         END DO                          
-                       END IF 
-                    END IF
-                    
-                    run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
-                    num_rho = 0                 ! The selection of the first value of penalization parameter rho
-                  
-                    IF (iprint >= 2) THEN
-                       WRITE(*,*) '-------------------------------------' 
-                       WRITE(*,*) 'New start point used'
-                    END IF
-                  
-                    DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
-                  
-                    num_rho = num_rho + 1       ! The update of the parameter rho
-                    
-                    IF (num_rho < 9) THEN
-                     SELECT CASE(num_rho)        ! The selection of the parameter rho
-                  
-                      CASE(1)
-                        rho = mrho(1)
-                      CASE(2)
-                        rho = mrho(2)                  
-                      CASE(3)
-                        rho = mrho(3)                  
-                      CASE(4)
-                        rho = mrho(4)              
-                      CASE(5)
-                        rho = mrho(5)                  
-                      CASE(6)
-                        rho = mrho(6)                  
-                      CASE(7)
-                        rho = mrho(7)                 
-                      CASE(8)
-                        rho = mrho(8)                            
-                     END SELECT 
-                    ELSE
-                      rho = 10.0_c_double * rho
-                      
-                      IF (num_rho>=24) THEN 
-                      run_stop = .TRUE.         ! Forced stop in optimization
-                      END IF 
-                    END IF
-                
-                    ! The optimization problem is solved fot the current rho and x_0
-     
-                    CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
-                            & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
-							& max_threads) 
-            
-                    IF (ed_sol_in_pen) THEN 
-                      x_0 = beta_solution   ! Starting point for the next round
-                    END IF    
-                                
-                    help_counter = 0           
-                    DO j = 1, user_n         ! The number of zero components in beta vector is computed
-                      IF ( ABS(beta_solution(j)) < tol_zero) THEN
-                        help_counter = help_counter +1
-                        beta_solution(j) = 0.0_c_double
-                      END IF
-                    END DO
-                                
-                    cost = 0.0_c_double            ! The initialization of the cost of 'beta_solution'
-                    kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
-                    kits_beta = 0            ! The initialization of kits in 'beta_solution'
-                  
-                    !Calculation of kits in solution
-                    DO j1 = 1, nk        ! Each kit is looked through
-                      kit_in_use = .FALSE.  
-                      DO j2 = 1, nft
-                        IF (mk(j2,j1)==1) THEN 
-                          IF ( ABS(beta_solution(j2)) >= tol_zero) THEN    ! If the condition is satisfied the kit j1 is in solution 'beta_solution'
-                             kit_in_use = .TRUE.                                  
-                          END IF
-                        END IF
-                      END DO
-                      IF (kit_in_use) THEN       ! Executed if kit j1 is in solution 'beta_solution'
-                        cost = cost + mC(j1)     ! The cost of kit j1 is taken into account
-                        kit_num = kit_num + 1    ! The number of kits is updated
-                        kits_beta(kit_num) = j1  ! The index of kit j1 is updated to table kits_beta                      
-                      END IF 
-                    END DO
-
-                    ! We check if the optimization of problem 3 with k kits can be stopped            
-                    IF (kit_num <= k .OR. run_stop) THEN 
-                       IF (run_stop) THEN 
-                         f_solution = (10.0_c_double)**7
-                       END IF
-                       run_stop = .TRUE.     ! The optimization can be stopped
-                       DO j = 1, nft
-                         points(j,i) = beta_solution(j)        ! We store the solution
-                       END DO       
-                       f1_current = f1(beta_solution,3,user_n)
-                       f2_current = f2(beta_solution,3,user_n)
-                       f_points(i) = f1_current-f2_current      ! We store the objective funtion value without penalization
-                    END IF                                     
-      
-                    f1_current = f1(beta_solution,3,user_n)
-                    f2_current = f2(beta_solution,3,user_n)
-     
-                    IF (iprint > 2) THEN
-                       WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-                    END IF      
-                    
-                    IF (run_stop) THEN                  
-                    IF (iprint >= 2 .AND. (kit_num <= k)) THEN   
-                      WRITE(*,*)
-                      WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                    END IF  
-                    IF (iprint >=2 .AND. (kit_num > k)) THEN                                      
-                      WRITE(*,*)
-                      WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-                    END IF
-                    END IF
-                  
-                    END DO
-                    
-                   ELSE
-                     !ind = (k-1)*nft       ! Solution with k nonzero features/kits is taken down
-                     DO j = 1, nft
-                        points(j,i) = x_ed(j)
-                     END DO     
-                     f_points(i) = 100000000000.0_c_double
-                   END IF           
-             
-                   END DO
-                   
-                   IF (start == -1) THEN 
-                      small = f_points(1)
-                      min_ind = 1
-                   END IF 
-                   
-                   IF (start == -2 .OR. start == -3) THEN 
-                     ! The selection of the best solution for problem 3 with k kits
-                     small = 10000000.0_c_double     ! The initialization of the smallest objective function values in table 'f_points'
-                     min_ind = 0               ! The index of 'f_points' yielding the smallest value 
-                     DO i = 1, nk           ! The determination of the smallest objective function value
-                       IF (small >= f_points(i)) THEN
-                         small = f_points(i)
-                         min_ind = i
-                       END IF
-                     END DO
-                   END IF 
-                   
-                   IF (start == -4) THEN 
-                     ! The selection of the best solution for problem 3 with k kits
-                     small = 10000000.0_c_double     ! The initialization of the smallest objective function values in table 'f_points'
-                     min_ind = 0               ! The index of 'f_points' yielding the smallest value 
-                     DO i = 1, nstart          ! The determination of the smallest objective function value
-                       IF (small >= f_points(i)) THEN
-                         small = f_points(i)
-                         min_ind = i
-                       END IF
-                     END DO
-                   END IF                      
-                               
-                   ind = (k-1)*nft  
-                   DO i = 1, nft
-                     x_ed(i) = points(i,min_ind)            ! The beta solution yielding the smallest objective function value is set as the previous solution
-                     beta(ind+i) = points(i,min_ind)        ! The beta solution yielding the smallest objective function value is stored to solution vector 
-                   END DO
-              
-                   IF (iprint >= 1) THEN
-                     ! WRITE(*,*) 'Objective function value for problem 3 with', k, 'nonzero kits:' , small
-                   END IF
-              
-                   help_counter = 0           
-                   DO j = 1, user_n         ! The number of zero components in the previous beta vector is computed
-                      IF ( ABS(x_ed(j)) < tol_zero ) THEN
-                        help_counter = help_counter+1
-                      END IF
-                   END DO
-
-                   cost = 0.0_c_double               ! The initialization of the previous solution
-                   kit_num_ed = 0              ! The initialization of the number of kits in the previous solution
-                   kits_beta_ed = 0            ! The initialization of kits in the previous solution                    
-
-                   !Calculation of kits in the previous solution
-                   DO j1 = 1, nk    ! Each kit is looked through
-                     kit_in_use = .FALSE.
-                     DO j2 = 1, nft
-                       IF (mk(j2,j1)==1) THEN 
-                         IF ( ABS(x_ed(j2)) >= tol_zero ) THEN 
-                           kit_in_use = .TRUE.           
-                         END IF
-                       END IF
-                     END DO
-                     IF (kit_in_use) THEN              ! Executed if kit j1 is in the previous solution
-                       cost = cost + mC(j1)            ! The cost of kit j1 is taken into account
-                       kit_num_ed = kit_num_ed + 1     ! The number of kits is updated
-                       kits_beta_ed(kit_num_ed) = j1      ! The index of kit j1 is updated to table kits_beta                 
-                     END IF 
-                   END DO  
-                   
-                   IF ((iprint>=2) .OR. (iprint == -1)) THEN 
-                     WRITE(*,*)
-                     WRITE(*,*) '-**--**--**--**--**--**--**--**--**--**--**--**-'
-                     WRITE(*,*) 'Information about the best solution:'
-                     WRITE(*,*)                  
-                     WRITE(*,*)  '  f=',small 
-                     WRITE(*,*)  '  number of zero elements=',help_counter
-                     WRITE(*,*)  '  number of nonzero elements=',nft-help_counter 
-                     WRITE(*,*)  '  cost=',cost
-                     WRITE(*,*)  '  number of kits=',kit_num_ed 
-                     WRITE(*,*)  '  kits=',kits_beta_ed(1:kit_num_ed)    
-                     WRITE(*,*)                  
-                     WRITE(*,*) '-**--**--**--**--**--**--**--**--**--**--**--**-'
-                     WRITE(*,*)               
-                     
-                   END IF
- 
-                   IF (iprint==1) THEN
-                     WRITE(*,*) small, help_counter, nft-help_counter, &
-                     & cost, kit_num_ed, kits_beta_ed(1:kit_num_ed)                
-                   END IF
-            
-                    
-                 END DO
-
+   
               END IF              
               
               !--------------------------------------------------------------------------
@@ -7625,40 +7393,42 @@
 
               IF (scale_in_use) THEN  ! Rescaling
                  
-                 CALL set_k(nk)               
-                 user_lambda = 0.0_c_double
-                 CALL rescaling_cox()        ! the rescaling of data 
+                 CALL set_k(info, nk)               
+                 info%user_lambda = 0.0_c_double
+                 CALL rescaling_cox(info)        ! the rescaling of data 
                  
                  DO k = 1, nk         ! Each solution is rescaled
-                   ind = (k-1)*nft
+                   ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
-                   DO i = 1, nft
+                   DO i = 1, user_n
                         beta_solution(i) = beta(ind+i)
                    END DO
-                   CALL rescaling_beta_cox(beta_solution)         ! Rescaling of solution
-                   f1_current = f1(beta_solution,problem1,user_n) ! The f_1 value 
-                   f2_current = f2(beta_solution,problem1,user_n) ! The f_2 value
+                   CALL rescaling_beta_cox(info, beta_solution)         ! Rescaling of solution
+                   f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value 
+                   f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value
                    fperk(k) = f1_current-f2_current               ! The objective function value for problem 3 with k nonzero kits 
-                   DO i = 1, nft 
+                    WRITE(*,*) 'f',k,':', fperk(k)
+                   DO i = 1, user_n 
                       beta(ind+i) = beta_solution(i)        ! the beta vector for problem 3 with k nonzero kits
                    END DO       
                    
                  END DO 
                  
               ELSE   
-                  CALL set_k(nk)               
-                  user_lambda = 0.0_c_double
+                  CALL set_k(info, nk)               
+                  info%user_lambda = 0.0_c_double
                  
                  DO k = 1, nk         
-                   ind = (k-1)*nft
+                   ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
-                   DO i = 1, nft
+                   DO i = 1, user_n
                         beta_solution(i) = beta(ind+i)
                    END DO
-                   f1_current = f1(beta_solution,problem1,user_n) ! The f_1 value 
-                   f2_current = f2(beta_solution,problem1,user_n) ! The f_2 value
+                   f1_current = f1(info,beta_solution,problem1,user_n) ! The f_1 value 
+                   f2_current = f2(info,beta_solution,problem1,user_n) ! The f_2 value
                    fperk(k) = f1_current-f2_current               ! The objective function value for problem 3 with k nonzero kits 
-                   DO i = 1, nft 
+                    WRITE(*,*) 'f',k,':', fperk(k)
+                  DO i = 1, user_n 
                       beta(ind+i) = beta_solution(i)        ! the beta vector for problem 3 with k nonzero kits
                    END DO       
                    
@@ -7671,21 +7441,23 @@
                
              CALL cpu_time(f_time)   ! Finish CPU timing    
              cpu = f_time-s_time             
-			 
+             
              CALL SYSTEM_CLOCK(COUNT=clock_end) ! Stop timing 'clock' time
            
              ! Calculate the elapsed 'clock' time in seconds:
-             elapsed_time=(1.0_c_double*clock_end-clock_start)/clock_rate   			 
-			 
+             elapsed_time=(1.0_c_double*clock_end-clock_start)/clock_rate                
+             
              
              IF ((iprint >= 1) .OR. (iprint == -1)) THEN               
                  WRITE(*,*) 'Used CPU:', cpu   , 'Elapsed time:', elapsed_time             
              END IF
        
-             CALL deallocate_data_cox() 
+             CALL deallocate_data_cox(info) 
                 
 
          END SUBROUTINE oscar_cox       
+        !--------------------------------------------------------------------------------------  
+
 
 
         ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
@@ -7708,9 +7480,9 @@
     ! ^^^^ START: IF Fortran code is used with R-C-interface ^^^^
     !--------------------------------------------------------------------------        
           SUBROUTINE oscar_mse(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
-		& in_print, in_start, in_k_max, &
-		& in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-		& in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol ) &		
+       & in_print, in_start, in_k_max, &
+       & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+       & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol ) &     
         & BIND(C, name = "oscar_mse_f_")               
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -7722,7 +7494,9 @@
           !--------------------------------------------------------------------------    
           ! SUBROUTINE oscar_mse(infileX, infileY, infileK, infileC,  &
           !                     & nrow, ncol, nkits, &
-          !                     & beta, fperk, in_print, in_start)  
+          !                     & beta, fperk, in_print, in_start, in_k_max, &
+          !                     & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+          !                     & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol )    
           !--------------------------------------------------------------------------            
           ! ^^^^ END: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------   
@@ -7740,8 +7514,6 @@
             !
             !
             !   Solves in a loop all L0-norm problems with the fixed number of k=1,...,in_k_max of kits    (if in_start > 0)
-			!                                                OR
-            !   Solves in a loop all L0-norm problems with the fixed number of k=nkits,....nkits-in_k_max+1 of kits    (if in_start < 0)
             ! 
             ! Solves the unconstrained nonsmooth DC minimization problem
             !
@@ -7754,16 +7526,16 @@
             !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
             !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
             !
-			!         PARAMETERS in DBDC method:
-			!
+            !         PARAMETERS in DBDC method:
+            !
             !         * in_mrounds     : the maximum number of rounds in one main iteratioin
             !         * in_mit         : the maximum number of main iterations
             !         * in_mrounds_esc : the maximum number of rounds in escape procedure
-			!
+            !
             !         * in_b1          : the size of bundle B1
             !         * in_b2          : the size of bundle B2
             !         * in_b           : the size of bundle in escape procedure
-			!
+            !
             !         * in_m           : the descent parameter in main iteration
             !         * in_m_clarke    : the descent parameter in escape procedure
             !         * in_c           : the extra decrease parameter in main iteration
@@ -7771,7 +7543,7 @@
             !         * in_r_inc       : the increase parameter in main iteration
             !         * in_eps1        : the enlargement parameter
             !         * in_eps         : the stopping tolerance: proximity measure  
-            !         * in_crit_tol    : the stopping tolerance: criticality tolerance 			
+            !         * in_crit_tol    : the stopping tolerance: criticality tolerance          
             !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
             !
@@ -7803,37 +7575,38 @@
             !         * 'CPUtime'       : the CPU time (in seconds) REAL
             !
             ! NOTICE: * 'in_print' has to be 0, 1, 2 or 3. If it is NOT then DEFAULT value 1 is used.             
-            !         * 'in_start' has to be -4, -3, -2, -1, 1, 2, 3 or 4. If it is NOT then DEFAULT value 1 is used.             
+            !         * 'in_start' has to be 1, 2, 3 or 4. If it is NOT then DEFAULT value 2 is used.             
             
             !***********************************************************************************
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow       ! Number of rows in x (i.e. records)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol       ! Number of cols in x (i.e. features)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits      ! Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN) :: nrow                  ! Number of rows in x (i.e. records)
+               INTEGER(KIND = c_int), INTENT(IN) :: ncol                  ! Number of cols in x (i.e. features)
+               INTEGER(KIND = c_int), INTENT(IN) :: nkits                 ! Number of kits for features
                
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start   ! Starting point procedure used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print   ! Print used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_k_max   ! The maximum number of kits in the loop
-			   
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds              ! the maximum number of rounds in one main iteration
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mit                  ! the maximum number of main iterations
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds_esc       ! the maximum number of rounds in one escape procedure
-			   
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b1                   ! the size of bundle B1
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b2                   ! the size of bundle B2
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b                    ! the size of bundle in escape procedure
-			   
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m                    ! the descent parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m_clarke             ! the descent parameter in escape procedure
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_c                    ! the extra decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_dec                ! the decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_inc                ! the increase parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps1                 ! the enlargement parameter
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps                  ! the stopping tolerance: proximity measure  
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance 			   
-                
+               INTEGER(KIND = c_int), INTENT(IN) :: in_start              ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN) :: in_print              ! Print used
+               INTEGER(KIND = c_int), INTENT(IN) :: in_k_max              ! The maximum number of kits in the loop
+               
+               INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds              ! the maximum number of rounds in one main iteration
+               INTEGER(KIND=c_int), INTENT(IN) :: in_mit                  ! the maximum number of main iterations
+               INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
+               
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+               
+               REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+
+
             !--------------------------------------------------------------------------
             ! ^^^^ START: If Fortran code is used with R-C-interface ^^^^
             !--------------------------------------------------------------------------
@@ -7864,6 +7637,8 @@
            
            !***************************** LOCAL VARIABLES ************************************      
  
+               TYPE(set_info) :: info                         ! The set of information                     
+
                REAL(KIND=c_double) :: CPUtime                 ! the CPU time (in seconds)
 
                INTEGER(KIND=c_int) :: nft                     ! the dimension of the problem = the number of features in a predictor
@@ -7872,18 +7647,25 @@
                INTEGER(KIND=c_int) :: nk_max                  ! the maximum number of kits in the loop 
    
                REAL(KIND=c_double), DIMENSION(ncol+1) :: beta_solution    ! the solution vector beta obtained for the problem
-               REAL(KIND=c_double) :: f_solution                          ! the objective function value at the solution 'beta_solution'
 
-               REAL(KIND=c_double), DIMENSION(ncol+1,nkits) :: points     ! the beta_solutions for problem 3 for fixed k ('nkits' different starting points) 
-               REAL(KIND=c_double), DIMENSION(nkits) ::      f_points     ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
-               REAL(KIND=c_double), DIMENSION(ncol+1) ::       x_koe      ! The solution to Cox's proportional hazard model without regularization
+               REAL(KIND=c_double), DIMENSION(ncol+1,nkits) :: points     ! the beta_solutions for problem 4 for fixed k ('nkits' different starting points) 
+               REAL(KIND=c_double), DIMENSION(nkits) ::      f_points     ! the objective function values for problem 4 for fixed k ('nkits' different starting points)
+               REAL(KIND=c_double), DIMENSION(ncol+1) ::       x_koe      ! The solution to  problem 4  without regularization
                REAL(KIND=c_double), DIMENSION(ncol+1) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
                
+               REAL(KIND=c_double), DIMENSION(ncol+1,nkits) ::  x_solution      ! the beta solutions for the problem with fixed starting points and number of kits
+               REAL(KIND=c_double), DIMENSION(nkits) :: f_solution              ! the objective function values at the solution 'x_solution'
+               REAL(KIND=c_double) :: f_solution_DBDC                           ! the f_solution obtained from DBDC method
+        
+              
                REAL(KIND=c_double), DIMENSION(nrow,ncol) :: in_mX     ! predictor matrix (row is an observation)
                REAL(KIND=c_double), DIMENSION(nrow) :: in_mY          ! output values 
                INTEGER(KIND=c_int), DIMENSION(nkits,ncol) :: in_mK    ! kit matrix (row is a kit)
                REAL(KIND=c_double), DIMENSION(nkits) :: in_mC         ! kit costs                   
-
+              
+               REAL(KIND=c_double), DIMENSION(ncol,nrow) :: mXt       ! predictor matrix (column is an observation)
+               REAL(KIND=c_double), DIMENSION(nrow) :: mYt            ! Outputs
+               
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta     ! indices of kits in the solution 'beta_solution'
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
 
@@ -8012,6 +7794,12 @@
                INTEGER(KIND=c_int) :: kit_num, kit_num_ed   ! The number of kits in the current and previous solutions
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
                INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
+               
+               INTEGER(KIND=c_int), DIMENSION(nkits) :: mPrNum   ! The number of problems for threads
+               INTEGER(KIND=c_int) :: tread_num                  ! The number of thread
+               INTEGER(KIND=c_int) :: jaannos                    ! The residue in division
+               INTEGER(KIND=c_int) :: kokoosa                    ! The integer obtained in division
+               INTEGER(KIND=c_int) :: startind, j3               ! Help variables
 
                REAL(KIND=c_double) :: elapsed_time                  ! elapsed 'clock' time in seconds
                INTEGER(KIND=c_int) :: clock_start, clock_end, clock_rate  ! start and finish 'clock' time 
@@ -8019,24 +7807,36 @@
                CALL cpu_time(s_time)   ! Start CPU timing    
                CALL SYSTEM_CLOCK(COUNT_RATE=clock_rate) ! Find the rate
                CALL SYSTEM_CLOCK(COUNT=clock_start)     ! Start timing 'clock' time     
- 			   
+ 
+ 
+             ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
+               
                ! Maximum number of possible treads in parallellization
                max_threads = omp_get_max_threads()
-			   !max_threads = 1
                
-			   ! The initialization of parametrs used in DBDC methods
-			   CALL allocate_parameters(in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-		                                   & in_b, in_m_clarke, in_eps, in_crit_tol)
-			   
+               !max_threads = 1
+        
+               CALL omp_set_num_threads(max_threads)
+               
+               
+               tread_num = max_threads
+
+               WRITE(*,*) 'The number of threads', max_threads             
+               ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
+
+               ! The initialization of parametrs used in DBDC methods
+               CALL allocate_parameters(info, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                           & in_b, in_m_clarke, in_eps, in_crit_tol)
+               
                ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
                nft = ncol
                nk = nkits
-			   
-			   ! The maximum number of kits in the loop
-			   nk_max = min(nk,in_k_max)         ! Cannot be greater than nk
-			   nk_max = max(1,nk_max)            ! Cannot be smaller than 1
-			   
+               
+               ! The maximum number of kits in the loop
+               nk_max = min(nk,in_k_max)               ! Cannot be greater than nk
+               nk_max = max(1_c_int,nk_max)            ! Cannot be smaller than 1               
+               
                start = in_start       ! Starting point generation procedure
                iprint = in_print      ! Print option
               
@@ -8046,7 +7846,7 @@
                END IF   
 
                ! The default start is used if user specifieed value is not acceptable
-               IF ((ABS(start)> 4) .OR. (start == 0)) THEN
+               IF ((start > 4) .OR. (start <= 0)) THEN
                   start = 2_c_int
                END IF              
                
@@ -8062,7 +7862,7 @@
                agg_used = .TRUE.         ! Aggregation is used
                stepsize_used = .FALSE.   ! Simple stepsize determination is not used
           
-               scale_in_use = .TRUE.     ! The scaling of data is CANNOT be used (the user gives a SCALED DATA)
+               scale_in_use = .TRUE.     ! The scaling of data is used
             
                ed_sol_in_pen = .FALSE.
                !ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem
@@ -8073,13 +7873,13 @@
                mrho = (/0.2_c_double, 0.5_c_double, 1.0_c_double, 2.0_c_double, &
                      & 5.0_c_double, 10.0_c_double, 20.0_c_double, 50.0_c_double /) 
 
-                ! Problem 
-                problem1 = 4_c_int
-                problem2 = 4_c_int                
+               ! Problem 
+               problem1 = 4_c_int
+               problem2 = 4_c_int                
                
-                user_n = nft+1
+               user_n = nft+1
                 
-                tol_zero = (10.0_c_double)**(-6)
+               tol_zero = (10.0_c_double)**(-6)
        
                IF ( (iprint > 0) .OR. (iprint == -1) ) THEN 
                  IF (ed_sol_in_pen) THEN 
@@ -8117,29 +7917,29 @@
               !                       READING DATA MATRICES
               !---------------------------------------------------------------------------
           
-               ! OPEN(78,file=infileX,status='old',form='formatted')
-               ! DO i=1,nrecord
-                  ! READ(78,*) (in_mX(i,j),j=1,nft)
-               ! END DO
-               ! CLOSE(78)
+                ! OPEN(78,file=infileX,status='old',form='formatted')
+                ! DO i=1,nrecord
+                   ! READ(78,*) (in_mX(i,j),j=1,nft)
+                ! END DO
+                ! CLOSE(78)
             
-               ! OPEN(78,file=infileY,status='old',form='formatted')
-               ! DO i=1,nrecord
-                  ! READ(78,*) in_mY(i)
-               ! END DO
-               ! CLOSE(78)        
+                ! OPEN(78,file=infileY,status='old',form='formatted')
+                ! DO i=1,nrecord
+                   ! READ(78,*) in_mY(i)
+                ! END DO
+                ! CLOSE(78)        
 
-               ! OPEN(78,file=infileK,status='old',form='formatted')      
-               ! DO i=1,nk
-                  ! READ(78,*) (in_mK(i,j),j=1,nft)
-               ! END DO
-               ! CLOSE(78)
+                ! OPEN(78,file=infileK,status='old',form='formatted')      
+                ! DO i=1,nk
+                   ! READ(78,*) (in_mK(i,j),j=1,nft)
+                ! END DO
+                ! CLOSE(78)
             
-               ! OPEN(78,file=infileC,status='old',form='formatted')
-               ! DO i=1,nk
-                  ! READ(78,*) in_mC(i)
-               ! END DO
-               ! CLOSE(78)  
+                ! OPEN(78,file=infileC,status='old',form='formatted')
+                ! DO i=1,nk
+                   ! READ(78,*) in_mC(i)
+                ! END DO
+                ! CLOSE(78)  
               !--------------------------------------------------------------------------
               ! ^^^^ END: IF Fortran code is used without R-C-interface ^^^^
               !---------------------------------------------------------------------------
@@ -8186,44 +7986,6 @@
               !--------------------------------------------------------------------------
               !^^^^ END: IF Fortran code is used with R-C-interface ^^^^
               !---------------------------------------------------------------------------
-               
-            
-               ! WRITE(*,*) 'Matrix X populated:', in_mX
-               ! WRITE(*,*) 'Matrix Y populated:', in_mY
-               ! WRITE(*,*) 'Matrix K populated:', in_mK
-               ! WRITE(*,*) 'Vector C populated:', in_mC
-           
-               ! write(*,*) 'Values of nr, nc, and nk:'
-               ! write(*,*) nrecord
-               ! write(*,*) nft
-               ! write(*,*) nk
-
-               ! WRITE(*,*)
-               ! write(*,*) 'Matrix X (input features):'
-               ! DO i = 1, nrecord
-               !    write(*,*) 'row', i, ':', in_mX(i,:)
-               !    write(*,*) '------------------------' 
-               ! END DO
-
-               ! WRITE(*,*)
-               ! write(*,*) 'Matrix Y (time and label):'
-               ! DO i = 1, nrecord
-               !    write(*,*) 'output', i, ':', in_mY(i)
-               !    write(*,*) '------------------------' 
-               ! END DO
-                
-               ! WRITE(*,*)
-               ! write(*,*) 'Matrix K (kit structure):'
-               ! DO i = 1, nk
-               !    write(*,*) 'row', i, ':', in_mK(i,:)
-               !    write(*,*) '------------------------' 
-               ! END DO
-                
-               ! WRITE(*,*)
-               ! WRITE(*,*) 'costs:', in_mC
-               ! WRITE(*,*)
-
-               ! write(*,*) 'End of initialization'    
 
            
               !---------------------------------------------------------------------------
@@ -8231,59 +7993,61 @@
               !---------------------------------------------------------------------------
                    
                ! Allocation of data matrices in function.f95
-               CALL allocate_data_mse(nft,nrecord,nk,user_n)   
+               CALL allocate_data_mse(info,nft,nrecord,nk,nk)   
                
               !---------------------------------------------------------------------------
               !                     STORING DATA MATRICES 
               !---------------------------------------------------------------------------
               ! Notice: Matrices are transposed! => Each column presents either an observation or a kit!
-          
-              DO i = 1, nrecord
-                DO j = 1, nft
-                    mX(j,i) = in_mX(i,j)
-                END DO
-              END DO
-                  
-              DO i = 1, nrecord
-                mY_mse(i) = in_mY(i)
-              END DO    
-          
-              DO i = 1, nk
-                DO j = 1, nft
-                    mK(j,i) = in_mK(i,j)
-                END DO
-              END DO          
-          
-              DO i = 1, nk         
-                 mC(i) = in_mC(i)
-              END DO
-               
-             ! Scaling of data             
-              IF (scale_in_use) THEN
-                 CALL scaling_mse()
-              END IF               
+              
+              
+              !Transpose of matrix mX
+               DO i = 1, nrecord
+                 DO j = 1, nft
+                    mXt(j,i) = in_mX(i,j)
+                 END DO
+               END DO
+            
+               !Transpose of matrix mY          
+               DO i = 1, nrecord
+                    mYt(i) = in_mY(i)
+               END DO    
 
-			  ! The initialization of beta vector
-			  beta = 0.0_c_double
+              CALL allocate_matrices_mse(info, mXt, mYt, in_mK, in_mC,  & 
+                                      & nrecord, nft, nk)
+
+              ! Scaling of data 
+              IF (scale_in_use) THEN
+                  CALL scaling_mse(info)
+                  
+                 ! Original data matrix mXt is changed to the scaled one 
+                  CALL scaling_matrix_mse(info, mXt)
+                  
+              END IF  
+           
+
+              ! The initialization of beta vector
+              beta = 0.0_c_double
               
               ! The best beta_solution for Cox's proportional hazard model without regularization/penalization    
               
-              CALL set_k(nkits)           ! All kits can be used
+              CALL set_k(info, nkits)           ! All kits can be used
               
-              CALL DBDC_algorithm( f_solution, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
+              
+              CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
                             & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
-							& max_threads)            
+                            & info)            
                             
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
               !         * x_koe is utilized in formation of starting points   
               
                x_ed = 0.01_c_double    ! We initialize the previous solution, since we do not have a value for it 
                
-               
+              
                IF ((iprint > 0) .OR. (iprint == -1)) THEN
                  WRITE(*,*) 
-                 WRITE(*,*) 'Value of mean square error model without regularization:', f_solution
+                 WRITE(*,*) 'Value of mean square error model without regularization:', f_solution_DBDC
                  WRITE(*,*) 
                END IF 
                
@@ -8300,26 +8064,27 @@
               !                 SOLVING OF L0-NORM PROBLEM BEGINS 
               !---------------------------------------------------------------------------  
 
-
-
               !---------------------------------------------------------
               ! problems are solved in order k=1,2,...,nkits
               !---------------------------------------------------------               
                IF (start > 0) THEN   ! problem are solved in order k=1,2,...,nkits
                
-                 kit_num_ed = 0        ! The number of kits in the previous solution
-                 kits_beta_ed = 0      ! The kits in the previous solution
+                 kit_num_ed = 0           ! The number of kits in the previous solution
+                 kits_beta_ed = 0         ! The kits in the previous solution
+                 small = (10_c_double)**9 ! There is no previous solution known
                  
                  IF (start == 1) THEN
                     nstart = 1
                  ELSE IF (start == 2 .OR. start == 3) THEN
                     nstart = nk
                  ELSE IF (start == 4) THEN 
-                    nstart = start_max           ! The number of random starting points
+                    nstart = start_max        ! The number of random starting points
                  END IF 
-               
-                 !DO k = 1, nk                    ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
-                 DO k = 1, nk_max                 ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to nk_max
+                 
+                 !---------------------------------------------------------------------------------------------
+                 ! Solves in a loop all L0-norm problems with the fixed number of k=1,..., nk_max of kits    
+                 !---------------------------------------------------------------------------------------------
+                 DO k = 1, nk_max              ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to nk_max
                   
                   IF (iprint>=2 .OR. iprint == -1) THEN
                        WRITE(*,*) '-------------------------------------' 
@@ -8327,185 +8092,63 @@
                        
                   END IF
                   
-                  CALL set_k(k)                  ! The number of nonzero kits is fixed
-                  f_solution = (10.0_c_double)**10     ! The best value for this solution is not yet known (therefore a big value is set)
-                
-                   DO i = 1, nstart              ! Different starting points are looked through to solve the problem 3 with fixed number of nonzero kits
-                     x_0 = x_ed                  ! The base of the starting point is the previous solution (k-1 nonzero kits)
-                     mukana = .FALSE.           
-                     IF (start == 2 .OR. start == 3) THEN          ! Only nkits-k+1 starting points used             
-                       DO ii = 1, kit_num_ed       ! Then we check if the kit i belongs to the previous solution
-                         IF (i == kits_beta_ed(ii)) THEN   
-                           mukana = .TRUE.         ! 'mukana' tells if the kit i is in solution     
-                         END IF
-                       END DO
-                     END IF
-                     
-                     ! Is a new starting point generated?
-                     IF (start == 2) THEN
-                        IF(mukana) THEN
-                           new_start = .FALSE.
-                        ELSE
-                           new_start = .TRUE.
-                        END IF               
-                     ELSE
-                        new_start = .TRUE.
-                     END IF                  
-                                         
-                     
-                   IF ( new_start ) THEN       ! .TRUE. if a new starting point is generated
-                    
-                    IF ((start == 2) .OR. (start == 3)) THEN 
-                      DO ii = 1, nft 
-                        IF (mK(ii,i)==1) THEN
-                           x_0(ii) = x_koe(ii)    ! In starting poitnt x_0, we initialize features in kit i with values from solution x_koe
-                        END IF   
-                      END DO
-                    END IF  
-                    
-                    IF (start == 4) THEN ! A random starting point is generated
-                       x_0 = 0.01_c_double
-                       DO ii = 1, nk
-                         CALL RANDOM_NUMBER(random_num)
-                         mRand(ii) = random_num
-                         mRandInd(ii) = ii
-                       END DO 
-                       CALL heapsort_ind(mRand,mRandInd)
-                       !WRITE(*,*) mRand
-                       !WRITE(*,*) mRandInd                     
-                       DO ii = 1, k
-                          DO i2 = 1, nft 
-                            IF (mK(i2,mRandInd(ii))==1) THEN
-                              x_0(i2) = x_koe(i2)    ! In starting point x_0, we initialize features in kit i with values from solution x_koe
-                            END IF   
-                          END DO     
-                       END DO
-                    END IF                  
-                      
-                    run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
-                    num_rho = 0                 ! The selection of the first value of penalization parameter rho
+                  CALL set_k(info, k)            ! The number of nonzero kits is fixed
+                                   
+                  jaannos = MOD(nk,tread_num)    ! The residue in the division
+                  kokoosa = nk/tread_num         ! The integer part obtained from the division
                   
-                    IF (iprint >= 2) THEN
-                       WRITE(*,*) '-------------------------------------' 
-                       WRITE(*,*) 'New start point used.' 
-                    END IF
+                  mPrNum = kokoosa               ! The initialization of the number of problems for threads
+                  DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
+                     mPrNum(i) = mPrNum(i)+1                  
+                  END DO
+
+                  !----------------------------------------------------------
+                  ! Starting points for problem with fixed number of k kits 
+                  !----------------------------------------------------------
                   
-                    DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
+                  !$OMP PARALLEL DO PRIVATE(x_solution, f_solution, i) & 
+                  !$OMP FIRSTPRIVATE(x_ed, x_koe, kits_beta_ed, kit_num_ed)  &             
+                  !$OMP FIRSTPRIVATE(small, k, iprint, mrho)                 &  
+                  !$OMP FIRSTPRIVATE(mit, mrounds, mrounds_clarke)           &    
+                  !$OMP FIRSTPRIVATE(agg_used, stepsize_used)                &
+                  !$OMP FIRSTPRIVATE(problem1, problem2)                     &  
+                  !$OMP FIRSTPRIVATE(in_b1, in_b2, in_m, in_c, in_r_dec)     &  
+                  !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
+                  !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
+                  !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
+                  !$OMP FIRSTPRIVATE(mXt, mYt, in_mK, in_mC)                 &  
+                  !$OMP SHARED(points, f_points, mPrNum)               
                   
-                    num_rho = num_rho + 1       ! The update of the parameter rho
+                   DO i = 1, tread_num          ! Different starting points for threads are looked through to solve the problem 4 with fixed number of nonzero kits                   
                     
-                    IF (num_rho < 9) THEN
-                     SELECT CASE(num_rho)        ! The selection of the parameter rho
-                  
-                      CASE(1)
-                        rho = mrho(1)
-                      CASE(2)
-                        rho = mrho(2)                  
-                      CASE(3)
-                        rho = mrho(3)                  
-                      CASE(4)
-                        rho = mrho(4)              
-                      CASE(5)
-                        rho = mrho(5)                  
-                      CASE(6)
-                        rho = mrho(6)                  
-                      CASE(7)
-                        rho = mrho(7)                 
-                      CASE(8)
-                        rho = mrho(8)                             
-                     END SELECT 
-                    ELSE
-                      rho = 10.0_c_double * rho
-                      
-                      IF (num_rho>=24) THEN 
-                      run_stop = .TRUE.         ! Forced stop in optimization
-                      END IF 
-                    END IF
-                
-                    ! The optimization problem is solved fot the current rho and x_0
-     
-                    CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
-                            & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
-							& max_threads) 
+                      CALL solution_with_k_kits_mse(x_solution, f_solution, k, i, small, &
+                                               & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
+                                               & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
+                                               & agg_used, stepsize_used, nft, problem1, problem2, &
+                                               & mXt, mYt, in_mK, in_mC, nrecord,  & 
+                                               & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum)
                     
-                    IF (ed_sol_in_pen) THEN 
-                      x_0 = beta_solution   ! Starting point for the next round
-                    END IF    
-                    
-                  ! The number of zero components in beta vector is computed    
-                    help_counter = 0                      
-                    DO j = 1, nft         
-                      IF ( ABS(beta_solution(j)) < tol_zero) THEN
-                        help_counter = help_counter + 1
-                        beta_solution(j) = 0.0_c_double
-                      END IF
-                    END DO
-                   
-                    cost = 0.0_c_double      ! The initialization of the cost of 'beta_solution'
-                    kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
-                    kits_beta = 0            ! The initialization of kits in 'beta_solution'
-                  
-                    !Calculation of kits in solution
-                    DO j1 = 1, nk        ! Each kit is looked through
-                      kit_in_use = .FALSE.  
-                      DO j2 = 1, nft
-                        IF (mk(j2,j1)==1) THEN 
-                          IF ( ABS(beta_solution(j2)) >= tol_zero) THEN    ! If the condition is satisfied the kit j1 is in solution 'beta_solution'
-                             kit_in_use = .TRUE.                                  
-                          END IF
-                        END IF
-                      END DO
-                      IF (kit_in_use) THEN       ! Executed if kit j1 is in solution 'beta_solution'
-                        cost = cost + mC(j1)     ! The cost of kit j1 is taken into account
-                        kit_num = kit_num + 1    ! The number of kits is updated
-                        kits_beta(kit_num) = j1  ! The index of kit j1 is updated to table kits_beta                      
-                      END IF 
-                    END DO
-    
-                    ! We check if the optimization of problem 3 with k kits can be stopped            
-                    IF (kit_num <= k .OR. run_stop) THEN 
-                       IF (run_stop) THEN 
-                         f_solution = (10.0_c_double)**10
-                       END IF
-                       run_stop = .TRUE.     ! The optimization can be stopped
-                       DO j = 1, user_n
-                         points(j,i) = beta_solution(j)        ! We store the solution
-                       END DO       
-                       f1_current = f1(beta_solution,problem1,user_n)
-                       f2_current = f2(beta_solution,problem2,user_n)
-                       f_points(i) = f1_current-f2_current      ! We store the objective funtion value without penalization
-                    END IF               
-                      
-                    f1_current = f1(beta_solution,problem1,user_n)
-                    f2_current = f2(beta_solution,problem2,user_n)
-     
-                    IF (iprint > 2) THEN
-                       WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-                    END IF
-                    
-                    IF (run_stop) THEN
-                      IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
-                        WRITE(*,*)
-                        WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                      END IF  
-                      IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
-                        WRITE(*,*)
-                        WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-                      END IF
-                    END IF
-                    
-                    END DO
-                    
-                   ELSE
-                     DO j = 1, user_n
-                        points(j,i) = x_ed(j)
-                     END DO     
-                     f_points(i) = small
-                   END IF           
-             
-                   END DO
-                   
+                    ! Storing of the obtained solution and the corresponding objective value
+                    !$OMP CRITICAL 
+                     startind = 1
+                     IF (i > 1) THEN    
+                       DO j3 = 1, i-1
+                          startind = startind + mPrNum(j3)
+                       END DO   
+                     END IF                        
+                        
+                     DO j3 = 1, mPrNum(i)   
+                        DO j = 1, user_n
+                            points(j,startind+(j3-1)) = x_solution(j,startind+(j3-1))
+                        END DO     
+                      f_points(startind+j3-1) = f_solution(startind+j3-1)
+                     END DO  
+                    !$OMP END CRITICAL                    
+                        
+                   END DO          
+                  !$OMP END PARALLEL DO   
+                            
                    IF (start == 1) THEN 
                       small = f_points(1)
                       min_ind = 1
@@ -8515,7 +8158,7 @@
                      ! The selection of the best solution for problem 3 with k kits
                      small = (10.0_c_double)**9      ! The initialization of the smallest objective function values in table 'f_points'
                      min_ind = 0               ! The index of 'f_points' yielding the smallest value 
-                     DO i = 1, nk           ! The determination of the smallest objective function value
+                     DO i = 1, nk              ! The determination of the smallest objective function value
                        IF (small >= f_points(i)) THEN
                          small = f_points(i)
                          min_ind = i
@@ -8534,25 +8177,20 @@
                        END IF
                      END DO
                    END IF                  
-                  
+
                    ind = (k-1)*user_n  
                    DO i = 1, user_n
                      x_ed(i) = points(i,min_ind)            ! The beta solution yielding the smallest objective function value is set as the previous solution
                      beta(ind+i) = points(i,min_ind)        ! The beta solution yielding the smallest objective function value is stored to solution vector 
                    END DO
-              
-                   IF (iprint >= 1) THEN
-                     !WRITE(*,*) 'Objective function value for problem 3 with', k, 'nonzero kits:' , small
-                   END IF
-              
+				   
                    help_counter = 0           
                    DO j = 1, nft         ! The number of zero components in the previous beta vector is computed
                       IF ( ABS(x_ed(j)) < tol_zero ) THEN
                         help_counter = help_counter+1
                       END IF
                    END DO
-
-
+                   
                    cost = 0.0_c_double         ! The initialization of the previous solution
                    kit_num_ed = 0              ! The initialization of the number of kits in the previous solution
                    kits_beta_ed = 0            ! The initialization of kits in the previous solution                    
@@ -8561,19 +8199,19 @@
                    DO j1 = 1, nk    ! Each kit is looked through
                      kit_in_use = .FALSE.
                      DO j2 = 1, nft
-                       IF (mk(j2,j1)==1) THEN 
+                       IF (info%mk(j2,j1)==1) THEN 
                          IF ( ABS(x_ed(j2)) >= tol_zero ) THEN 
                            kit_in_use = .TRUE.           
                          END IF
                        END IF
                      END DO
                      IF (kit_in_use) THEN              ! Executed if kit j1 is in the previous solution
-                       cost = cost + mC(j1)            ! The cost of kit j1 is taken into account
+                       cost = cost + info%mC(j1)            ! The cost of kit j1 is taken into account
                        kit_num_ed = kit_num_ed + 1     ! The number of kits is updated
                        kits_beta_ed(kit_num_ed) = j1   ! The index of kit j1 is updated to table kits_beta                 
                      END IF 
                    END DO       
-
+ 
  
                    IF ((iprint>=2) .OR. (iprint == -1)) THEN 
                      WRITE(*,*)
@@ -8597,336 +8235,6 @@
                      & cost, kit_num_ed, kits_beta_ed(1:kit_num_ed)                
                    END IF
                    
-                 END DO
-              
-              !---------------------------------------------------------
-              ! problems are solved in order k=nkits,nkits-1,...,1
-              !---------------------------------------------------------      
-              ELSE     
-
-                 kit_num_ed = 0        ! The number of kits in the previous solution
-                 kits_beta_ed = 0      ! The kits in the previous solution
-                 small = 100000.0_c_double
-                 
-                 IF (start == -1) THEN
-                    nstart = 1
-                 ELSE IF (start == -2 .OR. start == -3 ) THEN
-                    nstart = nk
-                 ELSE IF (start == -4) THEN     
-                    nstart = start_max
-                 END IF 
-               
-                 !DO k = nk, 1, -1                     ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from k to 1
-                 DO k = nk, nk-nk_max+1, -1            ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from k to k-nk_max+1
-                  
-                  IF ((iprint>=2) .OR. (iprint==-1)) THEN
-                       WRITE(*,*)
-                       WRITE(*,*) '-------------------------------------' 
-                       WRITE(*,*) 'PROBLEM with', k, 'kits' 
-                  END IF                  
-                  CALL set_k(k)                 ! The number of nonzero kits is fixed
-                  f_solution = 1000000.0_c_double     ! The best value for this solution is not yet known (therefore a big value is set)
-                
-                   DO i = 1, nstart              ! Different starting points are looked through to solve the problem 3 with fixed number of nonzero kits
-                     x_0 = x_ed                  ! The base of the starting point is the previous solution 
-                     mukana = .FALSE.
-                     IF (start == -2 .OR. start == -3 ) THEN              
-                       DO ii = 1, kit_num_ed       ! Then we check if the kit i belongs to the previous solution
-                         IF (i == kits_beta_ed(ii)) THEN   
-                           mukana = .TRUE.         ! 'mukana' tells if the kit i is in solution  
-                         END IF
-                       END DO
-                     END IF
-                     
-                     IF (start == -2) THEN
-                        IF(mukana .OR. (nk==k .AND. i==1)) THEN
-                           new_start = .TRUE.
-                        ELSE
-                           new_start = .FALSE.
-                        END IF
-                     ELSE 
-                        new_start = .TRUE.
-                     END IF
-                    
-                     
-                   IF (new_start) THEN    ! .TRUE. if new starting point is generated
-                     
-                     IF (k==nk) THEN   ! All the kits are in the solution. Thus, the solution x_koe is the optimal solution for the problem and a good starting point
-                        x_0 = x_koe
-                     END IF                  
-                     
-                     IF (mukana) THEN 
-                        DO ii = 1, nft 
-                           IF (mK(ii,i)==1) THEN
-                             x_0(ii) = 0.0_c_double        ! In starting point x_0, we initialize features in kit i with value 0
-                           END IF   
-                        END DO
-                     END IF
-                     
-                    IF (start == -3 .AND. (.NOT. mukana)) THEN
-                       DO ii = 1, nft 
-                         IF (mK(ii,i)==1) THEN
-                           x_0(ii) = x_koe(ii)        ! In starting poitnt x_0, we initialize features in kit i with values from x_koe belonging to kit i
-                         END IF   
-                       END DO                    
-                    END IF  
-                    
-                    IF (start == -4 .AND. (.NOT. k==nk) ) THEN
-                       DO ii = 1, nk
-                         CALL RANDOM_NUMBER(random_num)
-                         mRand(ii) = random_num
-                         mRandInd(ii) = ii
-                       END DO 
-                       CALL heapsort_ind(mRand,mRandInd)
-                       !!!WRITE(*,*) mRandInd                      
-                       IF (k > 3) THEN
-                         nremoved = 0
-                         ii = 1
-                         DO WHILE (nremoved < 2 .AND. ii <= nk) 
-                            DO i2 = 1, kit_num_ed       ! Then we check if the kit i belongs to the previous solution
-                              IF (mRandInd(ii) == kits_beta_ed(i2)) THEN 
-                                 DO iii = 1, nft 
-                                   IF (mK(iii,mRandInd(ii))==1) THEN
-                                      x_0(iii) = 0.0_c_double    ! In starting point x_0, we initialize features in kit mRandInd(ii) with value 0
-                                   END IF   
-                                 END DO 
-                                 nremoved = nremoved + 1
-                              END IF
-                            END DO                          
-                            ii = ii + 1
-                         END DO   
-                       ELSE 
-                         nremoved = 0
-                         ii = 1
-                         DO WHILE (nremoved < 1 .AND. ii <= nk) 
-                            DO i2 = 1, kit_num_ed       ! Then we check if the kit i belongs to the previous solution
-                              IF (mRandInd(ii) == kits_beta_ed(i2)) THEN 
-                                 DO iii = 1, nft 
-                                   IF (mK(iii,mRandInd(ii))==1) THEN
-                                      x_0(iii) = 0.0_c_double    ! In starting point x_0, we initialize features in kit mRandInd(ii) with value 0
-                                   END IF   
-                                 END DO
-                                 nremoved = nremoved + 1
-                              END IF
-                            END DO                          
-                            ii = ii + 1
-                         END DO                          
-                       END IF 
-                    END IF
-                    
-                    run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
-                    num_rho = 0                 ! The selection of the first value of penalization parameter rho
-                  
-                    IF (iprint >= 2) THEN
-                       WRITE(*,*) '-------------------------------------' 
-                       WRITE(*,*) 'New start point used'
-                    END IF
-                  
-                    DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
-                  
-                    num_rho = num_rho + 1       ! The update of the parameter rho
-                    
-                    IF (num_rho < 9) THEN
-                     SELECT CASE(num_rho)        ! The selection of the parameter rho
-                  
-                      CASE(1)
-                        rho = mrho(1)
-                      CASE(2)
-                        rho = mrho(2)                  
-                      CASE(3)
-                        rho = mrho(3)                  
-                      CASE(4)
-                        rho = mrho(4)              
-                      CASE(5)
-                        rho = mrho(5)                  
-                      CASE(6)
-                        rho = mrho(6)                  
-                      CASE(7)
-                        rho = mrho(7)                 
-                      CASE(8)
-                        rho = mrho(8)                            
-                     END SELECT 
-                    ELSE
-                      rho = 10.0_c_double * rho
-                      
-                      IF (num_rho>=24) THEN 
-                      run_stop = .TRUE.         ! Forced stop in optimization
-                      END IF 
-                    END IF
-                
-                    ! The optimization problem is solved fot the current rho and x_0
-     
-                    CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
-                            & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
-							& max_threads) 
-            
-                    IF (ed_sol_in_pen) THEN 
-                      x_0 = beta_solution   ! Starting point for the next round
-                    END IF    
-                   
-                    help_counter = 0           
-                    DO j = 1, nft         ! The number of zero components in beta vector is computed
-                      IF ( ABS(beta_solution(j)) < tol_zero) THEN
-                        help_counter = help_counter +1
-                        beta_solution(j) = 0.0_c_double
-                      END IF
-                    END DO
-                                
-                    cost = 0.0_c_double            ! The initialization of the cost of 'beta_solution'
-                    kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
-                    kits_beta = 0            ! The initialization of kits in 'beta_solution'
-                  
-                    !Calculation of kits in solution
-                    DO j1 = 1, nk        ! Each kit is looked through
-                      kit_in_use = .FALSE.  
-                      DO j2 = 1, nft
-                        IF (mk(j2,j1)==1) THEN 
-                          IF ( ABS(beta_solution(j2)) >= tol_zero) THEN    ! If the condition is satisfied the kit j1 is in solution 'beta_solution'
-                             kit_in_use = .TRUE.                                  
-                          END IF
-                        END IF
-                      END DO
-                      IF (kit_in_use) THEN       ! Executed if kit j1 is in solution 'beta_solution'
-                        cost = cost + mC(j1)     ! The cost of kit j1 is taken into account
-                        kit_num = kit_num + 1    ! The number of kits is updated
-                        kits_beta(kit_num) = j1  ! The index of kit j1 is updated to table kits_beta                      
-                      END IF 
-                    END DO
-                    
-                    ! We check if the optimization of problem 3 with k kits can be stopped            
-                    IF (kit_num <= k .OR. run_stop) THEN 
-                       IF (run_stop) THEN 
-                         f_solution = (10.0_c_double)**7
-                       END IF
-                       run_stop = .TRUE.     ! The optimization can be stopped
-                       DO j = 1, user_n
-                         points(j,i) = beta_solution(j)        ! We store the solution
-                       END DO       
-                       f1_current = f1(beta_solution,problem1,user_n)
-                       f2_current = f2(beta_solution,problem2,user_n)
-                       f_points(i) = f1_current-f2_current      ! We store the objective funtion value without penalization
-                    END IF               
-                                
-                    f1_current = f1(beta_solution,problem1,user_n)
-                    f2_current = f2(beta_solution,problem2,user_n)
-
-                    IF (iprint > 2) THEN
-                       WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-                    END IF 
-
-                    IF (run_stop) THEN                  
-                    IF (iprint >= 2 .AND. (kit_num <= k)) THEN   
-                      WRITE(*,*)
-                      WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                    END IF  
-                    IF (iprint >=2 .AND. (kit_num > k)) THEN                                      
-                      WRITE(*,*)
-                      WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-                    END IF
-                    END IF
-                  
-                    END DO
-                    
-                   ELSE
-                     DO j = 1, user_n
-                        points(j,i) = x_ed(j)
-                     END DO     
-                     f_points(i) = 100000000000.0_c_double
-                   END IF           
-             
-                   END DO
-                   
-                   IF (start == -1) THEN 
-                      small = f_points(1)
-                      min_ind = 1
-                   END IF 
-                   
-                   IF (start == -2 .OR. start == -3) THEN 
-                     ! The selection of the best solution for problem 3 with k kits
-                     small = 10000000.0_c_double     ! The initialization of the smallest objective function values in table 'f_points'
-                     min_ind = 0               ! The index of 'f_points' yielding the smallest value 
-                     DO i = 1, nk           ! The determination of the smallest objective function value
-                       IF (small >= f_points(i)) THEN
-                         small = f_points(i)
-                         min_ind = i
-                       END IF
-                     END DO
-                   END IF 
-                   
-                   IF (start == -4) THEN 
-                     ! The selection of the best solution for problem 3 with k kits
-                     small = 10000000.0_c_double     ! The initialization of the smallest objective function values in table 'f_points'
-                     min_ind = 0               ! The index of 'f_points' yielding the smallest value 
-                     DO i = 1, nstart          ! The determination of the smallest objective function value
-                       IF (small >= f_points(i)) THEN
-                         small = f_points(i)
-                         min_ind = i
-                       END IF
-                     END DO
-                   END IF                      
-                               
-                   ind = (k-1)*user_n  
-                   DO i = 1, user_n
-                     x_ed(i) = points(i,min_ind)            ! The beta solution yielding the smallest objective function value is set as the previous solution
-                     beta(ind+i) = points(i,min_ind)        ! The beta solution yielding the smallest objective function value is stored to solution vector 
-                   END DO
-              
-                   IF (iprint >= 1) THEN
-                     ! WRITE(*,*) 'Objective function value for problem 3 with', k, 'nonzero kits:' , small
-                   END IF
-              
-                   help_counter = 0           
-                   DO j = 1, nft         ! The number of zero components in the previous beta vector is computed
-                      IF ( ABS(x_ed(j)) < tol_zero ) THEN
-                        help_counter = help_counter+1
-                      END IF
-                   END DO
-
-                   cost = 0.0_c_double               ! The initialization of the previous solution
-                   kit_num_ed = 0              ! The initialization of the number of kits in the previous solution
-                   kits_beta_ed = 0            ! The initialization of kits in the previous solution                    
-
-                   !Calculation of kits in the previous solution
-                   DO j1 = 1, nk    ! Each kit is looked through
-                     kit_in_use = .FALSE.
-                     DO j2 = 1, nft
-                       IF (mk(j2,j1)==1) THEN 
-                         IF ( ABS(x_ed(j2)) >= tol_zero ) THEN 
-                           kit_in_use = .TRUE.           
-                         END IF
-                       END IF
-                     END DO
-                     IF (kit_in_use) THEN              ! Executed if kit j1 is in the previous solution
-                       cost = cost + mC(j1)            ! The cost of kit j1 is taken into account
-                       kit_num_ed = kit_num_ed + 1     ! The number of kits is updated
-                       kits_beta_ed(kit_num_ed) = j1      ! The index of kit j1 is updated to table kits_beta                 
-                     END IF 
-                   END DO  
-                   
-                   IF ((iprint>=2) .OR. (iprint == -1)) THEN 
-                     WRITE(*,*)
-                     WRITE(*,*) '-**--**--**--**--**--**--**--**--**--**--**--**-'
-                     WRITE(*,*) 'Information about the best solution:'
-                     WRITE(*,*)                  
-                     WRITE(*,*)  '  f=',small 
-                     WRITE(*,*)  '  number of zero elements=',help_counter
-                     WRITE(*,*)  '  number of nonzero elements=',nft-help_counter 
-                     WRITE(*,*)  '  cost=',cost
-                     WRITE(*,*)  '  number of kits=',kit_num_ed 
-                     WRITE(*,*)  '  kits=',kits_beta_ed(1:kit_num_ed)    
-                     WRITE(*,*)                  
-                     WRITE(*,*) '-**--**--**--**--**--**--**--**--**--**--**--**-'
-                     WRITE(*,*)               
-                     
-                   END IF
- 
-                   IF (iprint==1) THEN
-                     WRITE(*,*) small, help_counter, nft-help_counter, &
-                     & cost, kit_num_ed, kits_beta_ed(1:kit_num_ed)                
-                   END IF
-            
-                    
                  END DO
 
               END IF              
@@ -8940,22 +8248,24 @@
               !                 SOLUTION VECTORS beta and OBJECTIVE VALUES fperk
               !---------------------------------------------------------------------------                
 
+
+
               IF (scale_in_use) THEN     ! Rescaling
                  
-                 CALL set_k(nk)               
-                 user_lambda = 0.0_c_double
-                 CALL rescaling_mse()        ! the rescaling of data 
-                 
-                 DO k = 1, nk         ! Each solution is rescaled
+                 CALL set_k(info, nk)               
+                 info%user_lambda = 0.0_c_double
+                 CALL rescaling_mse(info)        ! the rescaling of data 
+                  
+                 DO k = 1, nk                    ! Each solution is rescaled
                    ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
                         beta_solution(i) = beta(ind+i)
                    END DO
-                   CALL rescaling_beta_mse(beta_solution)         ! Rescaling of solution
-                   f1_current = f1(beta_solution,problem1,user_n) ! The f_1 value 
-                   f2_current = f2(beta_solution,problem1,user_n) ! The f_2 value
-                   fperk(k) = f1_current-f2_current               ! The objective function value for problem 4 with k nonzero kits 
+                   CALL rescaling_beta_mse(info, beta_solution)        ! Rescaling of solution
+                   f1_current = f1(info,beta_solution,problem1,user_n) ! The f_1 value 
+                   f2_current = f2(info,beta_solution,problem1,user_n) ! The f_2 value
+                   fperk(k) = f1_current-f2_current                    ! The objective function value for problem 4 with k nonzero kits 
                    WRITE(*,*) 'f',k,':', fperk(k)
                    DO i = 1, user_n 
                       beta(ind+i) = beta_solution(i)        ! the beta vector for problem 4 with k nonzero kits
@@ -8964,24 +8274,42 @@
                  END DO 
               ELSE ! No rescaling
               
-                CALL set_k(nk)               
+                CALL set_k(info,nk)               
+                 info%user_lambda = 0.0_c_double
                  
-                 DO k = 1, nk         
+                 DO k = 1, nk-1         
                    ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
                         beta_solution(i) = beta(ind+i)
                    END DO
-                   f1_current = f1(beta_solution,problem1,user_n) ! The f_1 value 
-                   f2_current = f2(beta_solution,problem2,user_n) ! The f_2 value
-                   fperk(k) = f1_current-f2_current               ! The objective function value for problem 4 with k nonzero kits         
+                   f1_current = f1(info,beta_solution,problem1,user_n) ! The f_1 value 
+                   f2_current = f2(info,beta_solution,problem2,user_n) ! The f_2 value
+                   fperk(k) = f1_current-f2_current                    ! The objective function value for problem 4 with k nonzero kits         
+                    WRITE(*,*) 'f',k,':', fperk(k)
                    DO i = 1, user_n 
                       beta(ind+i) = beta_solution(i)        ! the beta vector for problem 4 with k nonzero kits
                    END DO       
-                   
-                 END DO               
+
+                 END DO   
+                 
+                   ind = (nk-1)*user_n
+                   ! The solution under consideration is stored to 'beta_solution' vector
+                   DO i = 1, user_n
+                        beta_solution(i) = x_koe(i)
+                   END DO
+                   f1_current = f1(info,beta_solution,problem1,user_n) ! The f_1 value 
+                   f2_current = f2(info,beta_solution,problem2,user_n) ! The f_2 value
+                   fperk(k) = f1_current-f2_current                    ! The objective function value for problem 4 with k nonzero kits         
+                    WRITE(*,*) 'f',k,':', fperk(k)
+                   DO i = 1, user_n 
+                      beta(ind+i) = beta_solution(i)        ! the beta vector for problem 4 with k nonzero kits
+                   END DO    
+
+                 
             
-              END IF    
+              END IF       
+
    
               !--------------------------------------------------------------------------
               !                 SOLUTION VECTORS beta and OBJECTIVE VALUES fperk COMPLETED
@@ -8993,14 +8321,14 @@
              CALL SYSTEM_CLOCK(COUNT=clock_end) ! Stop timing 'clock' time
            
              ! Calculate the elapsed 'clock' time in seconds:
-             elapsed_time=(1.0_c_double*clock_end-clock_start)/clock_rate   			 
-			 
+             elapsed_time=(1.0_c_double*clock_end-clock_start)/clock_rate                
+             
              
              IF ((iprint >= 1) .OR. (iprint == -1)) THEN               
                  WRITE(*,*) 'Used CPU:', cpu   , 'Elapsed time:', elapsed_time             
              END IF
        
-             CALL deallocate_data_mse() 
+             CALL deallocate_data_mse(info) 
                 
 
          END SUBROUTINE oscar_mse
@@ -9026,9 +8354,9 @@
     ! ^^^^ START: IF Fortran code is used with R-C-interface ^^^^
     !--------------------------------------------------------------------------        
           SUBROUTINE oscar_logistic(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
-		& in_print, in_start, in_k_max, &
-		& in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-		& in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol ) &		
+       & in_print, in_start, in_k_max, &
+       & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+       & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol ) &     
         & BIND(C, name = "oscar_logistic_f_")              
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -9040,7 +8368,9 @@
           !--------------------------------------------------------------------------    
           ! SUBROUTINE oscar_logistic(infileX, infileY, infileK, infileC,  &
           !                     & nrow, ncol, nkits, &
-          !                     & beta, fperk, in_print, in_start)  
+          !                     & beta, fperk, in_print, in_start, in_k_max, &
+          !                     & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+          !                     & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol)                                
           !--------------------------------------------------------------------------            
           ! ^^^^ END: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------   
@@ -9058,8 +8388,6 @@
             !
             !
             !   Solves in a loop all L0-norm problems with the fixed number of k=1,...,in_k_max of kits    (if in_start > 0)
-			!                                                OR
-            !   Solves in a loop all L0-norm problems with the fixed number of k=nkits,....nkits-in_k_max+1 of kits    (if in_start < 0)
             ! 
             ! Solves the unconstrained nonsmooth DC minimization problem
             !
@@ -9072,16 +8400,16 @@
             !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
             !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
             !
-			!         PARAMETERS in DBDC method:
-			!
+            !         PARAMETERS in DBDC method:
+            !
             !         * in_mrounds     : the maximum number of rounds in one main iteratioin
             !         * in_mit         : the maximum number of main iterations
             !         * in_mrounds_esc : the maximum number of rounds in escape procedure
-			!
+            !
             !         * in_b1          : the size of bundle B1
             !         * in_b2          : the size of bundle B2
             !         * in_b           : the size of bundle in escape procedure
-			!
+            !
             !         * in_m           : the descent parameter in main iteration
             !         * in_m_clarke    : the descent parameter in escape procedure
             !         * in_c           : the extra decrease parameter in main iteration
@@ -9089,7 +8417,7 @@
             !         * in_r_inc       : the increase parameter in main iteration
             !         * in_eps1        : the enlargement parameter
             !         * in_eps         : the stopping tolerance: proximity measure  
-            !         * in_crit_tol    : the stopping tolerance: criticality tolerance 			
+            !         * in_crit_tol    : the stopping tolerance: criticality tolerance          
             !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
             !
@@ -9121,38 +8449,36 @@
             !         * 'CPUtime'       : the CPU time (in seconds) REAL
             !
             ! NOTICE: * 'in_print' has to be 0, 1, 2 or 3. If it is NOT then DEFAULT value 1 is used.             
-            !         * 'in_start' has to be -4, -3, -2, -1, 1, 2, 3 or 4. If it is NOT then DEFAULT value 1 is used.             
+            !         * 'in_start' has to be  1, 2, 3 or 4. If it is NOT then DEFAULT value 2 is used.             
             
             !***********************************************************************************
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow       ! Number of rows in x (i.e. records)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol       ! Number of cols in x (i.e. features)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits      ! Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN)     :: nrow       ! Number of rows in x (i.e. records)
+               INTEGER(KIND = c_int), INTENT(IN)     :: ncol       ! Number of cols in x (i.e. features)
+               INTEGER(KIND = c_int), INTENT(IN)     :: nkits      ! Number of kits for features
                
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_start   ! Starting point procedure used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_print   ! Print used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: in_k_max   ! The maximum number of kits in the loop
-			   
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds              ! the maximum number of rounds in one main iteration
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mit                  ! the maximum number of main iterations
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds_esc       ! the maximum number of rounds in one escape procedure
-			   
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b1                   ! the size of bundle B1
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b2                   ! the size of bundle B2
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b                    ! the size of bundle in escape procedure
-			   
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m                    ! the descent parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m_clarke             ! the descent parameter in escape procedure
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_c                    ! the extra decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_dec                ! the decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_inc                ! the increase parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps1                 ! the enlargement parameter
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps                  ! the stopping tolerance: proximity measure  
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance 			   
-        
-        
+               INTEGER(KIND = c_int), INTENT(IN)    :: in_start    ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN)    :: in_print    ! Print used
+               INTEGER(KIND = c_int), INTENT(IN)    :: in_k_max    ! The maximum number of kits in the loop
+               
+               INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds              ! the maximum number of rounds in one main iteration
+               INTEGER(KIND=c_int), INTENT(IN) :: in_mit                  ! the maximum number of main iterations
+               INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
+               
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+               
+               REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance    
         
             !--------------------------------------------------------------------------
             ! ^^^^ START: If Fortran code is used with R-C-interface ^^^^
@@ -9183,6 +8509,8 @@
                
            
            !***************************** LOCAL VARIABLES ************************************      
+
+               TYPE(set_info) :: info           ! The set of information                     
  
                REAL(KIND=c_double) :: CPUtime                 ! the CPU time (in seconds)
 
@@ -9192,18 +8520,24 @@
                INTEGER(KIND=c_int) :: nk_max                  ! the maximum number of kits in the loop
    
                REAL(KIND=c_double), DIMENSION(ncol+1) :: beta_solution    ! the solution vector beta obtained for the problem
-               REAL(KIND=c_double) :: f_solution                          ! the objective function value at the solution 'beta_solution'
 
                REAL(KIND=c_double), DIMENSION(ncol+1,nkits) :: points     ! the beta_solutions for problem 3 for fixed k ('nkits' different starting points) 
                REAL(KIND=c_double), DIMENSION(nkits) ::      f_points     ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
                REAL(KIND=c_double), DIMENSION(ncol+1) ::       x_koe      ! The solution to Cox's proportional hazard model without regularization
                REAL(KIND=c_double), DIMENSION(ncol+1) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
+
+               REAL(KIND=c_double), DIMENSION(ncol+1,nkits) ::  x_solution      ! the beta solutions for the problem with fixed starting points and number of kits (for all starting points)
+               REAL(KIND=c_double), DIMENSION(nkits) :: f_solution              ! the objective function values at the solution 'x_solution' (for all starting points)
+               REAL(KIND=c_double) :: f_solution_DBDC                           ! the f_solution obtained from DBDC method
                
                REAL(KIND=c_double), DIMENSION(nrow,ncol) :: in_mX     ! predictor matrix (row is an observation)
                INTEGER(KIND=c_int), DIMENSION(nrow) :: in_mY          ! output values 
                INTEGER(KIND=c_int), DIMENSION(nkits,ncol) :: in_mK    ! kit matrix (row is a kit)
                REAL(KIND=c_double), DIMENSION(nkits) :: in_mC         ! kit costs                   
 
+               REAL(KIND=c_double), DIMENSION(ncol,nrow) :: mXt       ! predictor matrix (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(nrow) :: mYt            ! Outputs  
+               
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta     ! indices of kits in the solution 'beta_solution'
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
 
@@ -9333,29 +8667,44 @@
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
                INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
 
+               INTEGER(KIND=c_int), DIMENSION(nkits) :: mPrNum   ! The number of problems for threads
+               INTEGER(KIND=c_int) :: tread_num                  ! The number of thread
+               INTEGER(KIND=c_int) :: jaannos                    ! The residue in division
+               INTEGER(KIND=c_int) :: kokoosa                    ! The integer obtained in division
+               INTEGER(KIND=c_int) :: startind, j3               ! Help variables
+
                REAL(KIND=c_double) :: elapsed_time                  ! elapsed 'clock' time in seconds
                INTEGER(KIND=c_int) :: clock_start, clock_end, clock_rate  ! start and finish 'clock' time 
                 
                CALL cpu_time(s_time)   ! Start CPU timing    
                CALL SYSTEM_CLOCK(COUNT_RATE=clock_rate) ! Find the rate
                CALL SYSTEM_CLOCK(COUNT=clock_start)     ! Start timing 'clock' time     
- 			   
+               
+             ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
+               
                ! Maximum number of possible treads in parallellization
                max_threads = omp_get_max_threads()
-			   !max_threads = 1
+                   
+               !max_threads = 1
                
-			   ! The initialization of parametrs used in DBDC methods
-			   CALL allocate_parameters(in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-		                                   & in_b, in_m_clarke, in_eps, in_crit_tol)
-			   
+               CALL omp_set_num_threads(max_threads)
+               tread_num = max_threads
+
+               WRITE(*,*) 'The number of threads', max_threads             
+               ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
+
+               ! The initialization of parametrs used in DBDC methods
+               CALL allocate_parameters(info, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                           & in_b, in_m_clarke, in_eps, in_crit_tol)
+               
                ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
                nft = ncol
                nk = nkits
-			   
-			   ! The maximum number of kits in the loop
-			   nk_max = min(nk,in_k_max)         ! Cannot be greater than nk
-			   nk_max = max(1,nk_max)            ! Cannot be smaller than 1
+               
+               ! The maximum number of kits in the loop
+               nk_max = min(nk,in_k_max)         ! Cannot be greater than nk
+               nk_max = max(1,nk_max)            ! Cannot be smaller than 1
               
                start = in_start       ! Starting point generation procedure
                iprint = in_print      ! Print option
@@ -9366,7 +8715,7 @@
                END IF   
 
                ! The default start is used if user specifieed value is not acceptable
-               IF ((ABS(start)> 4) .OR. (start == 0)) THEN
+               IF ((start> 4) .OR. (start <= 0)) THEN
                   start = 2_c_int
                END IF              
                
@@ -9376,13 +8725,11 @@
                mrounds = in_mrounds            ! maximum number of rounds during one 'main iterations'
                mit = in_mit                    ! maximum number of 'main iteration'
                mrounds_clarke = in_mrounds_esc ! maximum number of rounds during one 'Clarke stationary' algorithm
+                    
+               agg_used = .TRUE.          ! Aggregation is used
+               stepsize_used = .FALSE.    ! Simple stepsize determination is not used
           
-               iprint_DBDC = 0_c_int           ! basic print of intermediate results and extended print of final results
-          
-               agg_used = .TRUE.         ! Aggregation is used
-               stepsize_used = .FALSE.   ! Simple stepsize determination is not used
-          
-               scale_in_use = .TRUE.    ! The scaling of data is CANNOT BE used (the user gives a SCALED DATA)
+               scale_in_use = .TRUE.      ! The scaling of data is used
             
                ed_sol_in_pen = .FALSE.
                !ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem
@@ -9437,29 +8784,29 @@
               !                       READING DATA MATRICES
               !---------------------------------------------------------------------------
           
-               ! OPEN(78,file=infileX,status='old',form='formatted')
-               ! DO i=1,nrecord
-                  ! READ(78,*) (in_mX(i,j),j=1,nft)
-               ! END DO
-               ! CLOSE(78)
+                ! OPEN(78,file=infileX,status='old',form='formatted')
+                ! DO i=1,nrecord
+                   ! READ(78,*) (in_mX(i,j),j=1,nft)
+                ! END DO
+                ! CLOSE(78)
             
-               ! OPEN(78,file=infileY,status='old',form='formatted')
-               ! DO i=1,nrecord
-                  ! READ(78,*) in_mY(i)
-               ! END DO
-               ! CLOSE(78)        
+                ! OPEN(78,file=infileY,status='old',form='formatted')
+                ! DO i=1,nrecord
+                   ! READ(78,*) in_mY(i)
+                ! END DO
+                ! CLOSE(78)        
 
-               ! OPEN(78,file=infileK,status='old',form='formatted')      
-               ! DO i=1,nk
-                  ! READ(78,*) (in_mK(i,j),j=1,nft)
-               ! END DO
-               ! CLOSE(78)
+                ! OPEN(78,file=infileK,status='old',form='formatted')      
+                ! DO i=1,nk
+                   ! READ(78,*) (in_mK(i,j),j=1,nft)
+                ! END DO
+                ! CLOSE(78)
             
-               ! OPEN(78,file=infileC,status='old',form='formatted')
-               ! DO i=1,nk
-                  ! READ(78,*) in_mC(i)
-               ! END DO
-               ! CLOSE(78)  
+                ! OPEN(78,file=infileC,status='old',form='formatted')
+                ! DO i=1,nk
+                   ! READ(78,*) in_mC(i)
+                ! END DO
+                ! CLOSE(78)  
               !--------------------------------------------------------------------------
               ! ^^^^ END: IF Fortran code is used without R-C-interface ^^^^
               !---------------------------------------------------------------------------
@@ -9507,94 +8854,58 @@
               !^^^^ END: IF Fortran code is used with R-C-interface ^^^^
               !---------------------------------------------------------------------------
                
-            
-               ! WRITE(*,*) 'Matrix X populated:', in_mX
-               ! WRITE(*,*) 'Matrix Y populated:', in_mY
-               ! WRITE(*,*) 'Matrix K populated:', in_mK
-               ! WRITE(*,*) 'Vector C populated:', in_mC
-           
-               ! write(*,*) 'Values of nr, nc, and nk:'
-               ! write(*,*) nrecord
-               ! write(*,*) nft
-               ! write(*,*) nk
-
-               ! WRITE(*,*)
-               ! write(*,*) 'Matrix X (input features):'
-               ! DO i = 1, nrecord
-               !    write(*,*) 'row', i, ':', in_mX(i,:)
-               !    write(*,*) '------------------------' 
-               ! END DO
-
-               ! WRITE(*,*)
-               ! write(*,*) 'Matrix Y (time and label):'
-               ! DO i = 1, nrecord
-               !    write(*,*) 'output', i, ':', in_mY(i)
-               !    write(*,*) '------------------------' 
-               ! END DO
-                
-               ! WRITE(*,*)
-               ! write(*,*) 'Matrix K (kit structure):'
-               ! DO i = 1, nk
-               !    write(*,*) 'row', i, ':', in_mK(i,:)
-               !    write(*,*) '------------------------' 
-               ! END DO
-                
-               ! WRITE(*,*)
-               ! WRITE(*,*) 'costs:', in_mC
-               ! WRITE(*,*)
-
-               ! write(*,*) 'End of initialization'    
-
            
               !---------------------------------------------------------------------------
               !               ALLOCATION OF DATA MATRICES 
               !---------------------------------------------------------------------------
                    
                ! Allocation of data matrices in function.f95
-               CALL allocate_data_log(nft,nrecord,nk,user_n)   
+               CALL allocate_data_log(info,nft,nrecord,nk,nk)   
                
               !---------------------------------------------------------------------------
               !                     STORING DATA MATRICES 
               !---------------------------------------------------------------------------
               ! Notice: Matrices are transposed! => Each column presents either an observation or a kit!
-          
-              DO i = 1, nrecord
-                DO j = 1, nft
-                    mX(j,i) = in_mX(i,j)
-                END DO
-              END DO
-                  
-              DO i = 1, nrecord
-                mY_log(i) = in_mY(i)
-              END DO    
-          
-              DO i = 1, nk
-                DO j = 1, nft
-                    mK(j,i) = in_mK(i,j)
-                END DO
-              END DO          
-          
-              DO i = 1, nk         
-                 mC(i) = in_mC(i)
-              END DO
-              
-            ! Scaling             
-              IF (scale_in_use) THEN
-                 CALL scaling_log()
-              END IF               
+             
+              !Transpose of matrix mX
+               DO i = 1, nrecord
+                 DO j = 1, nft
+                    mXt(j,i) = in_mX(i,j)
+                 END DO
+               END DO
+            
+               !Transpose of matrix mY          
+               DO i = 1, nrecord
+                    mYt(i) = in_mY(i)
+               END DO    
 
-			  ! The initialization of beta vector
-			  beta = 0.0_c_double
+               CALL allocate_matrices_log(info, mXt, mYt, in_mK, in_mC,  & 
+                                      & nrecord, nft, nk)
+
+              ! Scaling of data 
+              IF (scale_in_use) THEN
+                  CALL scaling_log(info)
+                  
+                 ! Original data matrix mXt is changed to the scaled one 
+                  CALL scaling_matrix_log(info, mXt)
+                  
+              END IF  
+
+
+              ! The initialization of beta vector
+              beta = 0.0_c_double
               
               ! The best beta_solution for Cox's proportional hazard model without regularization/penalization    
               
-              CALL set_k(nkits)           ! All kits can be used
-              
-              CALL DBDC_algorithm( f_solution, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
+              CALL set_k(info, nkits)           ! All kits can be used
+
+               iprint_DBDC = 0_c_int           ! basic print of intermediate results and extended print of final results
+                            
+              CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
                             & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n,&
-							& max_threads)            
-                            
+                            & info)            
+ 
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
               !         * x_koe is utilized in formation of starting points   
               
@@ -9603,7 +8914,7 @@
                
                IF ((iprint > 0) .OR. (iprint == -1)) THEN
                  WRITE(*,*) 
-                 WRITE(*,*) 'Value of logistic model without regularization:', f_solution
+                 WRITE(*,*) 'Value of logistic model without regularization:', f_solution_DBDC
                  WRITE(*,*) 
                END IF 
                
@@ -9620,25 +8931,26 @@
               !                 SOLVING OF L0-NORM PROBLEM BEGINS 
               !---------------------------------------------------------------------------  
 
-
-
               !---------------------------------------------------------
               ! problems are solved in order k=1,2,...,nkits
               !---------------------------------------------------------               
                IF (start > 0) THEN   ! problem are solved in order k=1,2,...,nkits
                
-                 kit_num_ed = 0        ! The number of kits in the previous solution
-                 kits_beta_ed = 0      ! The kits in the previous solution
+                 kit_num_ed = 0           ! The number of kits in the previous solution
+                 kits_beta_ed = 0         ! The kits in the previous solution
+                 small = (10_c_double)**9 ! There is no previous solution known
                  
                  IF (start == 1) THEN
                     nstart = 1
                  ELSE IF (start == 2 .OR. start == 3) THEN
                     nstart = nk
                  ELSE IF (start == 4) THEN 
-                    nstart = start_max           ! The number of random starting points
+                    nstart = start_max        ! The number of random starting points
                  END IF 
-               
-                 !DO k = 1, nk                 ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to k
+                 
+                 !---------------------------------------------------------------------------------------------
+                 ! Solves in a loop all L0-norm problems with the fixed number of k=1,..., nk_max of kits    
+                 !---------------------------------------------------------------------------------------------
                  DO k = 1, nk_max              ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to nk_max
                   
                   IF (iprint>=2 .OR. iprint == -1) THEN
@@ -9647,184 +8959,62 @@
                        
                   END IF
                   
-                  CALL set_k(k)                  ! The number of nonzero kits is fixed
-                  f_solution = (10.0_c_double)**10     ! The best value for this solution is not yet known (therefore a big value is set)
-                
-                   DO i = 1, nstart              ! Different starting points are looked through to solve the problem 3 with fixed number of nonzero kits
-                     x_0 = x_ed                  ! The base of the starting point is the previous solution (k-1 nonzero kits)
-                     mukana = .FALSE.           
-                     IF (start == 2 .OR. start == 3) THEN          ! Only nkits-k+1 starting points used             
-                       DO ii = 1, kit_num_ed       ! Then we check if the kit i belongs to the previous solution
-                         IF (i == kits_beta_ed(ii)) THEN   
-                           mukana = .TRUE.         ! 'mukana' tells if the kit i is in solution     
-                         END IF
-                       END DO
-                     END IF
-                     
-                     ! Is a new starting point generated?
-                     IF (start == 2) THEN
-                        IF(mukana) THEN
-                           new_start = .FALSE.
-                        ELSE
-                           new_start = .TRUE.
-                        END IF               
-                     ELSE
-                        new_start = .TRUE.
-                     END IF 
-                     
-                   IF ( new_start ) THEN       ! .TRUE. if a new starting point is generated
-                    
-                    IF ((start == 2) .OR. (start == 3)) THEN 
-                      DO ii = 1, nft 
-                        IF (mK(ii,i)==1) THEN
-                           x_0(ii) = x_koe(ii)    ! In starting poitnt x_0, we initialize features in kit i with values from solution x_koe
-                        END IF   
-                      END DO
-                    END IF  
-                    
-                    IF (start == 4) THEN ! A random starting point is generated
-                       x_0 = 0.01_c_double
-                       DO ii = 1, nk
-                         CALL RANDOM_NUMBER(random_num)
-                         mRand(ii) = random_num
-                         mRandInd(ii) = ii
-                       END DO 
-                       CALL heapsort_ind(mRand,mRandInd)
-                       !WRITE(*,*) mRand
-                       !WRITE(*,*) mRandInd                     
-                       DO ii = 1, k
-                          DO i2 = 1, nft 
-                            IF (mK(i2,mRandInd(ii))==1) THEN
-                              x_0(i2) = x_koe(i2)    ! In starting point x_0, we initialize features in kit i with values from solution x_koe
-                            END IF   
-                          END DO     
-                       END DO
-                    END IF                  
-                      
-                    run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
-                    num_rho = 0                 ! The selection of the first value of penalization parameter rho
+                  CALL set_k(info, k)            ! The number of nonzero kits is fixed
+				  
+                  jaannos = MOD(nk,tread_num)    ! The residue in the division
+                  kokoosa = nk/tread_num         ! The integer part obtained from the division
                   
-                    IF (iprint >= 2) THEN
-                       WRITE(*,*) '-------------------------------------' 
-                       WRITE(*,*) 'New start point used.' 
-                    END IF
-                  
-                    DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
-                  
-                    num_rho = num_rho + 1       ! The update of the parameter rho
-                    
-                    IF (num_rho < 9) THEN
-                     SELECT CASE(num_rho)        ! The selection of the parameter rho
-                  
-                      CASE(1)
-                        rho = mrho(1)
-                      CASE(2)
-                        rho = mrho(2)                  
-                      CASE(3)
-                        rho = mrho(3)                  
-                      CASE(4)
-                        rho = mrho(4)              
-                      CASE(5)
-                        rho = mrho(5)                  
-                      CASE(6)
-                        rho = mrho(6)                  
-                      CASE(7)
-                        rho = mrho(7)                 
-                      CASE(8)
-                        rho = mrho(8)                             
-                     END SELECT 
-                    ELSE
-                      rho = 10.0_c_double * rho
-                      
-                      IF (num_rho>=24) THEN 
-                      run_stop = .TRUE.         ! Forced stop in optimization
-                      END IF 
-                    END IF
-                
-                    ! The optimization problem is solved fot the current rho and x_0
-     
-                    CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
-                            & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
-							& max_threads) 
+                  mPrNum = kokoosa               ! The initialization of the number of problems for threads
+                  DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
+                     mPrNum(i) = mPrNum(i)+1                  
+                  END DO
 
-            
-                    IF (ed_sol_in_pen) THEN 
-                      x_0 = beta_solution   ! Starting point for the next round
-                    END IF    
-             
-                  ! The number of zero components in beta vector is computed    
-                    help_counter = 0                      
-                    DO j = 1, nft         
-                      IF ( ABS(beta_solution(j)) < tol_zero) THEN
-                        help_counter = help_counter + 1
-                        beta_solution(j) = 0.0_c_double
-                      END IF
-                    END DO
-                   
-                    cost = 0.0_c_double      ! The initialization of the cost of 'beta_solution'
-                    kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
-                    kits_beta = 0            ! The initialization of kits in 'beta_solution'
+                  !----------------------------------------------------------
+                  ! Starting points for problem with fixed number of k kits 
+                  !----------------------------------------------------------         
+ 
+                  !$OMP PARALLEL DO PRIVATE(x_solution, f_solution, i) & 
+                  !$OMP FIRSTPRIVATE(x_ed, x_koe, kits_beta_ed, kit_num_ed)  &             
+                  !$OMP FIRSTPRIVATE(small, k, iprint, mrho)                 &  
+                  !$OMP FIRSTPRIVATE(mit, mrounds, mrounds_clarke)           &    
+                  !$OMP FIRSTPRIVATE(agg_used, stepsize_used)                &
+                  !$OMP FIRSTPRIVATE(problem1, problem2)                     &  
+                  !$OMP FIRSTPRIVATE(in_b1, in_b2, in_m, in_c, in_r_dec)     &  
+                  !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
+                  !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
+                  !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
+                  !$OMP FIRSTPRIVATE(mXt, mYt, in_mK, in_mC)                 &  
+                  !$OMP SHARED(points, f_points, mPrNum)               
                   
-                    !Calculation of kits in solution
-                    DO j1 = 1, nk        ! Each kit is looked through
-                      kit_in_use = .FALSE.  
-                      DO j2 = 1, nft
-                        IF (mk(j2,j1)==1) THEN 
-                          IF ( ABS(beta_solution(j2)) >= tol_zero) THEN    ! If the condition is satisfied the kit j1 is in solution 'beta_solution'
-                             kit_in_use = .TRUE.                                  
-                          END IF
-                        END IF
-                      END DO
-                      IF (kit_in_use) THEN       ! Executed if kit j1 is in solution 'beta_solution'
-                        cost = cost + mC(j1)     ! The cost of kit j1 is taken into account
-                        kit_num = kit_num + 1    ! The number of kits is updated
-                        kits_beta(kit_num) = j1  ! The index of kit j1 is updated to table kits_beta                      
-                      END IF 
-                    END DO
-        
-                    ! We check if the optimization of problem 3 with k kits can be stopped            
-                    IF (kit_num <= k .OR. run_stop) THEN 
-                       IF (run_stop) THEN 
-                         f_solution = (10.0_c_double)**10
-                       END IF
-                       run_stop = .TRUE.     ! The optimization can be stopped
-                       DO j = 1, user_n
-                         points(j,i) = beta_solution(j)        ! We store the solution
-                       END DO       
-                       f1_current = f1(beta_solution,problem1,user_n)
-                       f2_current = f2(beta_solution,problem2,user_n)
-                       f_points(i) = f1_current-f2_current      ! We store the objective funtion value without penalization
-                    END IF               
-                      
-                    f1_current = f1(beta_solution,problem1,user_n)
-                    f2_current = f2(beta_solution,problem2,user_n)
+                   DO i = 1, tread_num          ! Different starting points for threads are looked through to solve the problem 3 with fixed number of nonzero kits                   
                     
-                    IF (iprint > 2) THEN
-                       WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-                    END IF                  
-                  
-                    IF (run_stop) THEN
-                      IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
-                        WRITE(*,*)
-                        WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                      END IF  
-                      IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
-                        WRITE(*,*)
-                        WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-                      END IF
-                    END IF
+                      CALL solution_with_k_kits_log(x_solution, f_solution, k, i, small, &
+                                               & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
+                                               & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
+                                               & agg_used, stepsize_used, nft, problem1, problem2, &
+                                               & mXt, mYt, in_mK, in_mC, nrecord,  & 
+                                               & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum)
                     
-                    END DO
-                    
-                   ELSE
-                     DO j = 1, user_n
-                        points(j,i) = x_ed(j)
-                     END DO     
-                     f_points(i) = small
-                   END IF           
-             
-                   END DO
+                    ! Storing of the obtained solution and the corresponding objective value
+                    !$OMP CRITICAL 
+                     startind = 1
+                     IF (i > 1) THEN    
+                       DO j3 = 1, i-1
+                          startind = startind + mPrNum(j3)
+                       END DO   
+                     END IF                        
+                        
+                     DO j3 = 1, mPrNum(i)   
+                        DO j = 1, user_n
+                            points(j,startind+(j3-1)) = x_solution(j,startind+(j3-1))
+                        END DO     
+                      f_points(startind+j3-1) = f_solution(startind+j3-1)
+                     END DO  
+                    !$OMP END CRITICAL                    
+                        
+                   END DO          
+                  !$OMP END PARALLEL DO   
                    
                    IF (start == 1) THEN 
                       small = f_points(1)
@@ -9880,14 +9070,14 @@
                    DO j1 = 1, nk    ! Each kit is looked through
                      kit_in_use = .FALSE.
                      DO j2 = 1, nft
-                       IF (mk(j2,j1)==1) THEN 
+                       IF (info%mk(j2,j1)==1) THEN 
                          IF ( ABS(x_ed(j2)) >= tol_zero ) THEN 
                            kit_in_use = .TRUE.           
                          END IF
                        END IF
                      END DO
                      IF (kit_in_use) THEN              ! Executed if kit j1 is in the previous solution
-                       cost = cost + mC(j1)            ! The cost of kit j1 is taken into account
+                       cost = cost + info%mC(j1)            ! The cost of kit j1 is taken into account
                        kit_num_ed = kit_num_ed + 1     ! The number of kits is updated
                        kits_beta_ed(kit_num_ed) = j1   ! The index of kit j1 is updated to table kits_beta                 
                      END IF 
@@ -9917,336 +9107,7 @@
                    END IF
                    
                  END DO
-              
-              !---------------------------------------------------------
-              ! problems are solved in order k=nkits,nkits-1,...,1
-              !---------------------------------------------------------      
-              ELSE     
 
-                 kit_num_ed = 0        ! The number of kits in the previous solution
-                 kits_beta_ed = 0      ! The kits in the previous solution
-                 small = 100000.0_c_double
-                 
-                 IF (start == -1) THEN
-                    nstart = 1
-                 ELSE IF (start == -2 .OR. start == -3 ) THEN
-                    nstart = nk
-                 ELSE IF (start == -4) THEN     
-                    nstart = start_max
-                 END IF 
-
-                 !DO k = nk, 1, -1                        ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from k to 1               
-                 DO k = nk, (nk-nk_max+1), -1             ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from k to k-nk_max+1
-                  
-                  IF ((iprint>=2) .OR. (iprint==-1)) THEN
-                       WRITE(*,*)
-                       WRITE(*,*) '-------------------------------------' 
-                       WRITE(*,*) 'PROBLEM with', k, 'kits' 
-                  END IF                  
-                  CALL set_k(k)                 ! The number of nonzero kits is fixed
-                  f_solution = 1000000.0_c_double     ! The best value for this solution is not yet known (therefore a big value is set)
-                
-                   DO i = 1, nstart              ! Different starting points are looked through to solve the problem 3 with fixed number of nonzero kits
-                     x_0 = x_ed                  ! The base of the starting point is the previous solution 
-                     mukana = .FALSE.
-                     IF (start == -2 .OR. start == -3 ) THEN              
-                       DO ii = 1, kit_num_ed       ! Then we check if the kit i belongs to the previous solution
-                         IF (i == kits_beta_ed(ii)) THEN   
-                           mukana = .TRUE.         ! 'mukana' tells if the kit i is in solution  
-                         END IF
-                       END DO
-                     END IF
-                     
-                     IF (start == -2) THEN
-                        IF(mukana .OR. (nk==k .AND. i==1)) THEN
-                           new_start = .TRUE.
-                        ELSE
-                           new_start = .FALSE.
-                        END IF
-                     ELSE 
-                        new_start = .TRUE.
-                     END IF
-                    
-                     
-                   IF (new_start) THEN    ! .TRUE. if new starting point is generated
-                     
-                     IF (k==nk) THEN   ! All the kits are in the solution. Thus, the solution x_koe is the optimal solution for the problem and a good starting point
-                        x_0 = x_koe
-                     END IF                  
-                     
-                     IF (mukana) THEN 
-                        DO ii = 1, nft 
-                           IF (mK(ii,i)==1) THEN
-                             x_0(ii) = 0.0_c_double        ! In starting point x_0, we initialize features in kit i with value 0
-                           END IF   
-                        END DO
-                     END IF
-                     
-                    IF (start == -3 .AND. (.NOT. mukana)) THEN
-                       DO ii = 1, nft 
-                         IF (mK(ii,i)==1) THEN
-                           x_0(ii) = x_koe(ii)        ! In starting poitnt x_0, we initialize features in kit i with values from x_koe belonging to kit i
-                         END IF   
-                       END DO                    
-                    END IF  
-                    
-                    IF (start == -4 .AND. (.NOT. k==nk) ) THEN
-                       DO ii = 1, nk
-                         CALL RANDOM_NUMBER(random_num)
-                         mRand(ii) = random_num
-                         mRandInd(ii) = ii
-                       END DO 
-                       CALL heapsort_ind(mRand,mRandInd)
-                       !!!WRITE(*,*) mRandInd                      
-                       IF (k > 3) THEN
-                         nremoved = 0
-                         ii = 1
-                         DO WHILE (nremoved < 2 .AND. ii <= nk) 
-                            DO i2 = 1, kit_num_ed       ! Then we check if the kit i belongs to the previous solution
-                              IF (mRandInd(ii) == kits_beta_ed(i2)) THEN 
-                                 DO iii = 1, nft 
-                                   IF (mK(iii,mRandInd(ii))==1) THEN
-                                      x_0(iii) = 0.0_c_double    ! In starting point x_0, we initialize features in kit mRandInd(ii) with value 0
-                                   END IF   
-                                 END DO 
-                                 nremoved = nremoved + 1
-                              END IF
-                            END DO                          
-                            ii = ii + 1
-                         END DO   
-                       ELSE 
-                         nremoved = 0
-                         ii = 1
-                         DO WHILE (nremoved < 1 .AND. ii <= nk) 
-                            DO i2 = 1, kit_num_ed       ! Then we check if the kit i belongs to the previous solution
-                              IF (mRandInd(ii) == kits_beta_ed(i2)) THEN 
-                                 DO iii = 1, nft 
-                                   IF (mK(iii,mRandInd(ii))==1) THEN
-                                      x_0(iii) = 0.0_c_double    ! In starting point x_0, we initialize features in kit mRandInd(ii) with value 0
-                                   END IF   
-                                 END DO
-                                 nremoved = nremoved + 1
-                              END IF
-                            END DO                          
-                            ii = ii + 1
-                         END DO                          
-                       END IF 
-                    END IF
-                    
-                    run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
-                    num_rho = 0                 ! The selection of the first value of penalization parameter rho
-                  
-                    IF (iprint >= 2) THEN
-                       WRITE(*,*) '-------------------------------------' 
-                       WRITE(*,*) 'New start point used'
-                    END IF
-                  
-                    DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
-                  
-                    num_rho = num_rho + 1       ! The update of the parameter rho
-                    
-                    IF (num_rho < 9) THEN
-                     SELECT CASE(num_rho)        ! The selection of the parameter rho
-                  
-                      CASE(1)
-                        rho = mrho(1)
-                      CASE(2)
-                        rho = mrho(2)                  
-                      CASE(3)
-                        rho = mrho(3)                  
-                      CASE(4)
-                        rho = mrho(4)              
-                      CASE(5)
-                        rho = mrho(5)                  
-                      CASE(6)
-                        rho = mrho(6)                  
-                      CASE(7)
-                        rho = mrho(7)                 
-                      CASE(8)
-                        rho = mrho(8)                            
-                     END SELECT 
-                    ELSE
-                      rho = 10.0_c_double * rho
-                      
-                      IF (num_rho>=24) THEN 
-                      run_stop = .TRUE.         ! Forced stop in optimization
-                      END IF 
-                    END IF
-                
-                    ! The optimization problem is solved fot the current rho and x_0
-     
-                    CALL DBDC_algorithm( f_solution, beta_solution, x_0, rho, 0.0_c_double, &
-                            & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
-							& max_threads) 
-            
-                    IF (ed_sol_in_pen) THEN 
-                      x_0 = beta_solution   ! Starting point for the next round
-                    END IF    
-                                
-                    help_counter = 0           
-                    DO j = 1, nft         ! The number of zero components in beta vector is computed
-                      IF ( ABS(beta_solution(j)) < tol_zero) THEN
-                        help_counter = help_counter +1
-                        beta_solution(j) = 0.0_c_double
-                      END IF
-                    END DO
-             
-                    cost = 0.0_c_double            ! The initialization of the cost of 'beta_solution'
-                    kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
-                    kits_beta = 0            ! The initialization of kits in 'beta_solution'
-                  
-                    !Calculation of kits in solution
-                    DO j1 = 1, nk        ! Each kit is looked through
-                      kit_in_use = .FALSE.  
-                      DO j2 = 1, nft
-                        IF (mk(j2,j1)==1) THEN 
-                          IF ( ABS(beta_solution(j2)) >= tol_zero) THEN    ! If the condition is satisfied the kit j1 is in solution 'beta_solution'
-                             kit_in_use = .TRUE.                                  
-                          END IF
-                        END IF
-                      END DO
-                      IF (kit_in_use) THEN       ! Executed if kit j1 is in solution 'beta_solution'
-                        cost = cost + mC(j1)     ! The cost of kit j1 is taken into account
-                        kit_num = kit_num + 1    ! The number of kits is updated
-                        kits_beta(kit_num) = j1  ! The index of kit j1 is updated to table kits_beta                      
-                      END IF 
-                    END DO
-      
-                    ! We check if the optimization of problem 3 with k kits can be stopped            
-                    IF (kit_num <= k .OR. run_stop) THEN 
-                       IF (run_stop) THEN 
-                         f_solution = (10.0_c_double)**7
-                       END IF
-                       run_stop = .TRUE.     ! The optimization can be stopped
-                       DO j = 1, user_n
-                         points(j,i) = beta_solution(j)        ! We store the solution
-                       END DO       
-                       f1_current = f1(beta_solution,problem1,user_n)
-                       f2_current = f2(beta_solution,problem2,user_n)
-                       f_points(i) = f1_current-f2_current      ! We store the objective funtion value without penalization
-                    END IF               
-                 
-                    IF (iprint > 2) THEN
-                       WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-                    END IF                            
-              
-                    f1_current = f1(beta_solution,problem1,user_n)
-                    f2_current = f2(beta_solution,problem2,user_n)
-
-                    IF (run_stop) THEN                  
-                    IF (iprint >= 2 .AND. (kit_num <= k)) THEN   
-                      WRITE(*,*)
-                      WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                    END IF  
-                    IF (iprint >=2 .AND. (kit_num > k)) THEN                                      
-                      WRITE(*,*)
-                      WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-                    END IF
-                    END IF
-                  
-                    END DO
-                    
-                   ELSE
-                     DO j = 1, user_n
-                        points(j,i) = x_ed(j)
-                     END DO     
-                     f_points(i) = 100000000000.0_c_double
-                   END IF           
-             
-                   END DO
-                   
-                   IF (start == -1) THEN 
-                      small = f_points(1)
-                      min_ind = 1
-                   END IF 
-                   
-                   IF (start == -2 .OR. start == -3) THEN 
-                     ! The selection of the best solution for problem 3 with k kits
-                     small = 10000000.0_c_double     ! The initialization of the smallest objective function values in table 'f_points'
-                     min_ind = 0               ! The index of 'f_points' yielding the smallest value 
-                     DO i = 1, nk           ! The determination of the smallest objective function value
-                       IF (small >= f_points(i)) THEN
-                         small = f_points(i)
-                         min_ind = i
-                       END IF
-                     END DO
-                   END IF 
-                   
-                   IF (start == -4) THEN 
-                     ! The selection of the best solution for problem 3 with k kits
-                     small = 10000000.0_c_double     ! The initialization of the smallest objective function values in table 'f_points'
-                     min_ind = 0               ! The index of 'f_points' yielding the smallest value 
-                     DO i = 1, nstart          ! The determination of the smallest objective function value
-                       IF (small >= f_points(i)) THEN
-                         small = f_points(i)
-                         min_ind = i
-                       END IF
-                     END DO
-                   END IF                      
-                               
-                   ind = (k-1)*user_n  
-                   DO i = 1, user_n
-                     x_ed(i) = points(i,min_ind)            ! The beta solution yielding the smallest objective function value is set as the previous solution
-                     beta(ind+i) = points(i,min_ind)        ! The beta solution yielding the smallest objective function value is stored to solution vector 
-                   END DO
-              
-                   IF (iprint >= 1) THEN
-                     ! WRITE(*,*) 'Objective function value for problem 3 with', k, 'nonzero kits:' , small
-                   END IF
-              
-                   help_counter = 0           
-                   DO j = 1, nft         ! The number of zero components in the previous beta vector is computed
-                      IF ( ABS(x_ed(j)) < tol_zero ) THEN
-                        help_counter = help_counter+1
-                      END IF
-                   END DO
-
-                   cost = 0.0_c_double               ! The initialization of the previous solution
-                   kit_num_ed = 0              ! The initialization of the number of kits in the previous solution
-                   kits_beta_ed = 0            ! The initialization of kits in the previous solution                    
-
-                   !Calculation of kits in the previous solution
-                   DO j1 = 1, nk    ! Each kit is looked through
-                     kit_in_use = .FALSE.
-                     DO j2 = 1, nft
-                       IF (mk(j2,j1)==1) THEN 
-                         IF ( ABS(x_ed(j2)) >= tol_zero ) THEN 
-                           kit_in_use = .TRUE.           
-                         END IF
-                       END IF
-                     END DO
-                     IF (kit_in_use) THEN              ! Executed if kit j1 is in the previous solution
-                       cost = cost + mC(j1)            ! The cost of kit j1 is taken into account
-                       kit_num_ed = kit_num_ed + 1     ! The number of kits is updated
-                       kits_beta_ed(kit_num_ed) = j1      ! The index of kit j1 is updated to table kits_beta                 
-                     END IF 
-                   END DO  
-                   
-                   IF ((iprint>=2) .OR. (iprint == -1)) THEN 
-                     WRITE(*,*)
-                     WRITE(*,*) '-**--**--**--**--**--**--**--**--**--**--**--**-'
-                     WRITE(*,*) 'Information about the best solution:'
-                     WRITE(*,*)                  
-                     WRITE(*,*)  '  f=',small 
-                     WRITE(*,*)  '  number of zero elements=',help_counter
-                     WRITE(*,*)  '  number of nonzero elements=',nft-help_counter 
-                     WRITE(*,*)  '  cost=',cost
-                     WRITE(*,*)  '  number of kits=',kit_num_ed 
-                     WRITE(*,*)  '  kits=',kits_beta_ed(1:kit_num_ed)    
-                     WRITE(*,*)                  
-                     WRITE(*,*) '-**--**--**--**--**--**--**--**--**--**--**--**-'
-                     WRITE(*,*)               
-                     
-                   END IF
- 
-                   IF (iprint==1) THEN
-                     WRITE(*,*) small, help_counter, nft-help_counter, &
-                     & cost, kit_num_ed, kits_beta_ed(1:kit_num_ed)                
-                   END IF
-            
-                    
-                 END DO
 
               END IF              
               
@@ -10261,9 +9122,9 @@
 
               IF (scale_in_use) THEN  ! Resclaing  
                  
-                 CALL set_k(nk)               
-                 user_lambda = 0.0_c_double
-                 CALL rescaling_mse()        ! the rescaling of data 
+                 CALL set_k(info,nk)               
+                 info%user_lambda = 0.0_c_double
+                 CALL rescaling_mse(info)        ! the rescaling of data 
                  
                  DO k = 1, nk         ! Each solution is rescaled
                    ind = (k-1)*user_n
@@ -10271,10 +9132,10 @@
                    DO i = 1, user_n
                         beta_solution(i) = beta(ind+i)
                    END DO
-                   CALL rescaling_beta_mse(beta_solution)         ! Rescaling of solution
-                   f1_current = f1(beta_solution,problem1,user_n) ! The f_1 value 
-                   f2_current = f2(beta_solution,problem1,user_n) ! The f_2 value
-                   fperk(k) = f1_current-f2_current               ! The objective function value for problem 5 with k nonzero kits 
+                   CALL rescaling_beta_mse(info, beta_solution)         ! Rescaling of solution
+                   f1_current = f1(info,beta_solution,problem1,user_n)  ! The f_1 value 
+                   f2_current = f2(info,beta_solution,problem1,user_n)  ! The f_2 value
+                   fperk(k) = f1_current-f2_current                     ! The objective function value for problem 5 with k nonzero kits 
                    WRITE(*,*) 'f',k,':', fperk(k)
                    DO i = 1, user_n 
                       beta(ind+i) = beta_solution(i)        ! the beta vector for problem 5 with k nonzero kits
@@ -10283,7 +9144,7 @@
                  END DO 
               ELSE   ! No rescaling
               
-                  CALL set_k(nk)               
+                  CALL set_k(info, nk)               
                  
                   DO k = 1, nk         
                    ind = (k-1)*user_n
@@ -10291,9 +9152,10 @@
                    DO i = 1, user_n
                         beta_solution(i) = beta(ind+i)
                    END DO
-                   f1_current = f1(beta_solution,problem1,user_n) ! The f_1 value 
-                   f2_current = f2(beta_solution,problem2,user_n) ! The f_2 value
-                   fperk(k) = f1_current-f2_current               ! The objective function value for problem 5 with k nonzero kits         
+                   f1_current = f1(info,beta_solution,problem1,user_n) ! The f_1 value 
+                   f2_current = f2(info,beta_solution,problem2,user_n) ! The f_2 value
+                   fperk(k) = f1_current-f2_current                    ! The objective function value for problem 5 with k nonzero kits         
+                    WRITE(*,*) 'f',k,':', fperk(k)
                    DO i = 1, user_n 
                       beta(ind+i) = beta_solution(i)        ! the beta vector for problem 5 with k nonzero kits
                    END DO       
@@ -10312,16 +9174,1374 @@
              CALL SYSTEM_CLOCK(COUNT=clock_end) ! Stop timing 'clock' time
            
              ! Calculate the elapsed 'clock' time in seconds:
-             elapsed_time=(1.0_c_double*clock_end-clock_start)/clock_rate   			 
-			 
+             elapsed_time=(1.0_c_double*clock_end-clock_start)/clock_rate                
+             
              
              IF ((iprint >= 1) .OR. (iprint == -1)) THEN               
                  WRITE(*,*) 'Used CPU:', cpu   , 'Elapsed time:', elapsed_time             
              END IF
        
-             CALL deallocate_data_log() 
+             CALL deallocate_data_log(info) 
              
          END SUBROUTINE oscar_logistic           
+        !---------------------------------------------------------------------------------------
+        
+        
+        ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
+        !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |
+        ! START ** START ** START ** START ** START ** START ** START ** START ** START ** START 
+        !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|         
+        ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>
+        !***************************************************************************************
+        !  ----------------------------------------------------------------------------------  |
+        !  |                                                                                |  |        
+        !  |             SOLVING THE PROBLEM WITH k KITS AND STARTING POINT i               |  |
+        !  |                                                                                |  |        
+        !  ----------------------------------------------------------------------------------  |
+        !***************************************************************************************
+         SUBROUTINE solution_with_k_kits_cox( x_solution, f_solution, k, i, f_prev, & 
+                                    & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
+                                    & nk, start, iprint, mrho, mit, mrounds, mrounds_esc, &
+                                    & agg_used, stepsize_used, nft, problem1, problem2,  &      
+                                    & in_mX, in_mY, in_mK, in_mC, nrecord, & 
+                                    & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum) 
+            !_____________________________________________________________________________________
+            ! 
+            !           
+            ! * 'problem1  and problem2   : defines the used objective function is Cox's proportional hazards model with L0-norm for kits
+            !                              (parametric approach since the number of nonzero elements is fixed) 
+            !
+            !   Solves the L0-norm problem from a fixed starting points for thread "i" with "k" kits
+            !                                                 
+            !
+            ! INPUT:  * 'nft'           : The dimension of the problem = the number of features in a predictor, INTEGER
+            !         * 'nk'            : the (maximum) number of kits, INTEGER
+            !         * 'nrecord'       : the number of observations, INTEGER
+            !
+            !         * 'k'             : the number of kits in the problem, INTEGER
+            !         * 'i'             : the number of thread, INTEGER
+            !
+            !         * 'x_ed'          : the beta solution for the previous problem where the number of nonzero kits was one smaller (INTEGER)
+            !         * 'x_koe'         : The solution to Cox's proportional hazard model without regularization
+            !         * 'kit_num_ed'    : The number of kits in the previous solution
+            !         * 'kit_beta_ed'   : indices of kits in the previous solution 'x_ed'
+            ! 
+            !         * 'print'         : specifies the print, INTEGER
+            !         * 'start'         : specifies how starting points are selected when the L0-norm problem is solved for  
+            !                             the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
+            !         * 'mrho'          : List of used rho values
+            !
+            !         * 'problem1'      : Defines the DC component f1 of the objective
+            !         * 'problem2'      : Defines the DC component f2 of the objective
+            !
+            !         * 'in_mX', 'in_mY', 'in_mK', 'in_mC'    : Are the data matrices 
+			!         * 'mPrNum'        : the information about starting points for the thread
+            !         
+            !         PARAMETERS in DBDC method:
+            !
+            !         * mrounds     : the maximum number of rounds in one main iteratioin
+            !         * mit         : the maximum number of main iterations
+            !         * mrounds_esc : the maximum number of rounds in escape procedure
+            !
+            !         * agg_used       : .TRUE. if aggregation is used 
+            !         * stepsize_used  : .TRUE. if Simple stepsize determination is not used
+            !
+            !         * in_b1          : the size of bundle B1
+            !         * in_b2          : the size of bundle B2
+            !         * in_b           : the size of bundle in escape procedure
+            !
+            !         * in_m           : the descent parameter in main iteration
+            !         * in_m_clarke    : the descent parameter in escape procedure
+            !         * in_c           : the extra decrease parameter in main iteration
+            !         * in_r_dec       : the decrease parameter in main iteration
+            !         * in_r_inc       : the increase parameter in main iteration
+            !         * in_eps1        : the enlargement parameter
+            !         * in_eps         : the stopping tolerance: proximity measure  
+            !         * in_crit_tol    : the stopping tolerance: criticality tolerance               !
+            !
+            ! OUTPUT: * 'f_solution'      : The objective function values for the L0-norm problem with "k" kits from fixed strating points in thread "i", 
+            !                              REAL, DIMENSION(nk) 
+            !         * 'x_solution'      : The vector containing solution vector betas for the L0-norm problem with "k" kits from fixed strating points in thread "i", 
+            !                              REAL, DIMENSION(nft,nk) 
+            !
+            ! INOUT:  * 'info'            : The set of information
+            !
+            !
+            ! NOTICE: * The dimension of vectors 'x_solution', 'x_ed' and 'x_koe' has to be 'nft' ('nft' is the dimension of the problem)
+            !
+            !
+            ! NOTICE: * 'print' has to be 0, 1, 2 or 3.           
+            !         * 'start' has to be 1, 2, 3 or 4.              
+            
+            !***********************************************************************************
+               IMPLICIT NONE
+            !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
+            ! INPUTs
+               REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_koe    ! The solution to Cox's proportional hazard model without regularization
+               REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_ed     ! the beta solution for the previous problem where the number of nonzero kits was one smaller   
+               
+               REAL(KIND=c_double), INTENT(IN) :: f_prev                   ! The objective value for the previous problem where the number of nonzero kits was one smaller       
+               
+               INTEGER(KIND=c_int), INTENT(IN) :: kit_num_ed                   ! The number of kits in the previous solution
+               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
+               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: mPrNum        ! the starting points for the thread
+
+               REAL(KIND=c_double), DIMENSION(8), INTENT(IN) :: mrho      ! Vector containing the values of rho parameter used in the method 
+            
+               INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (also the dimension of the problem)
+               INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
+               
+               INTEGER(KIND = c_int), INTENT(IN) :: start                 ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN) :: iprint                ! Print used
+               
+               INTEGER(KIND = c_int), INTENT(IN) :: k                     ! The number of kits in the problem 
+               INTEGER(KIND = c_int), INTENT(IN) :: i                     ! The number of the thread
+               
+               INTEGER(KIND = c_int), INTENT(IN) :: problem1              ! The DC component f1 of the objective               
+               INTEGER(KIND = c_int), INTENT(IN) :: problem2              ! The DC component f2 of the objective               
+               
+               INTEGER(KIND=c_int), INTENT(INOUT) :: mrounds                 ! the maximum number of rounds in one main iteration
+                                                                          ! If 'mrounds' <=0 then DEFAULT value 'mrounds'=5000 is used
+               
+               INTEGER(KIND=c_int), INTENT(INOUT) :: mit                     ! the maximum number of main iterations
+                                                                          ! If 'mit' <=0 then DEFAULT value 'mit'=5000 is used
+                                                                          
+               INTEGER(KIND=c_int), INTENT(INOUT) :: mrounds_esc             ! the maximum number of rounds in one escape procedure
+                                                                          ! If 'mrounds_clarke' <=0 then DEFAULT value 'mrounds_clarke'=5000 is used
+                
+               LOGICAL, INTENT(IN) :: agg_used                            ! .TRUE. if aggregation is used in DBDC
+               LOGICAL, INTENT(IN) :: stepsize_used                       ! .TRUE. if Simple stepsize determination is not used
+               
+              ! Parameters in DBDC method
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+               
+               REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+
+              ! The data matrices
+               REAL(KIND=c_double), DIMENSION(nft,nrecord) :: in_mX       ! predictor matrix (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(2,nrecord) :: in_mY         ! observed times and labels matrix (column is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(nk,nft) :: in_mK            ! kit matrix (row is a kit)
+               REAL(KIND=c_double), DIMENSION(nk) :: in_mC                ! kit costs          
+                     
+            ! OUTPUTs
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nft,nk)  :: x_solution   !Output variable for beta coefficients with k kits and starting points for the thread i
+               REAL(KIND = c_double), DIMENSION(nk), INTENT(OUT)      :: f_solution   !Output variable target function value with k kits and starting points for the thread i
+               
+           
+           !***************************** LOCAL VARIABLES ************************************      
+ 
+               TYPE(set_info) :: set                                    ! The set of information                     
+
+               REAL(KIND=c_double) :: CPUtime                           ! the CPU time (in seconds)
+               REAL(KIND=c_double) :: f_solution_DBDC                   ! the f_solution obtained from DBDC method
+  
+               REAL(KIND=c_double), DIMENSION(nft) :: beta_solution     ! the solution vector beta obtained during the execution      
+          
+               INTEGER(KIND=c_int), DIMENSION(nk) :: kits_beta          ! indices of kits in the solution 'beta_solution'
+
+               REAL(KIND=c_double), DIMENSION(nft) :: x_0               ! the starting point
+               
+               INTEGER(KIND=c_int) :: termination         ! The reason for termination in DBDC method
+                                                          ! 1 - the stopping condition is satisfied (i.e. Clarke stationarity)
+                                                          ! 2 - the approximate stopping condition is satisfied (i.e. the step-length beta* < eps)
+                                                          ! 3 - the maximum number 'mrounds' of rounds executed in one main iteration
+                                                          ! 4 - the maximum number of 'main iterations' is executed  
+                                                          ! 5 - the maximum number 'mrounds_clarke' of rounds executed in one 'Clarke stationary' alqorithm
+                                                          
+               INTEGER(KIND=c_int), DIMENSION(8) :: counter   ! contains the values of different counteres for DBDC method: 
+                                                              !   counter(1) = iter_counter         the number of 'main iterations' executed
+                                                              !   counter(2) = subprob_counter      the number of subproblems solved
+                                                              !   counter(3) = f_counter            the number of function values evaluated for DC component in 'main iteration'
+                                                              !   counter(4) = subgrad1_counter     the number of subgradients calculated for f_1 in 'main iteration'
+                                                              !   counter(5) = subgrad2_counter     the number of subgradients calculated for f_2 in 'main iteration'
+                                                              !--------------------------------------------------------------------------------------------------------------------------                   
+                                                              !   counter(6) = stop_cond_counter    the number of times 'Clarke stationary algorithm' is executed 
+                                                              !   counter(7) = clarke_f_counter     the number of function values evaluated for f in 'Clarke stationary algorithms'
+                                                              !   counter(8) = clarke_sub_counter   the number of subgradients caluculated for f in 'Clarke stationary algorithms'             
+        
+               INTEGER(KIND=c_int) :: user_n             ! the dimension of the problem
+                                      
+               INTEGER(KIND=c_int) :: iprint_DBDC  ! variable that specifies print option in DBDC method:
+                                                !   iprint = 0 : print is suppressed
+                                                !   iprint = 1 : basic print of final result 
+                                                !   iprint = -1: basic print of final result (without the solution vector)
+                                                !   iprint = 2 : extended print of final result 
+                                                !   iprint = -2: extended print of final result (without the solution vector)
+                                                !   iprint = 3 : basic print of intermediate results and extended print of final results
+                                                !   iprint = -3: basic print of intermediate results and extended print of final results (without the solution vector)
+                                                !   iprint = 4 : extended print of intermediate results and extended print of final results 
+                                                !   iprint = -4: extended print of intermediate results and extended print of final results (without the solution vectors)
+                                                
+                                                ! If 'iprint' <= -5 .OR. 'iprint' >= 5 then DEFAULT value 'iprint'=1 is used    
+               
+               LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
+               LOGICAL :: run_stop              ! If .TRUE. run of this subroutine is stopped for selected k
+               LOGICAL :: mukana                ! If .TRUE. specific kit is in the solution
+               
+               LOGICAL :: ed_sol_in_pen         ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
+               LOGICAL :: new_start             ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
+       
+               REAL(KIND=c_double) :: rho             ! The parameter rho used in L0-norm
+               REAL(KIND=c_double) :: cost            ! The cost of solution beta
+                            
+               REAL(KIND=c_double) :: f1_current      ! The value of f1
+               REAL(KIND=c_double) :: f2_current      ! The value of f2
+               
+               REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
+               
+               REAL(KIND=c_double) :: random_num                  ! Random number
+               REAL(KIND=c_double), DIMENSION(nk) :: mRand        ! Random number matrix
+               INTEGER(KIND=c_int), DIMENSION(nk) :: mRandInd     ! Original indices of random numbers in matrix
+        
+               INTEGER(KIND=c_int) :: help_counter
+               INTEGER(KIND=c_int) :: num_rho
+               INTEGER(KIND=c_int) :: kit_num               ! The number of kits in the current solution
+               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2
+               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization         
+
+               INTEGER(KIND=c_int) :: startind, j3, kk      ! the start index for starting point    
+ 
+ 
+                    !--------------------------------------------        
+                    !                INITIALIZATION
+                    !--------------------------------------------
+                    
+                    user_n = nft              ! The dimension of the problem
+                    iprint_DBDC = 0_c_int     ! The print is supressed 
+                  
+                    ed_sol_in_pen = .FALSE.
+                   !ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem  
+
+                   tol_zero = (10.0_c_double)**(-6)
+ 
+
+                   ! The initialization of parametrs used in DBDC methods
+                   CALL allocate_parameters(set, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                           & in_b, in_m_clarke, in_eps, in_crit_tol)
+  
+                   ! Allocation of sizes od data matrices in function.f95
+                    CALL allocate_data_cox(set, nft, nrecord, nk, k)   
+                    
+                   ! Allocation of data matrices    
+                    CALL allocate_matrices_cox(set, in_mX, in_mY, in_mK, in_mC,  & 
+                                      & nrecord, nft, nk)
+                    
+                    CALL  set_k(set, k)                        ! The number of nonzero kits is fixed
+					
+                     ! Determination of the first starting point for the thread i                    
+                    startind = 1
+                    IF (i > 1) THEN 
+                       DO j3 = 1, i-1
+                          startind = startind + mPrNum(j3)
+                       END DO   
+                    END IF
+
+                    ! The starting points for the thread are looked through
+                    DO kk = startind, startind + mPrNum(i) - 1 
+                        !--------------------------------------------
+                        !    THE GENERATION OF THE STARTING POINT
+                        !--------------------------------------------
+                         x_0 = x_ed                  ! The base of the starting point is the previous solution (k-1 nonzero kits)
+                         mukana = .FALSE.           
+                         IF (start == 2 .OR. start == 3) THEN     ! Only nkits-k+1 starting points used             
+                           DO ii = 1, kit_num_ed                  ! Then we check if the kit kk belongs to the previous solution
+                             IF (kk == kits_beta_ed(ii)) THEN   
+                               mukana = .TRUE.                    ! 'mukana' tells if the kit kk is in solution     
+                             END IF
+                           END DO
+                         END IF
+                         
+                         ! Is a new starting point generated?
+                         IF (start == 2) THEN
+                            IF(mukana) THEN
+                               new_start = .FALSE.
+                            ELSE
+                               new_start = .TRUE.
+                            END IF               
+                         ELSE
+                            new_start = .TRUE.
+                         END IF                  
+                        
+                         
+                       IF (new_start) THEN       ! .TRUE. if a new starting point is generated
+                        
+                        IF ((start == 2) .OR. (start == 3)) THEN 
+                          DO ii = 1, nft               ! the features are looke
+                            IF (set%mK(ii,kk)==1) THEN
+                               x_0(ii) = x_koe(ii)    ! In starting poitnt x_0, we initialize features in kit kk with values from solution x_koe
+                            END IF   
+                          END DO
+                        END IF  
+                        
+                        IF (start == 4) THEN ! A random starting point is generated
+                           x_0 = 0.01_c_double
+                           DO ii = 1, nk
+                             CALL RANDOM_NUMBER(random_num)
+                             mRand(ii) = random_num
+                             mRandInd(ii) = ii
+                           END DO 
+                           CALL heapsort_ind(mRand,mRandInd)                    
+                           DO ii = 1, k
+                              DO i2 = 1, nft 
+                                IF (set%mK(i2,mRandInd(ii))==1) THEN
+                                  x_0(i2) = x_koe(i2)    ! In starting point x_0, we initialize features in kit i with values from solution x_koe
+                                END IF   
+                              END DO     
+                           END DO
+                        END IF                  
+                          
+                        run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
+                        num_rho = 0                 ! The selection of the first value of penalization parameter rho
+                      
+                        IF (iprint >= 2) THEN
+                           WRITE(*,*) '-------------------------------------' 
+                           WRITE(*,*) 'New start point used.' 
+                        END IF
+                      
+                        DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
+                      
+                        num_rho = num_rho + 1       ! The update of the parameter rho
+                        
+                        IF (num_rho < 9) THEN
+                         SELECT CASE(num_rho)        ! The selection of the parameter rho
+                      
+                          CASE(1)
+                            rho = mrho(1)
+                          CASE(2)
+                            rho = mrho(2)                  
+                          CASE(3)
+                            rho = mrho(3)                  
+                          CASE(4)
+                            rho = mrho(4)              
+                          CASE(5)
+                            rho = mrho(5)                  
+                          CASE(6)
+                            rho = mrho(6)                  
+                          CASE(7)
+                            rho = mrho(7)                 
+                          CASE(8)
+                            rho = mrho(8)                             
+                         END SELECT 
+                        ELSE
+                          rho = 10.0_c_double * rho
+                          
+                          IF (num_rho>=24) THEN 
+                          run_stop = .TRUE.         ! Forced stop in optimization
+                          END IF 
+                        END IF
+                    
+                        ! The optimization problem is solved fot the current rho and x_0
+         
+                        CALL DBDC_algorithm( f_solution_DBDC, beta_solution, x_0, rho, 0.0_c_double, &
+                                & mit, mrounds, mrounds_esc, termination, counter, CPUtime,  &
+                                & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, nft, &
+                                & set) 
+                
+                        IF (ed_sol_in_pen) THEN 
+                          x_0 = beta_solution   ! Starting point for the next round
+                        END IF    
+                    
+                        help_counter = 0           
+                        DO j = 1, nft         ! The number of zero components in beta vector is computed
+                          IF ( ABS(beta_solution(j)) < tol_zero) THEN
+                            help_counter = help_counter +1
+                            beta_solution(j) = 0.0_c_double
+                          END IF
+                        END DO
+                  
+                        cost = 0.0_c_double      ! The initialization of the cost of 'beta_solution'
+                        kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
+                        kits_beta = 0            ! The initialization of kits in 'beta_solution'
+                      
+                        !Calculation of kits in solution
+                        DO j1 = 1, nk        ! Each kit is looked through
+                          kit_in_use = .FALSE.  
+                          DO j2 = 1, nft
+                            IF (set%mK(j2,j1)==1) THEN 
+                              IF ( ABS(beta_solution(j2)) >= tol_zero) THEN    ! If the condition is satisfied the kit j1 is in solution 'beta_solution'
+                                 kit_in_use = .TRUE.                                  
+                              END IF
+                            END IF
+                          END DO
+                          IF (kit_in_use) THEN       ! Executed if kit j1 is in solution 'beta_solution'
+                            cost = cost + set%mC(j1)     ! The cost of kit j1 is taken into account
+                            kit_num = kit_num + 1    ! The number of kits is updated
+                            kits_beta(kit_num) = j1  ! The index of kit j1 is updated to table kits_beta                      
+                          END IF 
+                        END DO
+        
+                        ! We check if the optimization of problem 3 with k kits can be stopped            
+                        IF (kit_num <= k .OR. run_stop) THEN 
+                           IF (run_stop) THEN 
+                             f_solution(kk) = (10.0_c_double)**10
+                           END IF
+                           run_stop = .TRUE.     ! The optimization can be stopped
+                           DO j = 1, nft
+                             x_solution(j,kk) = beta_solution(j)        ! We store the solution to x_solution
+                           END DO       
+                           
+                           f1_current = f1(set,beta_solution,problem1,user_n)
+                           f2_current = f2(set,beta_solution,problem2,user_n)
+                           f_solution(kk) = f1_current-f2_current       ! We store the objective funtion value without penalization to f_solution
+                        END IF               
+                       
+                        f1_current = f1(set,beta_solution,problem1,user_n) 
+                        f2_current = f2(set,beta_solution,problem2,user_n)
+        
+                        IF (iprint > 2) THEN
+                           WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+                        END IF
+                        
+                        IF (run_stop) THEN
+                          IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
+                            WRITE(*,*)
+                            WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
+                          END IF  
+                          IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
+                            WRITE(*,*)
+                            WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
+                          END IF
+                        END IF
+                        
+                        END DO
+                        
+                       ELSE
+                       
+                         DO j = 1, nft
+                            x_solution(j,kk) = x_ed(j)
+                         END DO     
+                         f_solution(kk) = f_prev
+                       END IF           
+                   
+                   END DO
+                   
+                   CALL deallocate_data_cox(set)             
+             
+         
+         END SUBROUTINE  solution_with_k_kits_cox
+        !.......................................................................................
+        ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>        
+        ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
+        !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |        
+        !** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** 
+        !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
+
+
+
+       ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
+        !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |
+        ! START ** START ** START ** START ** START ** START ** START ** START ** START ** START 
+        !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|         
+        ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>
+        !***************************************************************************************
+        !  ----------------------------------------------------------------------------------  |
+        !  |                                                                                |  |        
+        !  |             SOLVING THE PROBLEM WITH k KITS AND STARTING POINT i               |  |
+        !  |                                                                                |  |        
+        !  ----------------------------------------------------------------------------------  |
+        !***************************************************************************************
+         SUBROUTINE solution_with_k_kits_mse( x_solution, f_solution, k, i, f_prev, & 
+                                    & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
+                                    & nk, start, iprint, mrho, mit, mrounds, mrounds_esc, &
+                                    & agg_used, stepsize_used, nft, problem1, problem2,  &      
+                                    & in_mX, in_mY, in_mK, in_mC, nrecord, & 
+                                    & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                    & in_b, in_m_clarke, in_eps, in_crit_tol ,mPrNum) 
+            !_____________________________________________________________________________________
+            ! 
+            !           
+            ! * 'problem1  and problem2   : defines the used objective function is the mean square error model with L0-norm for kits
+            !                              (parametric approach since the number of nonzero elements is fixed) 
+            !
+            !   Solves the L0-norm problem from a fixed starting points for thread "i" with "k" kits
+            !                                                 
+            !
+            ! INPUT:  * 'nft'           : Number of rows. The dimension of the problem = nft + 1, INTEGER
+            !         * 'nk'            : the (maximum) number of kits, INTEGER
+            !         * 'nrecord'       : the number of observations, INTEGER
+            !
+            !         * 'k'             : the number of kits in the problem, INTEGER
+            !         * 'i'             : the number of thread, INTEGER
+            !
+            !         * 'x_ed'          : the beta solution for the previous problem where the number of nonzero kits was one smaller (INTEGER)
+            !         * 'x_koe'         : The solution to Cox's proportional hazard model without regularization
+            !         * 'kit_num_ed'    : The number of kits in the previous solution
+            !         * 'kit_beta_ed'   : indices of kits in the previous solution 'x_ed'
+            ! 
+            !         * 'print'         : specifies the print, INTEGER
+            !         * 'start'         : specifies how starting points are selected when the L0-norm problem is solved for  
+            !                             the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
+            !         * 'mrho'          : List of used rho values
+            !
+            !         * 'problem1'      : Defines the DC component f1 of the objective
+            !         * 'problem2'      : Defines the DC component f2 of the objective
+            !
+            !         * 'in_mX', 'in_mY', 'in_mK', 'in_mC'    : Are the data matrices 
+			!         * 'mPrNum'        : the information about starting points for the thread
+            !         
+            !         PARAMETERS in DBDC method:
+            !
+            !         * mrounds     : the maximum number of rounds in one main iteratioin
+            !         * mit         : the maximum number of main iterations
+            !         * mrounds_esc : the maximum number of rounds in escape procedure
+            !
+            !         * agg_used       : .TRUE. if aggregation is used 
+            !         * stepsize_used  : .TRUE. if Simple stepsize determination is not used
+            !
+            !         * in_b1          : the size of bundle B1
+            !         * in_b2          : the size of bundle B2
+            !         * in_b           : the size of bundle in escape procedure
+            !
+            !         * in_m           : the descent parameter in main iteration
+            !         * in_m_clarke    : the descent parameter in escape procedure
+            !         * in_c           : the extra decrease parameter in main iteration
+            !         * in_r_dec       : the decrease parameter in main iteration
+            !         * in_r_inc       : the increase parameter in main iteration
+            !         * in_eps1        : the enlargement parameter
+            !         * in_eps         : the stopping tolerance: proximity measure  
+            !         * in_crit_tol    : the stopping tolerance: criticality tolerance               !
+            !
+            ! OUTPUT: * 'f_solution'      : The objective function values for the L0-norm problem with "k" kits from fixed strating points in thread "i", 
+            !                              REAL, DIMENSION(nk) 
+            !         * 'x_solution'      : The vector containing solution vector betas for the L0-norm problem with "k" kits from fixed strating points in thread "i", 
+            !                              REAL, DIMENSION(nft,nk) 
+            !
+            ! INOUT:  * 'info'            : The set of information
+            !
+            !
+            ! NOTICE: * The dimension of vectors 'x_solution', 'x_ed' and 'x_koe' has to be 'nft' ('nft' is the dimension of the problem)
+            !
+            !
+            ! NOTICE: * 'print' has to be 0, 1, 2 or 3.           
+            !         * 'start' has to be 1, 2, 3 or 4.              
+            
+            !***********************************************************************************
+               IMPLICIT NONE
+            !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
+            ! INPUTs
+               REAL(KIND=c_double), DIMENSION(nft+1), INTENT(IN) :: x_koe    ! The solution to Cox's proportional hazard model without regularization
+               REAL(KIND=c_double), DIMENSION(nft+1), INTENT(IN) :: x_ed     ! the beta solution for the previous problem where the number of nonzero kits was one smaller   
+               
+               REAL(KIND=c_double), INTENT(IN) :: f_prev                     ! The objective value for the previous problem where the number of nonzero kits was one smaller       
+               
+               INTEGER(KIND=c_int), INTENT(IN) :: kit_num_ed                   ! The number of kits in the previous solution
+               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
+               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: mPrNum        ! the starting points for thread
+
+               REAL(KIND=c_double), DIMENSION(8), INTENT(IN) :: mrho      ! Vector containing the values of rho parameter used in the method 
+            
+               INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (also the dimension of the problem)
+               INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
+               
+               INTEGER(KIND = c_int), INTENT(IN) :: start                 ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN) :: iprint                ! Print used
+               
+               INTEGER(KIND = c_int), INTENT(IN) :: k                     ! The number of kits in the problem 
+               INTEGER(KIND = c_int), INTENT(IN) :: i                     ! The number of the thread
+               
+               INTEGER(KIND = c_int), INTENT(IN) :: problem1              ! The DC component f1 of the objective               
+               INTEGER(KIND = c_int), INTENT(IN) :: problem2              ! The DC component f2 of the objective               
+               
+               INTEGER(KIND=c_int), INTENT(INOUT) :: mrounds                 ! the maximum number of rounds in one main iteration
+                                                                          ! If 'mrounds' <=0 then DEFAULT value 'mrounds'=5000 is used
+               
+               INTEGER(KIND=c_int), INTENT(INOUT) :: mit                     ! the maximum number of main iterations
+                                                                          ! If 'mit' <=0 then DEFAULT value 'mit'=5000 is used
+                                                                          
+               INTEGER(KIND=c_int), INTENT(INOUT) :: mrounds_esc             ! the maximum number of rounds in one escape procedure
+                                                                          ! If 'mrounds_clarke' <=0 then DEFAULT value 'mrounds_clarke'=5000 is used
+                
+               LOGICAL, INTENT(IN) :: agg_used                            ! .TRUE. if aggregation is used in DBDC
+               LOGICAL, INTENT(IN) :: stepsize_used                       ! .TRUE. if Simple stepsize determination is not used
+               
+              ! Parameters in DBDC method
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+               
+               REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+
+              ! The data matrices
+               REAL(KIND=c_double), DIMENSION(nft,nrecord) :: in_mX       ! predictor matrix (column is an observation)
+               REAL(KIND=c_double), DIMENSION(2,nrecord) :: in_mY         ! observed times and labels matrix (column is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(nk,nft) :: in_mK            ! kit matrix (row is a kit)
+               REAL(KIND=c_double), DIMENSION(nk) :: in_mC                ! kit costs          
+                     
+            ! OUTPUTs
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nft+1,nk)  :: x_solution   !Output variable for beta coefficients with k kits and starting points for the thread i
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nk)        :: f_solution   !Output variable target function value with k kits and starting point for the thread i             
+           
+           !***************************** LOCAL VARIABLES ************************************      
+ 
+               TYPE(set_info) :: set                                    ! The set of information                     
+
+               REAL(KIND=c_double) :: CPUtime                           ! the CPU time (in seconds)
+               REAL(KIND=c_double) :: f_solution_DBDC                   ! the solution of DBDC method
+  
+               REAL(KIND=c_double), DIMENSION(nft+1) :: beta_solution   ! the solution vector beta obtained during the execution      
+          
+               INTEGER(KIND=c_int), DIMENSION(nk) :: kits_beta          ! indices of kits in the solution 'beta_solution'
+
+               REAL(KIND=c_double), DIMENSION(nft+1) :: x_0             ! the starting point
+               
+               INTEGER(KIND=c_int) :: termination         ! The reason for termination in DBDC method
+                                                          ! 1 - the stopping condition is satisfied (i.e. Clarke stationarity)
+                                                          ! 2 - the approximate stopping condition is satisfied (i.e. the step-length beta* < eps)
+                                                          ! 3 - the maximum number 'mrounds' of rounds executed in one main iteration
+                                                          ! 4 - the maximum number of 'main iterations' is executed  
+                                                          ! 5 - the maximum number 'mrounds_clarke' of rounds executed in one 'Clarke stationary' alqorithm
+                                                          
+               INTEGER(KIND=c_int), DIMENSION(8) :: counter   ! contains the values of different counteres for DBDC method: 
+                                                              !   counter(1) = iter_counter         the number of 'main iterations' executed
+                                                              !   counter(2) = subprob_counter      the number of subproblems solved
+                                                              !   counter(3) = f_counter            the number of function values evaluated for DC component in 'main iteration'
+                                                              !   counter(4) = subgrad1_counter     the number of subgradients calculated for f_1 in 'main iteration'
+                                                              !   counter(5) = subgrad2_counter     the number of subgradients calculated for f_2 in 'main iteration'
+                                                              !--------------------------------------------------------------------------------------------------------------------------                   
+                                                              !   counter(6) = stop_cond_counter    the number of times 'Clarke stationary algorithm' is executed 
+                                                              !   counter(7) = clarke_f_counter     the number of function values evaluated for f in 'Clarke stationary algorithms'
+                                                              !   counter(8) = clarke_sub_counter   the number of subgradients caluculated for f in 'Clarke stationary algorithms'             
+        
+               INTEGER(KIND=c_int) :: user_n             ! the dimension of the problem
+                                      
+               INTEGER(KIND=c_int) :: iprint_DBDC  ! variable that specifies print option in DBDC method:
+                                                !   iprint = 0 : print is suppressed
+                                                !   iprint = 1 : basic print of final result 
+                                                !   iprint = -1: basic print of final result (without the solution vector)
+                                                !   iprint = 2 : extended print of final result 
+                                                !   iprint = -2: extended print of final result (without the solution vector)
+                                                !   iprint = 3 : basic print of intermediate results and extended print of final results
+                                                !   iprint = -3: basic print of intermediate results and extended print of final results (without the solution vector)
+                                                !   iprint = 4 : extended print of intermediate results and extended print of final results 
+                                                !   iprint = -4: extended print of intermediate results and extended print of final results (without the solution vectors)
+                                                
+                                                ! If 'iprint' <= -5 .OR. 'iprint' >= 5 then DEFAULT value 'iprint'=1 is used    
+               
+               LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
+               LOGICAL :: run_stop              ! If .TRUE. run of this subroutine is stopped for selected k
+               LOGICAL :: mukana                ! If .TRUE. specific kit is in the solution
+               
+               LOGICAL :: ed_sol_in_pen         ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
+               LOGICAL :: new_start             ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
+       
+               REAL(KIND=c_double) :: rho             ! The parameter rho used in L0-norm
+               REAL(KIND=c_double) :: cost            ! The cost of solution beta
+                            
+               REAL(KIND=c_double) :: f1_current      ! The value of f1
+               REAL(KIND=c_double) :: f2_current      ! The value of f2
+               
+               REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
+               
+               REAL(KIND=c_double) :: random_num                  ! Random number
+               REAL(KIND=c_double), DIMENSION(nk) :: mRand        ! Random number matrix
+               INTEGER(KIND=c_int), DIMENSION(nk) :: mRandInd     ! Original indices of random numbers in matrix
+        
+               INTEGER(KIND=c_int) :: help_counter
+               INTEGER(KIND=c_int) :: num_rho
+               INTEGER(KIND=c_int) :: kit_num               ! The number of kits in the current solution
+               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2
+               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization  
+
+               
+               INTEGER(KIND=c_int) :: startind, j3, kk      ! the start index for starting point    
+ 
+ 
+                    !--------------------------------------------        
+                    !                INITIALIZATION
+                    !--------------------------------------------
+                    
+                    user_n = nft+1            ! The dimension of the problem
+                    iprint_DBDC = 0_c_int     ! The print is supressed 
+                  
+                    ed_sol_in_pen = .FALSE.
+                   !ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem  
+
+                   tol_zero = (10.0_c_double)**(-6)
+ 
+
+                   ! The initialization of parametrs used in DBDC methods
+                   CALL allocate_parameters(set, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                           & in_b, in_m_clarke, in_eps, in_crit_tol)
+  
+                   ! Allocation of sizes od data matrices in function.f95
+                    CALL allocate_data_mse(set, nft, nrecord, nk, k)   
+                    
+                   ! Allocation of data matricse    
+                    CALL allocate_matrices_mse(set, in_mX, in_mY, in_mK, in_mC,  & 
+                                      & nrecord, nft, nk)
+                    
+                    CALL  set_k(set, k)                        ! The number of nonzero kits is fixe                 
+                    
+                    ! Determination of the first starting point for the thread i                   
+                    startind = 1
+                    IF (i > 1) THEN 
+                       DO j3 = 1, i-1
+                          startind = startind + mPrNum(j3)
+                       END DO   
+                    END IF
+                    
+					! Starting points for the thread i are looked through
+                    DO kk = startind, startind + mPrNum(i) - 1 
+                        !--------------------------------------------
+                        !    THE GENERATION OF THE STARTING POINT
+                        !--------------------------------------------
+                         x_0 = x_ed                  ! The base of the starting point is the previous solution (k-1 nonzero kits)
+                         mukana = .FALSE.           
+                         IF (start == 2 .OR. start == 3) THEN          ! Only nkits-k+1 starting points used             
+                           DO ii = 1, kit_num_ed       ! Then we check if the kit 'kk' belongs to the previous solution
+                             IF (kk == kits_beta_ed(ii)) THEN   
+                               mukana = .TRUE.         ! 'mukana' tells if the kit 'kk' is in solution     
+                             END IF
+                           END DO
+                         END IF
+                         
+                         ! Is a new starting point generated?
+                         IF (start == 2) THEN
+                            IF(mukana) THEN
+                               new_start = .FALSE.
+                            ELSE
+                               new_start = .TRUE.
+                            END IF               
+                         ELSE
+                            new_start = .TRUE.
+                         END IF                  
+                                             
+                         
+                       IF (new_start) THEN       ! .TRUE. if a new starting point is generated
+                        
+                        IF ((start == 2) .OR. (start == 3)) THEN 
+                          DO ii = 1, nft               ! the features are looked through
+                            IF (set%mK(ii,kk)==1) THEN
+                               x_0(ii) = x_koe(ii)     ! In starting poitnt x_0, we initialize features in kit 'kk' with values from solution x_koe
+                            END IF   
+                          END DO
+                        END IF  
+                        
+                        IF (start == 4) THEN ! A random starting point is generated
+                           x_0 = 0.01_c_double
+                           DO ii = 1, nk
+                             CALL RANDOM_NUMBER(random_num)
+                             mRand(ii) = random_num
+                             mRandInd(ii) = ii
+                           END DO 
+                           CALL heapsort_ind(mRand,mRandInd)               
+                           DO ii = 1, k
+                              DO i2 = 1, nft 
+                                IF (set%mK(i2,mRandInd(ii))==1) THEN
+                                  x_0(i2) = x_koe(i2)    ! In starting point x_0, we initialize features in kit i with values from solution x_koe
+                                END IF   
+                              END DO     
+                           END DO
+                        END IF                  
+                          
+                        run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
+                        num_rho = 0                 ! The selection of the first value of penalization parameter rho
+                      
+                        IF (iprint >= 2) THEN
+                           WRITE(*,*) '-------------------------------------' 
+                           WRITE(*,*) 'New start point used.' 
+                        END IF
+                      
+                        DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
+                      
+                        num_rho = num_rho + 1       ! The update of the parameter rho
+                        
+                        IF (num_rho < 9) THEN
+                         SELECT CASE(num_rho)        ! The selection of the parameter rho
+                      
+                          CASE(1)
+                            rho = mrho(1)
+                          CASE(2)
+                            rho = mrho(2)                  
+                          CASE(3)
+                            rho = mrho(3)                  
+                          CASE(4)
+                            rho = mrho(4)              
+                          CASE(5)
+                            rho = mrho(5)                  
+                          CASE(6)
+                            rho = mrho(6)                  
+                          CASE(7)
+                            rho = mrho(7)                 
+                          CASE(8)
+                            rho = mrho(8)                             
+                         END SELECT 
+                        ELSE
+                          rho = 10.0_c_double * rho
+                          
+                          IF (num_rho>=24) THEN 
+                          run_stop = .TRUE.         ! Forced stop in optimization
+                          END IF 
+                        END IF
+                     
+            
+                        ! The optimization problem is solved fot the current rho and x_0
+         
+                        CALL DBDC_algorithm( f_solution_DBDC, beta_solution, x_0, rho, 0.0_c_double, &
+                                & mit, mrounds, mrounds_esc, termination, counter, CPUtime,  &
+                                & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
+                                & set) 
+                
+                        IF (ed_sol_in_pen) THEN 
+                          x_0 = beta_solution   ! Starting point for the next round
+                        END IF    
+                    
+                        help_counter = 0           
+                        DO j = 1, nft         ! The number of zero components in beta vector is computed
+                          IF ( ABS(beta_solution(j)) < tol_zero) THEN
+                            help_counter = help_counter +1  
+                            beta_solution(j) = 0.0_c_double
+                          END IF
+                        END DO
+                  
+                        cost = 0.0_c_double      ! The initialization of the cost of 'beta_solution'
+                        kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
+                        kits_beta = 0            ! The initialization of kits in 'beta_solution'
+                      
+                        !Calculation of kits in solution
+                        DO j1 = 1, nk        ! Each kit is looked through
+                          kit_in_use = .FALSE.  
+                          DO j2 = 1, nft
+                            IF (set%mK(j2,j1)==1) THEN 
+                              IF ( ABS(beta_solution(j2)) >= tol_zero) THEN    ! If the condition is satisfied the kit j1 is in solution 'beta_solution'
+                                 kit_in_use = .TRUE.                                  
+                              END IF
+                            END IF
+                          END DO
+                          IF (kit_in_use) THEN       ! Executed if kit j1 is in solution 'beta_solution'
+                            cost = cost + set%mC(j1)     ! The cost of kit j1 is taken into account
+                            kit_num = kit_num + 1    ! The number of kits is updated
+                            kits_beta(kit_num) = j1  ! The index of kit j1 is updated to table kits_beta                      
+                          END IF 
+                        END DO
+        
+                        ! We check if the optimization of problem 3 with k kits can be stopped            
+                        IF (kit_num <= k .OR. run_stop) THEN 
+                           IF (run_stop) THEN 
+                             f_solution(kk) = (10.0_c_double)**10
+                           END IF
+                           run_stop = .TRUE.     ! The optimization can be stopped
+                           DO j = 1, user_n
+                             x_solution(j,kk) = beta_solution(j)        ! We store the solution to x_solution
+                           END DO       
+                           f1_current = f1(set,beta_solution,problem1,user_n)
+                           f2_current = f2(set,beta_solution,problem2,user_n)
+                           f_solution(kk) = f1_current-f2_current       ! We store the objective funtion value without penalization to f_solution
+                        END IF               
+                       
+                        f1_current = f1(set,beta_solution,problem1,user_n) 
+                        f2_current = f2(set,beta_solution,problem2,user_n)
+        
+                        IF (iprint > 2) THEN
+                           WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+                        END IF
+                        
+                        IF (run_stop) THEN
+                          IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
+                            WRITE(*,*)
+                            WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
+                          END IF  
+                          IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
+                            WRITE(*,*)
+                            WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
+                          END IF
+                        END IF
+                        
+                        END DO
+                        
+                       ELSE
+                       
+                         DO j = 1, user_n
+                            x_solution(j,kk) = x_ed(j)
+                         END DO     
+                         f_solution(kk) = f_prev
+                       END IF           
+                       
+                   END DO           
+                       
+             
+                   CALL deallocate_data_mse(set)             
+             
+         
+         END SUBROUTINE  solution_with_k_kits_mse
+        !.......................................................................................
+        ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>        
+        ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
+        !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |        
+        !** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** 
+        !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
+
+
+
+
+       ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
+        !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |
+        ! START ** START ** START ** START ** START ** START ** START ** START ** START ** START 
+        !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|         
+        ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>
+        !***************************************************************************************
+        !  ----------------------------------------------------------------------------------  |
+        !  |                                                                                |  |        
+        !  |             SOLVING THE PROBLEM WITH k KITS AND STARTING POINT i               |  |
+        !  |                                                                                |  |        
+        !  ----------------------------------------------------------------------------------  |
+        !***************************************************************************************
+         SUBROUTINE solution_with_k_kits_log( x_solution, f_solution, k, i, f_prev, & 
+                                    & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
+                                    & nk, start, iprint, mrho, mit, mrounds, mrounds_esc, &
+                                    & agg_used, stepsize_used, nft, problem1, problem2,  &      
+                                    & in_mX, in_mY, in_mK, in_mC, nrecord, & 
+                                    & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum) 
+            !_____________________________________________________________________________________
+            ! 
+            !           
+            ! * 'problem1  and problem2   : defines the used objective function is the logistic regression model with L0-norm for kits
+            !                              (parametric approach since the number of nonzero elements is fixed) 
+            !
+            !   Solves the L0-norm problem from a fixed starting points for thread "i" with "k" kits
+            !                                                 
+            !
+            ! INPUT:  * 'nft'           : Number of rows. The dimension of the problem = nft + 1, INTEGER
+            !         * 'nk'            : the (maximum) number of kits, INTEGER
+            !         * 'nrecord'       : the number of observations, INTEGER
+            !
+            !         * 'k'             : the number of kits in the problem, INTEGER
+            !         * 'i'             : the number of thread, INTEGER
+            !
+            !         * 'x_ed'          : the beta solution for the previous problem where the number of nonzero kits was one smaller (INTEGER)
+            !         * 'x_koe'         : The solution to Cox's proportional hazard model without regularization
+            !         * 'kit_num_ed'    : The number of kits in the previous solution
+            !         * 'kit_beta_ed'   : indices of kits in the previous solution 'x_ed'
+            ! 
+            !         * 'print'         : specifies the print, INTEGER
+            !         * 'start'         : specifies how starting points are selected when the L0-norm problem is solved for  
+            !                             the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
+            !         * 'mrho'          : List of used rho values
+            !
+            !         * 'problem1'      : Defines the DC component f1 of the objective
+            !         * 'problem2'      : Defines the DC component f2 of the objective
+            !
+            !         * 'in_mX', 'in_mY', 'in_mK', 'in_mC'    : Are the data matrices 
+ 			!         * 'mPrNum'        : the information about starting points for the thread i
+           !         
+            !         PARAMETERS in DBDC method:
+            !
+            !         * mrounds     : the maximum number of rounds in one main iteratioin
+            !         * mit         : the maximum number of main iterations
+            !         * mrounds_esc : the maximum number of rounds in escape procedure
+            !
+            !         * agg_used       : .TRUE. if aggregation is used 
+            !         * stepsize_used  : .TRUE. if Simple stepsize determination is not used
+            !
+            !         * in_b1          : the size of bundle B1
+            !         * in_b2          : the size of bundle B2
+            !         * in_b           : the size of bundle in escape procedure
+            !
+            !         * in_m           : the descent parameter in main iteration
+            !         * in_m_clarke    : the descent parameter in escape procedure
+            !         * in_c           : the extra decrease parameter in main iteration
+            !         * in_r_dec       : the decrease parameter in main iteration
+            !         * in_r_inc       : the increase parameter in main iteration
+            !         * in_eps1        : the enlargement parameter
+            !         * in_eps         : the stopping tolerance: proximity measure  
+            !         * in_crit_tol    : the stopping tolerance: criticality tolerance               !
+            !
+            ! OUTPUT: * 'f_solution'      : The objective function values for the L0-norm problem with "k" kits from fixed strating points in thread "i", 
+            !                              REAL, DIMENSION(nk) 
+            !         * 'x_solution'      : The vector containing solution vector betas for the L0-norm problem with "k" kits from fixed strating points in thread "i", 
+            !                              REAL, DIMENSION(nft,nk) 
+            !
+            ! INOUT:  * 'info'            : The set of information
+            !
+            !
+            ! NOTICE: * The dimension of vectors 'x_solution', 'x_ed' and 'x_koe' has to be 'nft' ('nft' is the dimension of the problem)
+            !
+            !
+            ! NOTICE: * 'print' has to be 0, 1, 2 or 3.           
+            !         * 'start' has to be 1, 2, 3 or 4.              
+            
+            !***********************************************************************************
+               IMPLICIT NONE
+            !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
+            ! INPUTs
+               REAL(KIND=c_double), DIMENSION(nft+1), INTENT(IN) :: x_koe    ! The solution to Cox's proportional hazard model without regularization
+               REAL(KIND=c_double), DIMENSION(nft+1), INTENT(IN) :: x_ed     ! the beta solution for the previous problem where the number of nonzero kits was one smaller   
+               
+               REAL(KIND=c_double), INTENT(IN) :: f_prev                   ! The objective value for the previous problem where the number of nonzero kits was one smaller       
+               
+               INTEGER(KIND=c_int), INTENT(IN) :: kit_num_ed                   ! The number of kits in the previous solution
+               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
+               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: mPrNum        ! the starting points for thread
+
+               REAL(KIND=c_double), DIMENSION(8), INTENT(IN) :: mrho      ! Vector containing the values of rho parameter used in the method 
+            
+               INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (also the dimension of the problem)
+               INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
+               
+               INTEGER(KIND = c_int), INTENT(IN) :: start                 ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN) :: iprint                ! Print used
+               
+               INTEGER(KIND = c_int), INTENT(IN) :: k                     ! The number of kits in the problem 
+               INTEGER(KIND = c_int), INTENT(IN) :: i                     ! The number of the thread
+               
+               INTEGER(KIND = c_int), INTENT(IN) :: problem1              ! The DC component f1 of the objective               
+               INTEGER(KIND = c_int), INTENT(IN) :: problem2              ! The DC component f2 of the objective               
+               
+               INTEGER(KIND=c_int), INTENT(INOUT) :: mrounds                 ! the maximum number of rounds in one main iteration
+                                                                          ! If 'mrounds' <=0 then DEFAULT value 'mrounds'=5000 is used
+               
+               INTEGER(KIND=c_int), INTENT(INOUT) :: mit                     ! the maximum number of main iterations
+                                                                          ! If 'mit' <=0 then DEFAULT value 'mit'=5000 is used
+                                                                          
+               INTEGER(KIND=c_int), INTENT(INOUT) :: mrounds_esc             ! the maximum number of rounds in one escape procedure
+                                                                          ! If 'mrounds_clarke' <=0 then DEFAULT value 'mrounds_clarke'=5000 is used
+                
+               LOGICAL, INTENT(IN) :: agg_used                            ! .TRUE. if aggregation is used in DBDC
+               LOGICAL, INTENT(IN) :: stepsize_used                       ! .TRUE. if Simple stepsize determination is not used
+               
+              ! Parameters in DBDC method
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+               
+               REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+
+              ! The data matrices
+               REAL(KIND=c_double), DIMENSION(nft,nrecord) :: in_mX       ! predictor matrix (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(2,nrecord) :: in_mY         ! observed times and labels matrix (column is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(nk,nft) :: in_mK            ! kit matrix (row is a kit)
+               REAL(KIND=c_double), DIMENSION(nk) :: in_mC                ! kit costs          
+                     
+            ! OUTPUTs
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nft+1,nk)  :: x_solution   !Output variable for beta coefficients with k kits and starting points for the thread i
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nk)        :: f_solution   !Output variable target function value with k kits and starting point for the thread i
+               
+           
+           !***************************** LOCAL VARIABLES ************************************      
+ 
+               TYPE(set_info) :: set                                    ! The set of information                     
+
+               REAL(KIND=c_double) :: CPUtime                           ! the CPU time (in seconds)
+               REAL(KIND=c_double) :: f_solution_DBDC                   ! f value at the solution of DBDC method
+  
+               REAL(KIND=c_double), DIMENSION(nft+1) :: beta_solution     ! the solution vector beta obtained during the execution      
+          
+               INTEGER(KIND=c_int), DIMENSION(nk) :: kits_beta          ! indices of kits in the solution 'beta_solution'
+
+               REAL(KIND=c_double), DIMENSION(nft+1) :: x_0             ! the starting point
+               
+               INTEGER(KIND=c_int) :: termination         ! The reason for termination in DBDC method
+                                                          ! 1 - the stopping condition is satisfied (i.e. Clarke stationarity)
+                                                          ! 2 - the approximate stopping condition is satisfied (i.e. the step-length beta* < eps)
+                                                          ! 3 - the maximum number 'mrounds' of rounds executed in one main iteration
+                                                          ! 4 - the maximum number of 'main iterations' is executed  
+                                                          ! 5 - the maximum number 'mrounds_clarke' of rounds executed in one 'Clarke stationary' alqorithm
+                                                          
+               INTEGER(KIND=c_int), DIMENSION(8) :: counter   ! contains the values of different counteres for DBDC method: 
+                                                              !   counter(1) = iter_counter         the number of 'main iterations' executed
+                                                              !   counter(2) = subprob_counter      the number of subproblems solved
+                                                              !   counter(3) = f_counter            the number of function values evaluated for DC component in 'main iteration'
+                                                              !   counter(4) = subgrad1_counter     the number of subgradients calculated for f_1 in 'main iteration'
+                                                              !   counter(5) = subgrad2_counter     the number of subgradients calculated for f_2 in 'main iteration'
+                                                              !--------------------------------------------------------------------------------------------------------------------------                   
+                                                              !   counter(6) = stop_cond_counter    the number of times 'Clarke stationary algorithm' is executed 
+                                                              !   counter(7) = clarke_f_counter     the number of function values evaluated for f in 'Clarke stationary algorithms'
+                                                              !   counter(8) = clarke_sub_counter   the number of subgradients caluculated for f in 'Clarke stationary algorithms'             
+        
+               INTEGER(KIND=c_int) :: user_n             ! the dimension of the problem
+                                      
+               INTEGER(KIND=c_int) :: iprint_DBDC  ! variable that specifies print option in DBDC method:
+                                                !   iprint = 0 : print is suppressed
+                                                !   iprint = 1 : basic print of final result 
+                                                !   iprint = -1: basic print of final result (without the solution vector)
+                                                !   iprint = 2 : extended print of final result 
+                                                !   iprint = -2: extended print of final result (without the solution vector)
+                                                !   iprint = 3 : basic print of intermediate results and extended print of final results
+                                                !   iprint = -3: basic print of intermediate results and extended print of final results (without the solution vector)
+                                                !   iprint = 4 : extended print of intermediate results and extended print of final results 
+                                                !   iprint = -4: extended print of intermediate results and extended print of final results (without the solution vectors)
+                                                
+                                                ! If 'iprint' <= -5 .OR. 'iprint' >= 5 then DEFAULT value 'iprint'=1 is used    
+               
+               LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
+               LOGICAL :: run_stop              ! If .TRUE. run of this subroutine is stopped for selected k
+               LOGICAL :: mukana                ! If .TRUE. specific kit is in the solution
+               
+               LOGICAL :: ed_sol_in_pen         ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
+               LOGICAL :: new_start             ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
+       
+               REAL(KIND=c_double) :: rho             ! The parameter rho used in L0-norm
+               REAL(KIND=c_double) :: cost            ! The cost of solution beta
+                            
+               REAL(KIND=c_double) :: f1_current      ! The value of f1
+               REAL(KIND=c_double) :: f2_current      ! The value of f2
+               
+               REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
+               
+               REAL(KIND=c_double) :: random_num                  ! Random number
+               REAL(KIND=c_double), DIMENSION(nk) :: mRand        ! Random number matrix
+               INTEGER(KIND=c_int), DIMENSION(nk) :: mRandInd     ! Original indices of random numbers in matrix
+        
+               INTEGER(KIND=c_int) :: help_counter
+               INTEGER(KIND=c_int) :: num_rho
+               INTEGER(KIND=c_int) :: kit_num               ! The number of kits in the current solution
+               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2
+               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization         
+               INTEGER(KIND=c_int) :: startind, j3, kk      ! the start index for starting point    
+
+ 
+                    !--------------------------------------------        
+                    !                INITIALIZATION
+                    !--------------------------------------------
+                    
+                    user_n = nft+1            ! The dimension of the problem
+                    iprint_DBDC = 0_c_int     ! The print is supressed 
+                  
+                    ed_sol_in_pen = .FALSE.
+                   !ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem  
+
+                   tol_zero = (10.0_c_double)**(-6)
+ 
+
+                   ! The initialization of parametrs used in DBDC methods
+                   CALL allocate_parameters(set, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                           & in_b, in_m_clarke, in_eps, in_crit_tol)
+  
+                   ! Allocation of sizes od data matrices in function.f95
+                    CALL allocate_data_log(set, nft, nrecord, nk, k)   
+                    
+                   ! Allocation of data matricse    
+                    CALL allocate_matrices_log(set, in_mX, in_mY, in_mK, in_mC,  & 
+                                      & nrecord, nft, nk)
+                    
+                    CALL  set_k(set, k)                        ! The number of nonzero kits is fixed
+
+                    ! Determination of the first starting point for the thread i                   
+                    startind = 1
+                    IF (i > 1) THEN 
+                       DO j3 = 1, i-1
+                          startind = startind + mPrNum(j3)
+                       END DO   
+                    END IF
+					
+ 					! Starting points for the thread i are looked through
+                    DO kk = startind, startind + mPrNum(i) - 1                     
+                        !--------------------------------------------
+                        !    THE GENERATION OF THE STARTING POINT
+                        !--------------------------------------------
+                         x_0 = x_ed                  ! The base of the starting point is the previous solution (k-1 nonzero kits)
+                         mukana = .FALSE.           
+                         IF (start == 2 .OR. start == 3) THEN          ! Only nkits-k+1 starting points used             
+                           DO ii = 1, kit_num_ed       ! Then we check if the kit 'kk' belongs to the previous solution
+                             IF (kk == kits_beta_ed(ii)) THEN   
+                               mukana = .TRUE.         ! 'mukana' tells if the kit 'kk' is in solution     
+                             END IF
+                           END DO
+                         END IF
+                         
+                         ! Is a new starting point generated?
+                         IF (start == 2) THEN
+                            IF(mukana) THEN
+                               new_start = .FALSE.
+                            ELSE
+                               new_start = .TRUE.
+                            END IF               
+                         ELSE
+                            new_start = .TRUE.
+                         END IF                  
+                                             
+                         
+                       IF (new_start) THEN       ! .TRUE. if a new starting point is generated
+                        
+                        IF ((start == 2) .OR. (start == 3)) THEN 
+                          DO ii = 1, nft               ! the features are looked through
+                            IF (set%mK(ii,kk)==1) THEN
+                               x_0(ii) = x_koe(ii)     ! In starting poitnt x_0, we initialize features in kit 'kk' with values from solution x_koe
+                            END IF   
+                          END DO
+                        END IF  
+                        
+                        IF (start == 4) THEN ! A random starting point is generated
+                           x_0 = 0.01_c_double
+                           DO ii = 1, nk
+                             CALL RANDOM_NUMBER(random_num)
+                             mRand(ii) = random_num
+                             mRandInd(ii) = ii
+                           END DO 
+                           CALL heapsort_ind(mRand,mRandInd)                   
+                           DO ii = 1, k
+                              DO i2 = 1, nft 
+                                IF (set%mK(i2,mRandInd(ii))==1) THEN
+                                  x_0(i2) = x_koe(i2)    ! In starting point x_0, we initialize features in kit i with values from solution x_koe
+                                END IF   
+                              END DO     
+                           END DO
+                        END IF                  
+                          
+                        run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
+                        num_rho = 0                 ! The selection of the first value of penalization parameter rho
+                      
+                        IF (iprint >= 2) THEN
+                           WRITE(*,*) '-------------------------------------' 
+                           WRITE(*,*) 'New start point used.' 
+                        END IF
+                      
+                        DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
+                      
+                        num_rho = num_rho + 1       ! The update of the parameter rho
+                        
+                        IF (num_rho < 9) THEN
+                         SELECT CASE(num_rho)        ! The selection of the parameter rho
+                      
+                          CASE(1)
+                            rho = mrho(1)
+                          CASE(2)
+                            rho = mrho(2)                  
+                          CASE(3)
+                            rho = mrho(3)                  
+                          CASE(4)
+                            rho = mrho(4)              
+                          CASE(5)
+                            rho = mrho(5)                  
+                          CASE(6)
+                            rho = mrho(6)                  
+                          CASE(7)
+                            rho = mrho(7)                 
+                          CASE(8)
+                            rho = mrho(8)                             
+                         END SELECT 
+                        ELSE
+                          rho = 10.0_c_double * rho
+                          
+                          IF (num_rho>=24) THEN 
+                          run_stop = .TRUE.         ! Forced stop in optimization
+                          END IF 
+                        END IF
+                    
+                        ! The optimization problem is solved fot the current rho and x_0
+         
+                        CALL DBDC_algorithm( f_solution_DBDC, beta_solution, x_0, rho, 0.0_c_double, &
+                                & mit, mrounds, mrounds_esc, termination, counter, CPUtime,  &
+                                & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
+                                & set) 
+                
+                        IF (ed_sol_in_pen) THEN 
+                          x_0 = beta_solution   ! Starting point for the next round
+                        END IF    
+                    
+                        help_counter = 0           
+                        DO j = 1, nft         ! The number of zero components in beta vector is computed
+                          IF ( ABS(beta_solution(j)) < tol_zero) THEN
+                            help_counter = help_counter +1
+                            beta_solution(j) = 0.0_c_double
+                          END IF
+                        END DO
+                  
+                        cost = 0.0_c_double      ! The initialization of the cost of 'beta_solution'
+                        kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
+                        kits_beta = 0            ! The initialization of kits in 'beta_solution'
+                      
+                        !Calculation of kits in solution
+                        DO j1 = 1, nk        ! Each kit is looked through
+                          kit_in_use = .FALSE.  
+                          DO j2 = 1, nft
+                            IF (set%mK(j2,j1)==1) THEN 
+                              IF ( ABS(beta_solution(j2)) >= tol_zero) THEN    ! If the condition is satisfied the kit j1 is in solution 'beta_solution'
+                                 kit_in_use = .TRUE.                                  
+                              END IF
+                            END IF
+                          END DO
+                          IF (kit_in_use) THEN       ! Executed if kit j1 is in solution 'beta_solution'
+                            cost = cost + set%mC(j1)     ! The cost of kit j1 is taken into account
+                            kit_num = kit_num + 1    ! The number of kits is updated
+                            kits_beta(kit_num) = j1  ! The index of kit j1 is updated to table kits_beta                      
+                          END IF 
+                        END DO
+        
+                        ! We check if the optimization of problem 3 with k kits can be stopped            
+                        IF (kit_num <= k .OR. run_stop) THEN 
+                           IF (run_stop) THEN 
+                             f_solution(kk) = (10.0_c_double)**10
+                           END IF
+                           run_stop = .TRUE.     ! The optimization can be stopped
+                           DO j = 1, user_n
+                             x_solution(j,kk) = beta_solution(j)        ! We store the solution to x_solution
+                           END DO       
+                           f1_current = f1(set,beta_solution,problem1,user_n)
+                           f2_current = f2(set,beta_solution,problem2,user_n)
+                           f_solution(kk) = f1_current-f2_current       ! We store the objective funtion value without penalization to f_solution
+                        END IF               
+                       
+                        f1_current = f1(set,beta_solution,problem1,user_n) 
+                        f2_current = f2(set,beta_solution,problem2,user_n)
+        
+                        IF (iprint > 2) THEN
+                           WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+                        END IF
+                        
+                        IF (run_stop) THEN
+                          IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
+                            WRITE(*,*)
+                            WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
+                          END IF  
+                          IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
+                            WRITE(*,*)
+                            WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
+                          END IF
+                        END IF
+                        
+                        END DO
+                        
+                       ELSE
+                         DO j = 1, user_n
+                            x_solution(j,kk) = x_ed(j)
+                         END DO     
+                         f_solution(kk) = f_prev
+                       END IF        
+
+                   END DO                      
+             
+                   CALL deallocate_data_log(set)             
+             
+         
+         END SUBROUTINE  solution_with_k_kits_log
+        !.......................................................................................
+        ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>        
+        ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
+        !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |        
+        !** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** 
+        !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
+
+
+        
   
         ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
         !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |
