@@ -6704,30 +6704,30 @@
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-               INTEGER(KIND = c_int), INTENT(IN) :: nrow                  ! Number of rows in x (i.e. records)
-               INTEGER(KIND = c_int), INTENT(IN) :: ncol                  ! Number of cols in x (i.e. features)
-               INTEGER(KIND = c_int), INTENT(IN) :: nkits                 ! Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: nrow                  ! Number of rows in x (i.e. records)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: ncol                  ! Number of cols in x (i.e. features)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: nkits                 ! Number of kits for features
                
-               INTEGER(KIND = c_int), INTENT(IN) :: in_start              ! Starting point procedure used
-               INTEGER(KIND = c_int), INTENT(IN) :: in_print              ! Print used
-               INTEGER(KIND = c_int), INTENT(IN) :: in_k_max              ! The maximum number of kits in the loop
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: in_start              ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: in_print              ! Print used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: in_k_max              ! The maximum number of kits in the loop
                
-               INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds              ! the maximum number of rounds in one main iteration
-               INTEGER(KIND=c_int), INTENT(IN) :: in_mit                  ! the maximum number of main iterations
-               INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds              ! the maximum number of rounds in one main iteration
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mit                  ! the maximum number of main iterations
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
                
-               INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
-               INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
-               INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b                    ! the size of bundle in escape procedure
                
-               REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
-               REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
-               REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
-               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance
 
                 
             !--------------------------------------------------------------------------
@@ -7581,30 +7581,30 @@
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-               INTEGER(KIND = c_int), INTENT(IN) :: nrow                  ! Number of rows in x (i.e. records)
-               INTEGER(KIND = c_int), INTENT(IN) :: ncol                  ! Number of cols in x (i.e. features)
-               INTEGER(KIND = c_int), INTENT(IN) :: nkits                 ! Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: nrow                  ! Number of rows in x (i.e. records)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: ncol                  ! Number of cols in x (i.e. features)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: nkits                 ! Number of kits for features
                
-               INTEGER(KIND = c_int), INTENT(IN) :: in_start              ! Starting point procedure used
-               INTEGER(KIND = c_int), INTENT(IN) :: in_print              ! Print used
-               INTEGER(KIND = c_int), INTENT(IN) :: in_k_max              ! The maximum number of kits in the loop
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: in_start              ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: in_print              ! Print used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: in_k_max              ! The maximum number of kits in the loop
                
-               INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds              ! the maximum number of rounds in one main iteration
-               INTEGER(KIND=c_int), INTENT(IN) :: in_mit                  ! the maximum number of main iterations
-               INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds              ! the maximum number of rounds in one main iteration
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mit                  ! the maximum number of main iterations
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
                
-               INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
-               INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
-               INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b                    ! the size of bundle in escape procedure
                
-               REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
-               REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
-               REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
-               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance
 
 
             !--------------------------------------------------------------------------
@@ -8455,30 +8455,30 @@
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-               INTEGER(KIND = c_int), INTENT(IN)     :: nrow       ! Number of rows in x (i.e. records)
-               INTEGER(KIND = c_int), INTENT(IN)     :: ncol       ! Number of cols in x (i.e. features)
-               INTEGER(KIND = c_int), INTENT(IN)     :: nkits      ! Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow       ! Number of rows in x (i.e. records)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol       ! Number of cols in x (i.e. features)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits      ! Number of kits for features
                
-               INTEGER(KIND = c_int), INTENT(IN)    :: in_start    ! Starting point procedure used
-               INTEGER(KIND = c_int), INTENT(IN)    :: in_print    ! Print used
-               INTEGER(KIND = c_int), INTENT(IN)    :: in_k_max    ! The maximum number of kits in the loop
+               INTEGER(KIND = c_int), INTENT(IN), VALUE    :: in_start    ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE    :: in_print    ! Print used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE    :: in_k_max    ! The maximum number of kits in the loop
                
-               INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds              ! the maximum number of rounds in one main iteration
-               INTEGER(KIND=c_int), INTENT(IN) :: in_mit                  ! the maximum number of main iterations
-               INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds              ! the maximum number of rounds in one main iteration
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mit                  ! the maximum number of main iterations
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
                
-               INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
-               INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
-               INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b                    ! the size of bundle in escape procedure
                
-               REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
-               REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
-               REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
-               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance    
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance    
         
             !--------------------------------------------------------------------------
             ! ^^^^ START: If Fortran code is used with R-C-interface ^^^^
