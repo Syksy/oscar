@@ -6952,8 +6952,9 @@
                ! The initialization of parametrs used in DBDC methods
                CALL allocate_parameters(info, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
                                            & in_b, in_m_clarke, in_eps, in_crit_tol)
-               
-               ! Set the number of rows and columns inside Fortran  + kits           
+										   
+										   
+			   ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
                nft = ncol
                nk = nkits
@@ -7029,6 +7030,8 @@
               ! The starting point
         
                   x_0 = 0.0_c_double
+               
+    
                  
               !---------------------------------------------------------------------------
               !                       POPULATING DATA MATRICES
@@ -7453,7 +7456,6 @@
              END IF
        
              CALL deallocate_data_cox(info) 
-                
 
          END SUBROUTINE oscar_cox       
         !--------------------------------------------------------------------------------------  
