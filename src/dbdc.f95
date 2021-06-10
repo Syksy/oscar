@@ -4,7 +4,7 @@
         !| |                                                                                  | |
         !| |      DBDC - THE PROXIMAL DOUBLE BUNDLE METHOD FOR NONSMOOTH DC OPTIMIZATION      | | 
         !| |                                                                                  | |
-        !| |                                for CASSO with                                    | |
+        !| |                                for OSCAR with                                    | |
         !| |                                                                                  | |
         !| |                       1) Cox's proportional hazard model                         | |
         !| |                       2) Mean square error model                                 | |
@@ -6606,7 +6606,8 @@
           SUBROUTINE oscar_cox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
        & in_print, in_start, in_k_max, &
        & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-       & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol ) &
+       & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &
+       & nKitOnes, betakits ) &
         & BIND(C, name = "oscar_cox_f_")               
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -6620,7 +6621,8 @@
           !                     & nrow, ncol, nkits, &
           !                     & beta, fperk, in_print, in_start, in_k_max, &
           !                     & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-          !                     & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol )    
+          !                     & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, & 
+          !                     & nKitOnes, betakits )    
           !--------------------------------------------------------------------------            
           ! ^^^^ END: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------   
@@ -6648,6 +6650,8 @@
             !         * 'in_start'    : specifies how starting points are selected when the L0-norm problem is solved for  
             !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
             !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
+            !
+            !         * 'nKitOnes'    : the number of value 1 in kit matrix
             !         
             !         PARAMETERS in DBDC method:
             !
@@ -6704,32 +6708,62 @@
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-               INTEGER(KIND = c_int), INTENT(IN), VALUE :: nrow                  ! Number of rows in x (i.e. records)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE :: ncol                  ! Number of cols in x (i.e. features)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE :: nkits                 ! Number of kits for features
+               ! INTEGER(KIND = c_int), INTENT(IN) :: nrow                  ! Number of rows in x (i.e. records)
+               ! INTEGER(KIND = c_int), INTENT(IN) :: ncol                  ! Number of cols in x (i.e. features)
+               ! INTEGER(KIND = c_int), INTENT(IN) :: nkits                 ! Number of kits for features
                
-               INTEGER(KIND = c_int), INTENT(IN), VALUE :: in_start              ! Starting point procedure used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE :: in_print              ! Print used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE :: in_k_max              ! The maximum number of kits in the loop
+               ! INTEGER(KIND = c_int), INTENT(IN) :: in_start              ! Starting point procedure used
+               ! INTEGER(KIND = c_int), INTENT(IN) :: in_print              ! Print used
+               ! INTEGER(KIND = c_int), INTENT(IN) :: in_k_max              ! The maximum number of kits in the loop
                
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds              ! the maximum number of rounds in one main iteration
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mit                  ! the maximum number of main iterations
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds              ! the maximum number of rounds in one main iteration
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_mit                  ! the maximum number of main iterations
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
                
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b1                   ! the size of bundle B1
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b2                   ! the size of bundle B2
-               INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_b                    ! the size of bundle in escape procedure
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
                
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m                    ! the descent parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_m_clarke             ! the descent parameter in escape procedure
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_c                    ! the extra decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_dec                ! the decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_inc                ! the increase parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps1                 ! the enlargement parameter
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps                  ! the stopping tolerance: proximity measure  
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+               ! REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
+               ! REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
+               ! REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
+               ! REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
+               ! REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
+               ! REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
+               ! REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
+               ! REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+               
+               ! INTEGER(KIND=c_int), INTENT(IN) :: nKitOnes                ! the number of value 1 in kit matrix
 
-                
+            ! INPUTs
+               INTEGER(KIND = c_int), INTENT(IN), VAlUE :: nrow                  ! Number of rows in x (i.e. records)
+               INTEGER(KIND = c_int), INTENT(IN), VAlUE :: ncol                  ! Number of cols in x (i.e. features)
+               INTEGER(KIND = c_int), INTENT(IN), VAlUE :: nkits                 ! Number of kits for features
+               
+               INTEGER(KIND = c_int), INTENT(IN), VAlUE :: in_start              ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN), VAlUE :: in_print              ! Print used
+               INTEGER(KIND = c_int), INTENT(IN), VAlUE :: in_k_max              ! The maximum number of kits in the loop
+               
+               INTEGER(KIND=c_int), INTENT(IN), VAlUE :: in_mrounds              ! the maximum number of rounds in one main iteration
+               INTEGER(KIND=c_int), INTENT(IN), VAlUE :: in_mit                  ! the maximum number of main iterations
+               INTEGER(KIND=c_int), INTENT(IN), VAlUE :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
+               
+               INTEGER(KIND=c_int), INTENT(IN), VAlUE :: in_b1                   ! the size of bundle B1
+               INTEGER(KIND=c_int), INTENT(IN), VAlUE :: in_b2                   ! the size of bundle B2
+               INTEGER(KIND=c_int), INTENT(IN), VAlUE :: in_b                    ! the size of bundle in escape procedure
+               
+               REAL(KIND=c_double), INTENT(IN), VAlUE :: in_m                    ! the descent parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VAlUE :: in_m_clarke             ! the descent parameter in escape procedure
+               REAL(KIND=c_double), INTENT(IN), VAlUE :: in_c                    ! the extra decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VAlUE :: in_r_dec                ! the decrease parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VAlUE :: in_r_inc                ! the increase parameter in main iteration
+               REAL(KIND=c_double), INTENT(IN), VAlUE :: in_eps1                 ! the enlargement parameter
+               REAL(KIND=c_double), INTENT(IN), VAlUE :: in_eps                  ! the stopping tolerance: proximity measure  
+               REAL(KIND=c_double), INTENT(IN), VAlUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+             
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: nKitOnes                ! the number of value 1 in kit matrix
+
+ 
             !--------------------------------------------------------------------------
             ! ^^^^ START: If Fortran code is used with R-C-interface ^^^^
             !--------------------------------------------------------------------------
@@ -6754,9 +6788,9 @@
             !--------------------------------------------------------------------------
             
             ! OUTPUTs
-               REAL(KIND = c_double), INTENT(OUT), DIMENSION(ncol*nkits)  :: beta   !Output variable for beta coefficients per k
-               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nkits)       :: fperk  !Output variable target function value per k     
-               
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(ncol*nkits)   :: beta       !Output variable for beta coefficients per k
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nkits)        :: fperk      !Output variable target function value per k     
+               INTEGER(KIND = c_int), INTENT(OUT), DIMENSION(nkits*nkits)  :: betakits   !!Output variable telling kits in beta coefficients per k     
            
            !***************************** LOCAL VARIABLES ************************************      
            
@@ -6769,32 +6803,36 @@
                INTEGER(KIND=c_int) :: nk                      ! the number of kits 
                INTEGER(KIND=c_int) :: nk_max                  ! the maximum number of kits in the loop 
    
-               REAL(KIND=c_double), DIMENSION(ncol) :: beta_solution    ! the solution vector beta obtained for the problem
+               REAL(KIND=c_double), DIMENSION(nKitOnes) :: beta_solution    ! the solution vector beta obtained for the problem
 
-               REAL(KIND=c_double), DIMENSION(ncol,nkits) :: points     ! the beta_solutions for problem 3 for fixed k ('nkits' different starting points) 
-               REAL(KIND=c_double), DIMENSION(nkits) ::      f_points   ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
-               REAL(KIND=c_double), DIMENSION(ncol) ::       x_koe      ! The solution to Cox's proportional hazard model without regularization
-               REAL(KIND=c_double), DIMENSION(ncol) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
+               REAL(KIND=c_double), DIMENSION(nKitOnes,nkits) :: points     ! the beta_solutions for problem 3 for fixed k ('nkits' different starting points) 
+               REAL(KIND=c_double), DIMENSION(nkits) ::      f_points       ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
+               REAL(KIND=c_double), DIMENSION(nKitOnes) ::       x_koe      ! The solution to Cox's proportional hazard model without regularization
+               REAL(KIND=c_double), DIMENSION(nKitOnes) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
                
-               REAL(KIND=c_double), DIMENSION(ncol,nkits) :: x_solution    ! the beta solutions for the problem with fixed starting points and number of kits 
-               REAL(KIND=c_double), DIMENSION(nkits) :: f_solution         ! the objective function valuse at the solution 'x_solution'
-               REAL(KIND=c_double) :: f_solution_DBDC                      ! the f_solution obtained from DBDC method
+               REAL(KIND=c_double), DIMENSION(nKitOnes,nkits) :: x_solution    ! the beta solutions for the problem with fixed starting points and number of kits 
+               REAL(KIND=c_double), DIMENSION(nkits) :: f_solution             ! the objective function valuse at the solution 'x_solution'
+               REAL(KIND=c_double) :: f_solution_DBDC                          ! the f_solution obtained from DBDC method
                
                REAL(KIND=c_double), DIMENSION(nrow,ncol) :: in_mX      ! predictor matrix (row is an observation)
-               INTEGER(KIND=c_int), DIMENSION(nrow,2) :: in_mY         ! observed times and labels matrix (row is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(nrow,2) :: in_mY             ! observed times and labels matrix (row is an observation)  
                INTEGER(KIND=c_int), DIMENSION(nkits,ncol) :: in_mK     ! kit matrix (row is a kit)
-               REAL(KIND=c_double), DIMENSION(nkits) :: in_mC          ! kit costs          
+               REAL(KIND=c_double), DIMENSION(nkits) :: in_mC              ! kit costs          
        
-               REAL(KIND=c_double), DIMENSION(ncol,nrow) :: mXt        ! predictor matrix (column is an observation)
-               INTEGER(KIND=c_int), DIMENSION(2,nrow) :: mYt           ! observed times and labels matrix (column is an observation)  
+               REAL(KIND=c_double), DIMENSION(nKitOnes,nrow) :: mXt        ! predictor matrix (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(2,nrow) :: mYt               ! observed times and labels matrix (column is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(nkits,nKitOnes) :: mK        ! Modified kit matrix (There is only one value one in each column)  
+               REAL(KIND = c_double), DIMENSION(nKitOnes*nkits)  :: beta_nft   !Output variable for beta coefficients per k
 
-               INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta      ! indices of kits in the solution 'beta_solution'
-               INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed   ! indices of kits in the previous solution 'x_ed'
+               INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta          ! indices of kits in the solution 'beta_solution'
+               INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed       ! indices of kits in the previous solution 'x_ed'
 
-               REAL(KIND=c_double), DIMENSION(ncol) :: x_0             ! the starting point
+               REAL(KIND=c_double), DIMENSION(nKitOnes) :: x_0             ! the starting point
                
                REAL(KIND=c_double), DIMENSION(nrow) :: mTimes          ! Times for the observations   
                INTEGER(KIND=c_int), DIMENSION(nrow) :: mTimesInd       ! Labels of times for the observations (0=alive, 1=death)  
+               
+               INTEGER(KIND=c_int), DIMENSION(ncol) :: KitOnes        ! The number of kits where each variables is located. If kits do not intersect then each variable is only in one kit!
               
                REAL(KIND=c_double), DIMENSION(8) :: mrho        ! Vector containing the values of rho parameter used in the method 
               
@@ -6919,6 +6957,7 @@
                INTEGER(KIND=c_int) :: nremoved
                INTEGER(KIND=c_int) :: kit_num, kit_num_ed   ! The number of kits in the current and previous solutions
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
+               INTEGER(KIND=c_int) :: l, l2
                INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
 
                
@@ -6952,11 +6991,10 @@
                ! The initialization of parametrs used in DBDC methods
                CALL allocate_parameters(info, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
                                            & in_b, in_m_clarke, in_eps, in_crit_tol)
-										   
-										   
-			   ! Set the number of rows and columns inside Fortran  + kits           
+               
+               ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
-               nft = ncol
+               nft = nKitOnes
                nk = nkits
             
                ! The maximum number of kits in the loop
@@ -7004,6 +7042,7 @@
                !ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem      
 
                 tol_zero = (10.0_c_double)**(-6)               
+                
        
                IF ( (iprint > 0) .OR. (iprint == -1) ) THEN 
                  IF (ed_sol_in_pen) THEN 
@@ -7030,8 +7069,6 @@
               ! The starting point
         
                   x_0 = 0.0_c_double
-               
-    
                  
               !---------------------------------------------------------------------------
               !                       POPULATING DATA MATRICES
@@ -7045,7 +7082,7 @@
           
                 ! OPEN(78,file=infileX,status='old',form='formatted')
                 ! DO i=1,nrecord
-                   ! READ(78,*) (in_mX(i,j),j=1,nft)
+                   ! READ(78,*) (in_mX(i,j),j=1,ncol)
                 ! END DO
                 ! CLOSE(78)
             
@@ -7057,7 +7094,7 @@
 
                 ! OPEN(78,file=infileK,status='old',form='formatted')      
                 ! DO i=1,nkits
-                   ! READ(78,*) (in_mK(i,j),j=1,nft)
+                   ! READ(78,*) (in_mK(i,j),j=1,ncol)
                 ! END DO
                 ! CLOSE(78)
             
@@ -7066,6 +7103,7 @@
                    ! READ(78,*) in_mC(i)
                 ! END DO
                 ! CLOSE(78)  
+                
               !--------------------------------------------------------------------------
               ! ^^^^ END: IF Fortran code is used without R-C-interface ^^^^
               !---------------------------------------------------------------------------
@@ -7079,7 +7117,7 @@
               
                ! Populate the input matrix 'in_mX' of dim {nrecord,nft}
                  ind = 0
-                 DO j = 1, nft
+                 DO j = 1, ncol
                     DO i = 1, nrecord
                       ind = ind +1
                       in_mX(i,j) = x(ind)
@@ -7097,7 +7135,7 @@
                  
               ! Populate kit structure matrix 'in_mK' of dim {nkits,nft}
                  ind = 0
-                 DO j = 1, nft
+                 DO j = 1, ncol
                     DO i = 1, nk
                       ind = ind + 1
                       in_mK(i,j) = kits(ind)
@@ -7114,7 +7152,14 @@
               !--------------------------------------------------------------------------
               !^^^^ END: IF Fortran code is used with R-C-interface ^^^^
               !---------------------------------------------------------------------------
-               
+  
+                ! The number of value ones in columns of kit matrix
+                KitOnes = 0_c_int
+                DO j = 1, ncol
+                   DO i = 1, nk
+                       KitOnes(j) = KitOnes(j) + in_mK(i,j)
+                   END DO
+                END DO
           
               !---------------------------------------------------------------------------
               !               ORDERING DATA IN INCREASING ORDER BASED ON time 
@@ -7131,8 +7176,12 @@
                !Transpose of matrix mX
                DO i = 1, nrecord
                  ind = mTimesInd(i)
-                 DO j = 1, nft
-                    mXt(j,i) = in_mX(ind,j)
+                 l2 = 1
+                 DO j = 1, ncol
+                   DO l = 1, KitOnes(j) 
+                       mXt(l2,i) = in_mX(ind,j)
+                       l2 = l2 + 1
+                   END DO   
                  END DO
                END DO
             
@@ -7142,7 +7191,19 @@
                  DO j = 1, 2
                     mYt(j,i) = in_mY(ind,j)
                  END DO
-               END DO                  
+               END DO    
+
+               ! Alters the kit matrix
+               mK = 0_c_int
+               l2 = 1_c_int
+               DO j = 1, ncol 
+                  DO i = 1, nk
+                     IF (in_mK(i,j)==1_c_int) THEN  
+                        mK(i,l2) = in_mK(i,j)
+                        l2 = l2 + 1_c_int
+                     END IF
+                  END DO               
+               END DO 
                
       
                ! Allocation of sizes of matrices in function.f95
@@ -7151,9 +7212,9 @@
               !---------------------------------------------------------------------------
               !                     STORING DATA MATRICES 
               !---------------------------------------------------------------------------
-              ! Notice: Matrices are transposed above! => Each column presents either an observation or a kit!
+              ! Notice: Matrices are transposed! => Each column presents either an observation or a kit!
           
-              CALL allocate_matrices_cox(info, mXt, mYt, in_mK, in_mC,  & 
+              CALL allocate_matrices_cox(info, mXt, mYt, mK, in_mC,  & 
                                       & nrecord, nft, nk)
 
               ! Scaling of data 
@@ -7167,9 +7228,10 @@
 
               
               ! The initialization of beta vector
+              beta_nft = 0.0_c_double
               beta = 0.0_c_double
-			  
-			  ! The print in DBDC method is supressed
+              
+              ! The print in DBDC method is supressed
               iprint_DBDC = 0
               
               !-------------------------------------------------------------------------------------------------
@@ -7261,7 +7323,7 @@
                   !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
                   !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
                   !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
-                  !$OMP FIRSTPRIVATE(mXt, mYt, in_mK, in_mC)                 &  
+                  !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC)                    &  
                   !$OMP SHARED(points, f_points, mPrNum)               
                   
                    DO i = 1, tread_num              ! Different starting points in threads are looked through to solve the problem 3 with fixed number of nonzero kits                   
@@ -7270,7 +7332,7 @@
                                                & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
                                                & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
                                                & agg_used, stepsize_used, user_n, problem1, problem2, &
-                                               & mXt, mYt, in_mK, in_mC, nrecord,  & 
+                                               & mXt, mYt, mK, in_mC, nrecord,  & 
                                                & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
                                                & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum)
                     
@@ -7326,7 +7388,7 @@
                    ind = (k-1)*user_n  
                    DO i = 1, user_n
                      x_ed(i) = points(i,min_ind)            ! The beta solution yielding the smallest objective function value is set as the previous solution
-                     beta(ind+i) = points(i,min_ind)        ! The beta solution yielding the smallest objective function value is stored to solution vector 
+                     beta_nft(ind+i) = points(i,min_ind)        ! The beta solution yielding the smallest objective function value is stored to solution vector 
                    END DO
               
                    help_counter = 0           
@@ -7356,6 +7418,12 @@
                        kits_beta_ed(kit_num_ed) = j1   ! The index of kit j1 is updated to table kits_beta                 
                      END IF 
                    END DO       
+
+                   ! The storing of kits to "betakits" vector
+                   ind = (k-1)*nk
+                   DO i = 1, nk
+                      betakits(ind+i) = kits_beta_ed(i)                
+                   END DO
 
  
                    IF ((iprint>=2) .OR. (iprint == -1)) THEN 
@@ -7404,15 +7472,21 @@
                    ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
-                        beta_solution(i) = beta(ind+i)
+                        beta_solution(i) = beta_nft(ind+i)
                    END DO
                    CALL rescaling_beta_cox(info, beta_solution)         ! Rescaling of solution
                    f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value 
                    f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value
                    fperk(k) = f1_current-f2_current               ! The objective function value for problem 3 with k nonzero kits 
                     WRITE(*,*) 'f',k,':', fperk(k)
-                   DO i = 1, user_n 
-                      beta(ind+i) = beta_solution(i)        ! the beta vector for problem 3 with k nonzero kits
+                    
+                   l2 = 1   
+                   ind = (k-1)*ncol
+                   DO i = 1, ncol 
+                      DO j = 1, KitOnes(i)
+                        beta(ind+i) = beta(ind+i)+beta_solution(l2)        ! the beta vector for problem 3 with k nonzero kits
+                        l2 = l2 + 1 
+                      END DO    
                    END DO       
                    
                  END DO 
@@ -7425,15 +7499,21 @@
                    ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
-                        beta_solution(i) = beta(ind+i)
+                        beta_solution(i) = beta_nft(ind+i)
                    END DO
                    f1_current = f1(info,beta_solution,problem1,user_n) ! The f_1 value 
                    f2_current = f2(info,beta_solution,problem1,user_n) ! The f_2 value
                    fperk(k) = f1_current-f2_current               ! The objective function value for problem 3 with k nonzero kits 
                     WRITE(*,*) 'f',k,':', fperk(k)
-                  DO i = 1, user_n 
-                      beta(ind+i) = beta_solution(i)        ! the beta vector for problem 3 with k nonzero kits
-                   END DO       
+                    
+                   l2 = 1   
+                   ind = (k-1)*ncol
+                   DO i = 1, ncol 
+                      DO j = 1, KitOnes(i)
+                        beta(ind+i) = beta(ind+i)+beta_solution(l2)        ! the beta vector for problem 3 with k nonzero kits
+                        l2 = l2 + 1 
+                      END DO    
+                   END DO     
                    
                  END DO            
               END IF            
@@ -7456,6 +7536,7 @@
              END IF
        
              CALL deallocate_data_cox(info) 
+                
 
          END SUBROUTINE oscar_cox       
         !--------------------------------------------------------------------------------------  
@@ -7484,7 +7565,8 @@
           SUBROUTINE oscar_mse(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
        & in_print, in_start, in_k_max, &
        & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-       & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol ) &     
+       & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &
+       & nKitOnes, betakits ) &     
         & BIND(C, name = "oscar_mse_f_")               
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -7498,7 +7580,8 @@
           !                     & nrow, ncol, nkits, &
           !                     & beta, fperk, in_print, in_start, in_k_max, &
           !                     & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-          !                     & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol )    
+          !                     & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &
+          !                     & nKitOnes, betakits )    
           !--------------------------------------------------------------------------            
           ! ^^^^ END: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------   
@@ -7527,6 +7610,8 @@
             !         * 'in_start'    : specifies how starting points are selected when the L0-norm problem is solved for  
             !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
             !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
+            !
+            !         * 'nKitOnes'    : the number of value 1 in kit matrix
             !
             !         PARAMETERS in DBDC method:
             !
@@ -7582,7 +7667,35 @@
             !***********************************************************************************
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
-            ! INPUTs
+            ! ! INPUTs
+               ! INTEGER(KIND = c_int), INTENT(IN) :: nrow                  ! Number of rows in x (i.e. records)
+               ! INTEGER(KIND = c_int), INTENT(IN) :: ncol                  ! Number of cols in x (i.e. features)
+               ! INTEGER(KIND = c_int), INTENT(IN) :: nkits                 ! Number of kits for features
+               
+               ! INTEGER(KIND = c_int), INTENT(IN) :: in_start              ! Starting point procedure used
+               ! INTEGER(KIND = c_int), INTENT(IN) :: in_print              ! Print used
+               ! INTEGER(KIND = c_int), INTENT(IN) :: in_k_max              ! The maximum number of kits in the loop
+               
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds              ! the maximum number of rounds in one main iteration
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_mit                  ! the maximum number of main iterations
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
+               
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+               
+               ! REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
+               ! REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
+               ! REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
+               ! REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
+               ! REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
+               ! REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
+               ! REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
+               ! REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+
+               ! INTEGER(KIND=c_int), INTENT(IN) :: nKitOnes                ! the number of value 1 in kit matrix
+
+              ! INPUTs
                INTEGER(KIND = c_int), INTENT(IN), VALUE :: nrow                  ! Number of rows in x (i.e. records)
                INTEGER(KIND = c_int), INTENT(IN), VALUE :: ncol                  ! Number of cols in x (i.e. features)
                INTEGER(KIND = c_int), INTENT(IN), VALUE :: nkits                 ! Number of kits for features
@@ -7607,6 +7720,8 @@
                REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps1                 ! the enlargement parameter
                REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps                  ! the stopping tolerance: proximity measure  
                REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: nKitOnes                ! the number of value 1 in kit matrix
 
 
             !--------------------------------------------------------------------------
@@ -7633,8 +7748,9 @@
             !--------------------------------------------------------------------------
             
             ! OUTPUTs
-               REAL(KIND = c_double), INTENT(OUT), DIMENSION((ncol+1)*nkits)  :: beta   !Output variable for beta coefficients per k
-               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nkits)           :: fperk  !Output variable target function value per k     
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION((ncol+1)*nkits)  :: beta       !Output variable for beta coefficients per k
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nkits)           :: fperk      !Output variable target function value per k     
+               INTEGER(KIND = c_int), INTENT(OUT), DIMENSION(nkits*nkits)     :: betakits   !Output variable telling kits in beta coefficients per k
                
            
            !***************************** LOCAL VARIABLES ************************************      
@@ -7648,30 +7764,33 @@
                INTEGER(KIND=c_int) :: nk                      ! the number of kits 
                INTEGER(KIND=c_int) :: nk_max                  ! the maximum number of kits in the loop 
    
-               REAL(KIND=c_double), DIMENSION(ncol+1) :: beta_solution    ! the solution vector beta obtained for the problem
+               REAL(KIND=c_double), DIMENSION(nKitOnes+1) :: beta_solution    ! the solution vector beta obtained for the problem
 
-               REAL(KIND=c_double), DIMENSION(ncol+1,nkits) :: points     ! the beta_solutions for problem 4 for fixed k ('nkits' different starting points) 
+               REAL(KIND=c_double), DIMENSION(nKitOnes+1,nkits) :: points     ! the beta_solutions for problem 4 for fixed k ('nkits' different starting points) 
                REAL(KIND=c_double), DIMENSION(nkits) ::      f_points     ! the objective function values for problem 4 for fixed k ('nkits' different starting points)
-               REAL(KIND=c_double), DIMENSION(ncol+1) ::       x_koe      ! The solution to  problem 4  without regularization
-               REAL(KIND=c_double), DIMENSION(ncol+1) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
+               REAL(KIND=c_double), DIMENSION(nKitOnes+1) ::       x_koe      ! The solution to  problem 4  without regularization
+               REAL(KIND=c_double), DIMENSION(nKitOnes+1) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
                
-               REAL(KIND=c_double), DIMENSION(ncol+1,nkits) ::  x_solution      ! the beta solutions for the problem with fixed starting points and number of kits
+               REAL(KIND=c_double), DIMENSION(nKitOnes+1,nkits) ::  x_solution      ! the beta solutions for the problem with fixed starting points and number of kits
                REAL(KIND=c_double), DIMENSION(nkits) :: f_solution              ! the objective function values at the solution 'x_solution'
                REAL(KIND=c_double) :: f_solution_DBDC                           ! the f_solution obtained from DBDC method
         
-              
                REAL(KIND=c_double), DIMENSION(nrow,ncol) :: in_mX     ! predictor matrix (row is an observation)
                REAL(KIND=c_double), DIMENSION(nrow) :: in_mY          ! output values 
                INTEGER(KIND=c_int), DIMENSION(nkits,ncol) :: in_mK    ! kit matrix (row is a kit)
                REAL(KIND=c_double), DIMENSION(nkits) :: in_mC         ! kit costs                   
               
-               REAL(KIND=c_double), DIMENSION(ncol,nrow) :: mXt       ! predictor matrix (column is an observation)
-               REAL(KIND=c_double), DIMENSION(nrow) :: mYt            ! Outputs
+               REAL(KIND=c_double), DIMENSION(nKitOnes,nrow) :: mXt       ! predictor matrix (column is an observation)
+               REAL(KIND=c_double), DIMENSION(nrow) :: mYt                 ! Outputs
+               INTEGER(KIND=c_int), DIMENSION(nkits,nKitOnes) :: mK        ! Modified kit matrix (There is only one value one in each column)  
+               REAL(KIND = c_double), DIMENSION((nKitOnes+1)*nkits)  :: beta_nft   !Output variable for beta coefficients per k
+
+               INTEGER(KIND=c_int), DIMENSION(ncol) :: KitOnes        ! The number of kits where each variables is located. If kits do not intersect then each variable is only in one kit!
                
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta     ! indices of kits in the solution 'beta_solution'
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
 
-               REAL(KIND=c_double), DIMENSION(ncol+1) :: x_0          ! the starting point
+               REAL(KIND=c_double), DIMENSION(nKitOnes+1) :: x_0          ! the starting point
                              
                REAL(KIND=c_double), DIMENSION(8) :: mrho        ! Vector containing the values of rho parameter used in the method 
               
@@ -7795,6 +7914,7 @@
                INTEGER(KIND=c_int) :: nremoved
                INTEGER(KIND=c_int) :: kit_num, kit_num_ed   ! The number of kits in the current and previous solutions
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
+               INTEGER(KIND=c_int) :: l, l2
                INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
                
                INTEGER(KIND=c_int), DIMENSION(nkits) :: mPrNum   ! The number of problems for threads
@@ -7832,7 +7952,7 @@
                
                ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
-               nft = ncol
+               nft = nKitOnes
                nk = nkits
                
                ! The maximum number of kits in the loop
@@ -7921,7 +8041,7 @@
           
                 ! OPEN(78,file=infileX,status='old',form='formatted')
                 ! DO i=1,nrecord
-                   ! READ(78,*) (in_mX(i,j),j=1,nft)
+                   ! READ(78,*) (in_mX(i,j),j=1,ncol)
                 ! END DO
                 ! CLOSE(78)
             
@@ -7933,7 +8053,7 @@
 
                 ! OPEN(78,file=infileK,status='old',form='formatted')      
                 ! DO i=1,nk
-                   ! READ(78,*) (in_mK(i,j),j=1,nft)
+                   ! READ(78,*) (in_mK(i,j),j=1,ncol)
                 ! END DO
                 ! CLOSE(78)
             
@@ -7942,6 +8062,7 @@
                    ! READ(78,*) in_mC(i)
                 ! END DO
                 ! CLOSE(78)  
+                
               !--------------------------------------------------------------------------
               ! ^^^^ END: IF Fortran code is used without R-C-interface ^^^^
               !---------------------------------------------------------------------------
@@ -7955,7 +8076,7 @@
               
                ! Populate the input matrix 'in_mX' of dim {nft,nrecord}
                  ind = 0
-                 DO j = 1, nft
+                 DO j = 1, ncol
                     DO i = 1, nrecord
                       ind = ind + 1
                       in_mX(i,j) = x(ind)
@@ -7971,7 +8092,7 @@
                  
               ! Populate kit matrix 'in_mK' of dim {nkits,nft}
                  ind = 0
-                 DO j = 1, nft
+                 DO j = 1, ncol
                     DO i = 1, nk
                       ind = ind + 1
                       in_mK(i,j) = kits(ind)
@@ -7997,6 +8118,15 @@
                ! Allocation of data matrices in function.f95
                CALL allocate_data_mse(info,nft,nrecord,nk,nk)   
                
+                ! The number of value ones in columns of kit matrix
+                KitOnes = 0_c_int
+                DO j = 1, ncol
+                   DO i = 1, nk
+                       KitOnes(j) = KitOnes(j) + in_mK(i,j)
+                   END DO
+                END DO
+
+               
               !---------------------------------------------------------------------------
               !                     STORING DATA MATRICES 
               !---------------------------------------------------------------------------
@@ -8005,17 +8135,33 @@
               
               !Transpose of matrix mX
                DO i = 1, nrecord
-                 DO j = 1, nft
-                    mXt(j,i) = in_mX(i,j)
+                 l2 = 1
+                 DO j = 1, ncol
+                   DO l = 1, KitOnes(j) 
+                       mXt(l2,i) = in_mX(i,j)
+                       l2 = l2 + 1
+                   END DO   
                  END DO
-               END DO
+               END DO             
             
                !Transpose of matrix mY          
                DO i = 1, nrecord
                     mYt(i) = in_mY(i)
                END DO    
 
-              CALL allocate_matrices_mse(info, mXt, mYt, in_mK, in_mC,  & 
+               ! Alters the kit matrix
+               mK = 0_c_int
+               l2 = 1_c_int
+               DO j = 1, ncol 
+                  DO i = 1, nk
+                     IF (in_mK(i,j)==1_c_int) THEN  
+                        mK(i,l2) = in_mK(i,j)
+                        l2 = l2 + 1_c_int
+                     END IF
+                  END DO               
+               END DO 
+               
+              CALL allocate_matrices_mse(info, mXt, mYt, mK, in_mC,  & 
                                       & nrecord, nft, nk)
 
               ! Scaling of data 
@@ -8029,6 +8175,7 @@
            
 
               ! The initialization of beta vector
+              beta_nft = 0.0_c_double
               beta = 0.0_c_double
               
               ! The best beta_solution for Cox's proportional hazard model without regularization/penalization    
@@ -8118,7 +8265,7 @@
                   !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
                   !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
                   !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
-                  !$OMP FIRSTPRIVATE(mXt, mYt, in_mK, in_mC)                 &  
+                  !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC)                    &  
                   !$OMP SHARED(points, f_points, mPrNum)               
                   
                    DO i = 1, tread_num          ! Different starting points for threads are looked through to solve the problem 4 with fixed number of nonzero kits                   
@@ -8127,7 +8274,7 @@
                                                & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
                                                & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
                                                & agg_used, stepsize_used, nft, problem1, problem2, &
-                                               & mXt, mYt, in_mK, in_mC, nrecord,  & 
+                                               & mXt, mYt, mK, in_mC, nrecord,  & 
                                                & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
                                                & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum)
                     
@@ -8183,9 +8330,9 @@
                    ind = (k-1)*user_n  
                    DO i = 1, user_n
                      x_ed(i) = points(i,min_ind)            ! The beta solution yielding the smallest objective function value is set as the previous solution
-                     beta(ind+i) = points(i,min_ind)        ! The beta solution yielding the smallest objective function value is stored to solution vector 
+                     beta_nft(ind+i) = points(i,min_ind)        ! The beta solution yielding the smallest objective function value is stored to solution vector 
                    END DO
-				   
+                   
                    help_counter = 0           
                    DO j = 1, nft         ! The number of zero components in the previous beta vector is computed
                       IF ( ABS(x_ed(j)) < tol_zero ) THEN
@@ -8213,7 +8360,12 @@
                        kits_beta_ed(kit_num_ed) = j1   ! The index of kit j1 is updated to table kits_beta                 
                      END IF 
                    END DO       
- 
+
+                   ! The storing of kits to "betakits" vector
+                   ind = (k-1)*nk
+                   DO i = 1, nk
+                      betakits(ind+i) = kits_beta_ed(i)                
+                   END DO 
  
                    IF ((iprint>=2) .OR. (iprint == -1)) THEN 
                      WRITE(*,*)
@@ -8262,16 +8414,23 @@
                    ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
-                        beta_solution(i) = beta(ind+i)
+                        beta_solution(i) = beta_nft(ind+i)
                    END DO
                    CALL rescaling_beta_mse(info, beta_solution)        ! Rescaling of solution
                    f1_current = f1(info,beta_solution,problem1,user_n) ! The f_1 value 
                    f2_current = f2(info,beta_solution,problem1,user_n) ! The f_2 value
                    fperk(k) = f1_current-f2_current                    ! The objective function value for problem 4 with k nonzero kits 
                    WRITE(*,*) 'f',k,':', fperk(k)
-                   DO i = 1, user_n 
-                      beta(ind+i) = beta_solution(i)        ! the beta vector for problem 4 with k nonzero kits
-                   END DO       
+                   
+                   l2 = 1   
+                   ind = (k-1)*(ncol+1)
+                   DO i = 1, ncol 
+                      DO j = 1, KitOnes(i)
+                        beta(ind+i) = beta(ind+i)+beta_solution(l2)        ! the beta vector for problem 3 with k nonzero kits
+                        l2 = l2 + 1 
+                      END DO    
+                   END DO   
+                   beta(ind+ncol+1) = beta_solution(l2)                     
                    
                  END DO 
               ELSE ! No rescaling
@@ -8283,15 +8442,22 @@
                    ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
-                        beta_solution(i) = beta(ind+i)
+                        beta_solution(i) = beta_nft(ind+i)
                    END DO
                    f1_current = f1(info,beta_solution,problem1,user_n) ! The f_1 value 
                    f2_current = f2(info,beta_solution,problem2,user_n) ! The f_2 value
                    fperk(k) = f1_current-f2_current                    ! The objective function value for problem 4 with k nonzero kits         
                     WRITE(*,*) 'f',k,':', fperk(k)
-                   DO i = 1, user_n 
-                      beta(ind+i) = beta_solution(i)        ! the beta vector for problem 4 with k nonzero kits
-                   END DO       
+                    
+                   l2 = 1   
+                   ind = (k-1)*(ncol+1)
+                   DO i = 1, ncol 
+                      DO j = 1, KitOnes(i)
+                        beta(ind+i) = beta(ind+1)+beta_solution(l2)        ! the beta vector for problem 3 with k nonzero kits
+                        l2 = l2 + 1 
+                      END DO    
+                   END DO   
+                   beta(ind+ncol+1) = beta_solution(l2)    
 
                  END DO   
                  
@@ -8304,10 +8470,16 @@
                    f2_current = f2(info,beta_solution,problem2,user_n) ! The f_2 value
                    fperk(k) = f1_current-f2_current                    ! The objective function value for problem 4 with k nonzero kits         
                     WRITE(*,*) 'f',k,':', fperk(k)
-                   DO i = 1, user_n 
-                      beta(ind+i) = beta_solution(i)        ! the beta vector for problem 4 with k nonzero kits
-                   END DO    
 
+                   l2 = 1   
+                   ind = (k-1)*(ncol+1)
+                   DO i = 1, ncol 
+                      DO j = 1, KitOnes(i)
+                        beta(ind+i) = beta(ind+i)+beta_solution(l2)        ! the beta vector for problem 3 with k nonzero kits
+                        l2 = l2 + 1 
+                      END DO    
+                   END DO   
+                   beta(ind+ncol+1) = beta_solution(l2) 
                  
             
               END IF       
@@ -8358,7 +8530,8 @@
           SUBROUTINE oscar_logistic(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
        & in_print, in_start, in_k_max, &
        & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-       & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol ) &     
+       & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, & 
+       & nKitOnes, betakits ) &     
         & BIND(C, name = "oscar_logistic_f_")              
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -8372,7 +8545,8 @@
           !                     & nrow, ncol, nkits, &
           !                     & beta, fperk, in_print, in_start, in_k_max, &
           !                     & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-          !                     & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol)                                
+          !                     & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &                                
+           !                    & nKitOnes, betakits )    
           !--------------------------------------------------------------------------            
           ! ^^^^ END: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------   
@@ -8401,6 +8575,8 @@
             !         * 'in_start'    : specifies how starting points are selected when the L0-norm problem is solved for  
             !                           the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
             !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
+            !
+            !         * 'nKitOnes'    : the number of value 1 in kit matrix
             !
             !         PARAMETERS in DBDC method:
             !
@@ -8457,13 +8633,41 @@
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nrow       ! Number of rows in x (i.e. records)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: ncol       ! Number of cols in x (i.e. features)
-               INTEGER(KIND = c_int), INTENT(IN), VALUE     :: nkits      ! Number of kits for features
+               ! INTEGER(KIND = c_int), INTENT(IN)     :: nrow       ! Number of rows in x (i.e. records)
+               ! INTEGER(KIND = c_int), INTENT(IN)     :: ncol       ! Number of cols in x (i.e. features)
+               ! INTEGER(KIND = c_int), INTENT(IN)     :: nkits      ! Number of kits for features
                
-               INTEGER(KIND = c_int), INTENT(IN), VALUE    :: in_start    ! Starting point procedure used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE    :: in_print    ! Print used
-               INTEGER(KIND = c_int), INTENT(IN), VALUE    :: in_k_max    ! The maximum number of kits in the loop
+               ! INTEGER(KIND = c_int), INTENT(IN)    :: in_start    ! Starting point procedure used
+               ! INTEGER(KIND = c_int), INTENT(IN)    :: in_print    ! Print used
+               ! INTEGER(KIND = c_int), INTENT(IN)    :: in_k_max    ! The maximum number of kits in the loop
+               
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds              ! the maximum number of rounds in one main iteration
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_mit                  ! the maximum number of main iterations
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_mrounds_esc          ! the maximum number of rounds in one escape procedure
+               
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
+               ! INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+               
+               ! REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
+               ! REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
+               ! REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
+               ! REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
+               ! REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
+               ! REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
+               ! REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
+               ! REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance    
+
+               ! INTEGER(KIND=c_int), INTENT(IN) :: nKitOnes                ! the number of value 1 in kit matrix
+
+              ! INPUTs
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: nrow                  ! Number of rows in x (i.e. records)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: ncol                  ! Number of cols in x (i.e. features)
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: nkits                 ! Number of kits for features
+               
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: in_start              ! Starting point procedure used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: in_print              ! Print used
+               INTEGER(KIND = c_int), INTENT(IN), VALUE :: in_k_max              ! The maximum number of kits in the loop
                
                INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mrounds              ! the maximum number of rounds in one main iteration
                INTEGER(KIND=c_int), INTENT(IN), VALUE :: in_mit                  ! the maximum number of main iterations
@@ -8480,7 +8684,9 @@
                REAL(KIND=c_double), INTENT(IN), VALUE :: in_r_inc                ! the increase parameter in main iteration
                REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps1                 ! the enlargement parameter
                REAL(KIND=c_double), INTENT(IN), VALUE :: in_eps                  ! the stopping tolerance: proximity measure  
-               REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance    
+               REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+
+               INTEGER(KIND=c_int), INTENT(IN), VALUE :: nKitOnes                ! the number of value 1 in kit matrix
         
             !--------------------------------------------------------------------------
             ! ^^^^ START: If Fortran code is used with R-C-interface ^^^^
@@ -8506,9 +8712,10 @@
             !--------------------------------------------------------------------------
             
             ! OUTPUTs
-               REAL(KIND = c_double), INTENT(OUT), DIMENSION((ncol+1)*nkits)  :: beta   !Output variable for beta coefficients per k
-               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nkits)           :: fperk  !Output variable target function value per k     
-               
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION((ncol+1)*nkits)  :: beta       !Output variable for beta coefficients per k
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nkits)           :: fperk      !Output variable target function value per k     
+               INTEGER(KIND = c_int), INTENT(OUT), DIMENSION(nkits*nkits)     :: betakits   !Output variable telling kits in beta coefficients per k
+
            
            !***************************** LOCAL VARIABLES ************************************      
 
@@ -8521,14 +8728,14 @@
                INTEGER(KIND=c_int) :: nk                      ! the number of kits 
                INTEGER(KIND=c_int) :: nk_max                  ! the maximum number of kits in the loop
    
-               REAL(KIND=c_double), DIMENSION(ncol+1) :: beta_solution    ! the solution vector beta obtained for the problem
+               REAL(KIND=c_double), DIMENSION(nKitOnes+1) :: beta_solution    ! the solution vector beta obtained for the problem
 
-               REAL(KIND=c_double), DIMENSION(ncol+1,nkits) :: points     ! the beta_solutions for problem 3 for fixed k ('nkits' different starting points) 
+               REAL(KIND=c_double), DIMENSION(nKitOnes+1,nkits) :: points     ! the beta_solutions for problem 3 for fixed k ('nkits' different starting points) 
                REAL(KIND=c_double), DIMENSION(nkits) ::      f_points     ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
-               REAL(KIND=c_double), DIMENSION(ncol+1) ::       x_koe      ! The solution to Cox's proportional hazard model without regularization
-               REAL(KIND=c_double), DIMENSION(ncol+1) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
+               REAL(KIND=c_double), DIMENSION(nKitOnes+1) ::       x_koe      ! The solution to Cox's proportional hazard model without regularization
+               REAL(KIND=c_double), DIMENSION(nKitOnes+1) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
 
-               REAL(KIND=c_double), DIMENSION(ncol+1,nkits) ::  x_solution      ! the beta solutions for the problem with fixed starting points and number of kits (for all starting points)
+               REAL(KIND=c_double), DIMENSION(nKitOnes+1,nkits) ::  x_solution      ! the beta solutions for the problem with fixed starting points and number of kits (for all starting points)
                REAL(KIND=c_double), DIMENSION(nkits) :: f_solution              ! the objective function values at the solution 'x_solution' (for all starting points)
                REAL(KIND=c_double) :: f_solution_DBDC                           ! the f_solution obtained from DBDC method
                
@@ -8537,13 +8744,17 @@
                INTEGER(KIND=c_int), DIMENSION(nkits,ncol) :: in_mK    ! kit matrix (row is a kit)
                REAL(KIND=c_double), DIMENSION(nkits) :: in_mC         ! kit costs                   
 
-               REAL(KIND=c_double), DIMENSION(ncol,nrow) :: mXt       ! predictor matrix (column is an observation)
-               INTEGER(KIND=c_int), DIMENSION(nrow) :: mYt            ! Outputs  
-               
+               REAL(KIND=c_double), DIMENSION(nKitOnes,nrow) :: mXt        ! predictor matrix (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(nrow) :: mYt                 ! Outputs  
+               INTEGER(KIND=c_int), DIMENSION(nkits,nKitOnes) :: mK        ! Modified kit matrix (There is only one value one in each column)  
+               REAL(KIND = c_double), DIMENSION((nKitOnes+1)*nkits)  :: beta_nft   !Output variable for beta coefficients per k
+
+               INTEGER(KIND=c_int), DIMENSION(ncol) :: KitOnes        ! The number of kits where each variables is located. If kits do not intersect then each variable is only in one kit!
+                
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta     ! indices of kits in the solution 'beta_solution'
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
 
-               REAL(KIND=c_double), DIMENSION(ncol+1) :: x_0          ! the starting point
+               REAL(KIND=c_double), DIMENSION(nKitOnes+1) :: x_0          ! the starting point
                              
                REAL(KIND=c_double), DIMENSION(8) :: mrho        ! Vector containing the values of rho parameter used in the method 
               
@@ -8674,6 +8885,7 @@
                INTEGER(KIND=c_int) :: jaannos                    ! The residue in division
                INTEGER(KIND=c_int) :: kokoosa                    ! The integer obtained in division
                INTEGER(KIND=c_int) :: startind, j3               ! Help variables
+               INTEGER(KIND=c_int) :: l, l2                      ! Help variables
 
                REAL(KIND=c_double) :: elapsed_time                  ! elapsed 'clock' time in seconds
                INTEGER(KIND=c_int) :: clock_start, clock_end, clock_rate  ! start and finish 'clock' time 
@@ -8701,7 +8913,7 @@
                
                ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
-               nft = ncol
+               nft = nKitOnes
                nk = nkits
                
                ! The maximum number of kits in the loop
@@ -8788,7 +9000,7 @@
           
                 ! OPEN(78,file=infileX,status='old',form='formatted')
                 ! DO i=1,nrecord
-                   ! READ(78,*) (in_mX(i,j),j=1,nft)
+                   ! READ(78,*) (in_mX(i,j),j=1,ncol)
                 ! END DO
                 ! CLOSE(78)
             
@@ -8800,7 +9012,7 @@
 
                 ! OPEN(78,file=infileK,status='old',form='formatted')      
                 ! DO i=1,nk
-                   ! READ(78,*) (in_mK(i,j),j=1,nft)
+                   ! READ(78,*) (in_mK(i,j),j=1,ncol)
                 ! END DO
                 ! CLOSE(78)
             
@@ -8809,6 +9021,7 @@
                    ! READ(78,*) in_mC(i)
                 ! END DO
                 ! CLOSE(78)  
+                
               !--------------------------------------------------------------------------
               ! ^^^^ END: IF Fortran code is used without R-C-interface ^^^^
               !---------------------------------------------------------------------------
@@ -8822,7 +9035,7 @@
               
                ! Populate the input matrix 'in_mX' of dim {nrecord,nft}
                  ind = 0
-                 DO j = 1, nft
+                 DO j = 1, ncol
                     DO i = 1, nrecord
                       ind = ind +1
                       in_mX(i,j) = x(ind)
@@ -8838,7 +9051,7 @@
                  
               ! Populate the kit matrix 'in_mK' of dim {nkits,nft}
                  ind = 0
-                 DO j = 1, nft
+                 DO j = 1, ncol
                     DO i = 1, nk
                       ind = ind + 1
                       in_mK(i,j) = kits(ind)
@@ -8863,6 +9076,14 @@
                    
                ! Allocation of data matrices in function.f95
                CALL allocate_data_log(info,nft,nrecord,nk,nk)   
+
+                ! The number of value ones in columns of kit matrix
+                KitOnes = 0_c_int
+                DO j = 1, ncol
+                   DO i = 1, nk
+                       KitOnes(j) = KitOnes(j) + in_mK(i,j)
+                   END DO
+                END DO
                
               !---------------------------------------------------------------------------
               !                     STORING DATA MATRICES 
@@ -8871,17 +9092,33 @@
              
               !Transpose of matrix mX
                DO i = 1, nrecord
-                 DO j = 1, nft
-                    mXt(j,i) = in_mX(i,j)
+                 l2 = 1
+                 DO j = 1, ncol
+                   DO l = 1, KitOnes(j) 
+                       mXt(l2,i) = in_mX(i,j)
+                       l2 = l2 + 1
+                   END DO   
                  END DO
-               END DO
+               END DO   
             
                !Transpose of matrix mY          
                DO i = 1, nrecord
                     mYt(i) = in_mY(i)
-               END DO    
+               END DO
 
-               CALL allocate_matrices_log(info, mXt, mYt, in_mK, in_mC,  & 
+               ! Alters the kit matrix
+               mK = 0_c_int
+               l2 = 1_c_int
+               DO j = 1, ncol 
+                  DO i = 1, nk
+                     IF (in_mK(i,j)==1_c_int) THEN  
+                        mK(i,l2) = in_mK(i,j)
+                        l2 = l2 + 1_c_int
+                     END IF
+                  END DO               
+               END DO              
+
+               CALL allocate_matrices_log(info, mXt, mYt, mK, in_mC,  & 
                                       & nrecord, nft, nk)
 
               ! Scaling of data 
@@ -8896,6 +9133,8 @@
 
               ! The initialization of beta vector
               beta = 0.0_c_double
+              beta_nft = 0.0_c_double
+              
               
               ! The best beta_solution for Cox's proportional hazard model without regularization/penalization    
               
@@ -8962,7 +9201,7 @@
                   END IF
                   
                   CALL set_k(info, k)            ! The number of nonzero kits is fixed
-				  
+                  
                   jaannos = MOD(nk,tread_num)    ! The residue in the division
                   kokoosa = nk/tread_num         ! The integer part obtained from the division
                   
@@ -8985,7 +9224,7 @@
                   !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
                   !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
                   !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
-                  !$OMP FIRSTPRIVATE(mXt, mYt, in_mK, in_mC)                 &  
+                  !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC)                    &  
                   !$OMP SHARED(points, f_points, mPrNum)               
                   
                    DO i = 1, tread_num          ! Different starting points for threads are looked through to solve the problem 3 with fixed number of nonzero kits                   
@@ -8994,7 +9233,7 @@
                                                & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
                                                & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
                                                & agg_used, stepsize_used, nft, problem1, problem2, &
-                                               & mXt, mYt, in_mK, in_mC, nrecord,  & 
+                                               & mXt, mYt, mK, in_mC, nrecord,  & 
                                                & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
                                                & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum)
                     
@@ -9050,7 +9289,7 @@
                    ind = (k-1)*user_n  
                    DO i = 1, user_n
                      x_ed(i) = points(i,min_ind)            ! The beta solution yielding the smallest objective function value is set as the previous solution
-                     beta(ind+i) = points(i,min_ind)        ! The beta solution yielding the smallest objective function value is stored to solution vector 
+                     beta_nft(ind+i) = points(i,min_ind)        ! The beta solution yielding the smallest objective function value is stored to solution vector 
                    END DO
               
                    IF (iprint >= 1) THEN
@@ -9079,12 +9318,17 @@
                        END IF
                      END DO
                      IF (kit_in_use) THEN              ! Executed if kit j1 is in the previous solution
-                       cost = cost + info%mC(j1)            ! The cost of kit j1 is taken into account
+                       cost = cost + info%mC(j1)       ! The cost of kit j1 is taken into account
                        kit_num_ed = kit_num_ed + 1     ! The number of kits is updated
                        kits_beta_ed(kit_num_ed) = j1   ! The index of kit j1 is updated to table kits_beta                 
                      END IF 
                    END DO       
 
+                   ! The storing of kits to "betakits" vector
+                   ind = (k-1)*nk
+                   DO i = 1, nk
+                      betakits(ind+i) = kits_beta_ed(i)                
+                   END DO
  
                    IF ((iprint>=2) .OR. (iprint == -1)) THEN 
                      WRITE(*,*)
@@ -9132,16 +9376,23 @@
                    ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
-                        beta_solution(i) = beta(ind+i)
+                        beta_solution(i) = beta_nft(ind+i)
                    END DO
                    CALL rescaling_beta_mse(info, beta_solution)         ! Rescaling of solution
                    f1_current = f1(info,beta_solution,problem1,user_n)  ! The f_1 value 
                    f2_current = f2(info,beta_solution,problem1,user_n)  ! The f_2 value
                    fperk(k) = f1_current-f2_current                     ! The objective function value for problem 5 with k nonzero kits 
                    WRITE(*,*) 'f',k,':', fperk(k)
-                   DO i = 1, user_n 
-                      beta(ind+i) = beta_solution(i)        ! the beta vector for problem 5 with k nonzero kits
-                   END DO       
+                  
+                   l2 = 1   
+                   ind = (k-1)*(ncol+1)
+                   DO i = 1, ncol 
+                      DO j = 1, KitOnes(i)
+                        beta(ind+i) = beta(ind+i)+beta_solution(l2)        ! the beta vector for problem 3 with k nonzero kits
+                        l2 = l2 + 1 
+                      END DO    
+                   END DO   
+                   beta(ind+ncol+1) = beta_solution(l2)      
                    
                  END DO 
               ELSE   ! No rescaling
@@ -9152,15 +9403,22 @@
                    ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
-                        beta_solution(i) = beta(ind+i)
+                        beta_solution(i) = beta_nft(ind+i)
                    END DO
                    f1_current = f1(info,beta_solution,problem1,user_n) ! The f_1 value 
                    f2_current = f2(info,beta_solution,problem2,user_n) ! The f_2 value
                    fperk(k) = f1_current-f2_current                    ! The objective function value for problem 5 with k nonzero kits         
                     WRITE(*,*) 'f',k,':', fperk(k)
-                   DO i = 1, user_n 
-                      beta(ind+i) = beta_solution(i)        ! the beta vector for problem 5 with k nonzero kits
-                   END DO       
+
+                   l2 = 1   
+                   ind = (k-1)*(ncol+1)
+                   DO i = 1, ncol 
+                      DO j = 1, KitOnes(i)
+                        beta(ind+i) = beta(ind+i)+beta_solution(l2)        ! the beta vector for problem 3 with k nonzero kits
+                        l2 = l2 + 1 
+                      END DO    
+                   END DO   
+                   beta(ind+ncol+1) = beta_solution(l2)    
                    
                  END DO               
               
@@ -9238,7 +9496,7 @@
             !         * 'problem2'      : Defines the DC component f2 of the objective
             !
             !         * 'in_mX', 'in_mY', 'in_mK', 'in_mC'    : Are the data matrices 
-			!         * 'mPrNum'        : the information about starting points for the thread
+            !         * 'mPrNum'        : the information about starting points for the thread
             !         
             !         PARAMETERS in DBDC method:
             !
@@ -9440,7 +9698,7 @@
                                       & nrecord, nft, nk)
                     
                     CALL  set_k(set, k)                        ! The number of nonzero kits is fixed
-					
+                    
                      ! Determination of the first starting point for the thread i                    
                     startind = 1
                     IF (i > 1) THEN 
@@ -9690,7 +9948,7 @@
             !         * 'problem2'      : Defines the DC component f2 of the objective
             !
             !         * 'in_mX', 'in_mY', 'in_mK', 'in_mC'    : Are the data matrices 
-			!         * 'mPrNum'        : the information about starting points for the thread
+            !         * 'mPrNum'        : the information about starting points for the thread
             !         
             !         PARAMETERS in DBDC method:
             !
@@ -9901,7 +10159,7 @@
                        END DO   
                     END IF
                     
-					! Starting points for the thread i are looked through
+                    ! Starting points for the thread i are looked through
                     DO kk = startind, startind + mPrNum(i) - 1 
                         !--------------------------------------------
                         !    THE GENERATION OF THE STARTING POINT
@@ -10144,7 +10402,7 @@
             !         * 'problem2'      : Defines the DC component f2 of the objective
             !
             !         * 'in_mX', 'in_mY', 'in_mK', 'in_mC'    : Are the data matrices 
- 			!         * 'mPrNum'        : the information about starting points for the thread i
+            !         * 'mPrNum'        : the information about starting points for the thread i
            !         
             !         PARAMETERS in DBDC method:
             !
@@ -10353,8 +10611,8 @@
                           startind = startind + mPrNum(j3)
                        END DO   
                     END IF
-					
- 					! Starting points for the thread i are looked through
+                    
+                    ! Starting points for the thread i are looked through
                     DO kk = startind, startind + mPrNum(i) - 1                     
                         !--------------------------------------------
                         !    THE GENERATION OF THE STARTING POINT
