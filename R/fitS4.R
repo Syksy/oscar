@@ -33,6 +33,7 @@ setClass("oscar", # abbreviation
 		info = "character",	# Additional error messages, warnings or such reported e.g. during model fitting
 		kmax = "integer",	# Number of maximum k tested
 		metric = "character"	# Name of the goodness-of-fit metric used
+		
 	),	
 	prototype(
 		# Prototype base model object
@@ -179,7 +180,7 @@ oscar <- function(
 		}
 	}
 	
-	# Sanity checks: Check that imput matrices x and y hav equal number of rows
+	# Sanity checks: Check that input matrices x and y have equal number of rows
 	if(family=="cox"&&nrow(y)!=nrow(x)){
 		stop(paste("Number of observations in the response matrix y (",nrow(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
 	}
@@ -190,6 +191,7 @@ oscar <- function(
 	if(missing(k)){
 		k <- matrix(0, nrow=ncol(x), ncol=ncol(x))
 		diag(k) <- 1
+		rownames(k) <- colnames(x)
 	}
 	# Check that input k is a matrix
 	if(!is.matrix(k)){
@@ -202,26 +204,33 @@ oscar <- function(
 	}
 	## -> Intercept is an independent variable that is not subjected to penalization
 	# If family is not Cox, (Intercept) requires its own row/column in K
-	if(!family == "cox" && ncol(k) == ncol(x)){
-		k <- rbind(0, cbind(0, k))
-		k[1,1] <- 1
-		if(!is.null(rownames(k)) & !is.null(colnames(k))) rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
-	}
+	#if(!family == "cox" && ncol(k) == ncol(x)){
+	#	k <- rbind(0, cbind(0, k))
+	#	k[1,1] <- 1
+	#	if(!is.null(rownames(k)) & !is.null(colnames(k))) rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
+	#}
 	# Check that the kit matrix has only 0 or 1
 	if(!all(k %in% c(0,1))){
 		stop(paste("Values in the kit matrix k should be 0 or 1. Please check the kit matrix."))
 	}
 	# Check that there are no zero-columns in the kit matrix
 	if(any(apply(k,MARGIN=2,FUN=sum)==0)){
-		stop(paste("Zero column in the kit matrix k. Please check that each feature is exactly in one kit."))  ## For now only one kit per feature allowed.
+		stop(paste("Zero column in the kit matrix k. Please check that each feature is in atleast one kit."))  ## For now only one kit per feature allowed.
 	}
 	# Check that each feature is only in one kit
-	if(any(apply(k,MARGIN=2,FUN=sum)>1)){
-		stop(paste("Some feature(s) are in multiple kits. Please check that each feature is exactly in one kit."))  ## For now only one kit per feature allowed.
-	}
+	# EDIT: Kits are now allowed to be in multiple kits.
+	#if(any(apply(k,MARGIN=2,FUN=sum)>1)){
+	#	stop(paste("Some feature(s) are in multiple kits. Please check that each feature is exactly in one kit."))  ## For now only one kit per feature allowed.
+	#}
+	
 	# Check that each kit has at least one feature (not sure if necessary?))
 	if(any(apply(k,MARGIN=1,FUN=sum)<1)){
-		stop(paste("Some kit(s)) don't have any features. Please check that each kit has at least one feature."))
+		stop(paste("Some kit(s) don't have any features. Please check that each kit has at least one feature."))
+	}
+	
+	# Check that no dublicate kits aka kits with exactly the same features
+	if(nrow(unique(k))!=nrow(k)){
+		stop(paste("Some kits have exactly the same features. Please check that each kit has a different combination of features."))
 	}
 	
 	# Checking k structure
@@ -430,7 +439,8 @@ oscar <- function(
 			as.double(in_r_inc), # Increase parameter
 			as.double(in_eps1), # Enlargement parameter
 			as.double(in_eps), # Stopping tolerance: Proximity measure
-			as.double(in_crit_tol) # Stopping tolerance: Criticality tolerance
+			as.double(in_crit_tol), # Stopping tolerance: Criticality tolerance
+			as.integer(sum(k)) #Number of ones in the kit matrix
 		)
 		if(verb>=2){
 			print(res)
@@ -467,7 +477,8 @@ oscar <- function(
 			as.double(in_r_inc), # Increase parameter
 			as.double(in_eps1), # Enlargement parameter
 			as.double(in_eps), # Stopping tolerance: Proximity measure
-			as.double(in_crit_tol) # Stopping tolerance: Criticality tolerance
+			as.double(in_crit_tol), # Stopping tolerance: Criticality tolerance
+			as.integer(sum(k)) #Number of ones in the kit matrix
 		)
 		# Beta per k steps
 		# Add row for intercept
@@ -502,7 +513,8 @@ oscar <- function(
 			as.double(in_r_inc), # Increase parameter
 			as.double(in_eps1), # Enlargement parameter
 			as.double(in_eps), # Stopping tolerance: Proximity measure
-			as.double(in_crit_tol) # Stopping tolerance: Criticality tolerance
+			as.double(in_crit_tol), # Stopping tolerance: Criticality tolerance
+			as.integer(sum(k)) #Number of ones in the kit matrix
 		)
 		# Beta per k steps
 		# Add row for intercept
@@ -553,23 +565,34 @@ oscar <- function(
 	}
 	
 	# Kits picked per each k-step
-	kperk <- t(apply(bperk, MARGIN=1, FUN=function(z) as.integer(!z==0)))
+	#kperk <- t(apply(bperk, MARGIN=1, FUN=function(z) as.integer(!z==0)))
+	#
+	
+	# If dealing with non-Cox regression, omit (Intercept) from indicator matrix
+	#if(!family == "cox" & ncol(k) == ncol(x)){
+	#	kperk <- kperk[,-1]
+	#}
+	
+	# Indices as a named vector
+	#kperk <- as.list(apply(kperk %*% t(k), MARGIN=1, FUN=function(z) { which(!z==0) }))
+	#if(verb>=3){
+	#	print("kperk2")
+	#	print(dim(kperk))
+	#	print(kperk)
+	#}
+	
+	## Get kperk from Fortran
+	kperk <- t(matrix(res[[3]], nrow = nrow(k), ncol = nrow(k)))
 	if(verb>=3){
 		print("kperk1")
 		print(dim(kperk))
 		print(kperk)
 	}
-	# If dealing with non-Cox regression, omit (Intercept) from indicator matrix
-	if(!family == "cox" & ncol(k) == ncol(x)){
-		kperk <- kperk[,-1]
-	}
 	
-	# Indices as a named vector
-	kperk <- as.list(apply(kperk %*% t(k), MARGIN=1, FUN=function(z) { which(!z==0) }))
-	if(verb>=3){
-		print("kperk2")
-		print(dim(kperk))
-		print(kperk)
+	kperk<- as.list(apply(kperk,MARGIN=1,FUN=function(z){z[which(!z==0)]}))
+	# If dealing with non-Cox regression, omit intercept from kit names
+	for(i in 1:length(kperk)){
+		names(kperk[[i]])<-rownames(k)[kperk[[i]]]
 	}
 	
 	# Kit costs per each k-step
@@ -597,6 +620,7 @@ oscar <- function(
 		metric=as.character(metric),	# Model goodness metric
 		start=start,	# Method for generating starting points
 		kmax=kmax	# Max run k-step
+		
 	)
 
 	if(verb>=2){
