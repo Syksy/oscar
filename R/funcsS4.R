@@ -158,7 +158,7 @@ setMethod("feat", "oscar",
 			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
 		}
 		# Returning the correct nonzero coefs at k:th step and name the indices according to data matrix column names
-		tmp <- oscar::coef(object@fits[[k]])
+		tmp <- oscar::coef(object,k=k)
 		# Return the non-zero coefs, named vector
 		tmp[!tmp==0]
 	}
