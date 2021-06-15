@@ -90,9 +90,6 @@ setClass("oscar", # abbreviation
 #'   fit
 #'  }
 #' }
-#' @seealso 
-#'  \code{\link[survival]{coxph}},\code{\link[survival]{coxph.control}}
-#'  \code{\link[stats]{glm}}
 #' @rdname oscar
 #' @export 
 #' @importFrom survival coxph coxph.control
