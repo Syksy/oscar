@@ -78,7 +78,3 @@ if(interactive()){
  }
 }
 }
-\seealso{
-\code{\link[survival]{coxph}},\code{\link[survival]{coxph.control}}
- \code{\link[stats]{glm}}
-}
