@@ -5,22 +5,22 @@
 #include <R_ext/Rdynload.h>
 
 // family Cox
-void F77_NAME(oscar_cox_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax,
+void F77_NAME(oscar_cox_f)(double *x, double *y, int *kits, double *cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax,
 							int inmrounds, int inmit, int inmroundsesc, int inb1, int inb2, int inb, double inm, double inmclarke, double inc,
-							double inrdec, double inrinc, double ineps1, double ineps, double incrittol);
+							double inrdec, double inrinc, double ineps1, double ineps, double incrittol, int nKitOnes, int *betakits);
 // family Gaussian (MSE)
-void F77_NAME(oscar_mse_f)(double *x, double *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax,
+void F77_NAME(oscar_mse_f)(double *x, double *y, int *kits, double *cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax,
 							int inmrounds, int inmit, int inmroundsesc, int inb1, int inb2, int inb, double inm, double inmclarke, double inc,
-							double inrdec, double inrinc, double ineps1, double ineps, double incrittol);
+							double inrdec, double inrinc, double ineps1, double ineps, double incrittol, int nKitOnes, int *betakits);
 // family Logistic
-void F77_NAME(oscar_logistic_f)(double *x, int *y, int *kits, double* cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax,
+void F77_NAME(oscar_logistic_f)(double *x, int *y, int *kits, double *cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax,
 							int inmrounds, int inmit, int inmroundsesc, int inb1, int inb2, int inb, double inm, double inmclarke, double inc,
-							double inrdec, double inrinc, double ineps1, double ineps, double incrittol);
+							double inrdec, double inrinc, double ineps1, double ineps, double incrittol, int nKitOnes, int *betakits);
 
 // Define the C wrapper function for Cox regression
 extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start, SEXP kmax,
 						SEXP mrounds, SEXP mit, SEXP mroundsesc, SEXP b1, SEXP b2, SEXP b, SEXP m, SEXP mclarke,
-						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol){
+						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol, SEXP nKitOnes){
 	// Define constants (dimensions in data / features)
 	const int nr = asInteger(nrow);
 	const int nc = asInteger(ncol);
@@ -42,25 +42,30 @@ extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	const double ineps1 =asReal(eps1);
 	const double ineps = asReal(eps);
 	const double incrittol = asReal(crittol);
-
+	const int innKitOnes= asInteger(nKitOnes);
+	
 	SEXP beta;
 	SEXP fperk;
+	SEXP betakits;
 	// Format output and protect them from garbage collection
 	PROTECT(beta = allocVector(REALSXP, nc*nk));
 	PROTECT(fperk = allocVector(REALSXP, nk));
+	PROTECT(betakits=allocVector(INTSXP, nk*nk));
 
 
 	// Call Fortran subroutine
 	F77_CALL(oscar_cox_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart, inkmax,
 						inmrounds, inmit, inmroundsesc, inb1, inb2, inb, inm,
-						inmclarke,inc, inrdec, inrinc, ineps1, ineps, incrittol);
+						inmclarke,inc, inrdec, inrinc, ineps1, ineps, incrittol, innKitOnes,INTEGER(betakits));
 
 	// Create result structure
-	SEXP res = PROTECT(allocVector(VECSXP,2));
+	SEXP res = PROTECT(allocVector(VECSXP,3));
 	SET_VECTOR_ELT(res,0,beta);
 	SET_VECTOR_ELT(res,1,fperk);
+	SET_VECTOR_ELT(res,2,betakits);
 
 	// Wrap up and return
+	UNPROTECT(1);
 	UNPROTECT(1);
 	UNPROTECT(1);
 	UNPROTECT(1);
@@ -72,7 +77,7 @@ extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 // Define the C wrapper function for Gaussian family
 extern SEXP c_oscar_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start, SEXP kmax,
 						SEXP mrounds, SEXP mit, SEXP mroundsesc, SEXP b1, SEXP b2, SEXP b, SEXP m, SEXP mclarke,
-						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol){
+						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol, SEXP nKitOnes){
 	// Define constants (dimensions in data / features)
 	const int nr = asInteger(nrow);
 	const int nc = asInteger(ncol);
@@ -94,29 +99,33 @@ extern SEXP c_oscar_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	const double ineps1 =asReal(eps1);
 	const double ineps = asReal(eps);
 	const double incrittol = asReal(crittol);
-
+	const int innKitOnes= asInteger(nKitOnes);
 
 	SEXP beta;
 	SEXP fperk;
+	SEXP betakits;
 	// Format output and protect them from garbage collection
 	PROTECT(beta = allocVector(REALSXP, (nc+1)*nk));
 	PROTECT(fperk = allocVector(REALSXP, nk));
+	PROTECT(betakits=allocVector(INTSXP, nk*nk));
+
 
 	// Call Fortran subroutine
 	F77_CALL(oscar_mse_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart, inkmax,
 						inmrounds, inmit, inmroundsesc, inb1, inb2, inb, inm,
-						inmclarke,inc, inrdec, inrinc, ineps1, ineps, incrittol);
+						inmclarke,inc, inrdec, inrinc, ineps1, ineps, incrittol, innKitOnes, INTEGER(betakits));
 
 	// Create result structure
-	SEXP res = PROTECT(allocVector(VECSXP,2));
+	SEXP res = PROTECT(allocVector(VECSXP,3));
 	SET_VECTOR_ELT(res,0,beta);
 	SET_VECTOR_ELT(res,1,fperk);
+	SET_VECTOR_ELT(res,2,betakits);
 
 	// Wrap up and return
 	UNPROTECT(1);
 	UNPROTECT(1);
 	UNPROTECT(1);
-
+	UNPROTECT(1);
 	//return(beta);
 	return(res);
 }
@@ -124,7 +133,7 @@ extern SEXP c_oscar_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 // Define the C wrapper function for logistic family
 extern SEXP c_oscar_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start, SEXP kmax,
 						SEXP mrounds, SEXP mit, SEXP mroundsesc, SEXP b1, SEXP b2, SEXP b, SEXP m, SEXP mclarke,
-						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol){
+						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol, SEXP nKitOnes){
 	// Define constants (dimensions in data / features)
 	const int nr = asInteger(nrow);
 	const int nc = asInteger(ncol);
@@ -146,39 +155,45 @@ extern SEXP c_oscar_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, 
 	const double ineps1 =asReal(eps1);
 	const double ineps = asReal(eps);
 	const double incrittol = asReal(crittol);
+	const int innKitOnes= asInteger(nKitOnes);
 
 	SEXP beta;
 	SEXP fperk;
+	SEXP betakits;
 	// Format output and protect them from garbage collection
 	PROTECT(beta = allocVector(REALSXP, (nc+1)*nk));
 	PROTECT(fperk = allocVector(REALSXP, nk));
+	PROTECT(betakits=allocVector(INTSXP, nk*nk));
+
 
 
 	// Call Fortran subroutine
 	// Here y in {0,1}, thus INTEGER
 	F77_CALL(oscar_logistic_f)(REAL(x), INTEGER(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart, inkmax,
 						inmrounds, inmit, inmroundsesc, inb1, inb2, inb, inm,
-						inmclarke,inc, inrdec, inrinc, ineps1, ineps, incrittol);
+						inmclarke,inc, inrdec, inrinc, ineps1, ineps, incrittol, innKitOnes, INTEGER(betakits));
 
 	// Create result structure
-	SEXP res = PROTECT(allocVector(VECSXP,2));
+	SEXP res = PROTECT(allocVector(VECSXP,3));
 	SET_VECTOR_ELT(res,0,beta);
 	SET_VECTOR_ELT(res,1,fperk);
+	SET_VECTOR_ELT(res,2,betakits);
 
 	// Wrap up and return
 	UNPROTECT(1);
 	UNPROTECT(1);
 	UNPROTECT(1);
-
+	UNPROTECT(1);
+	
 	//return(beta);
 	return(res);
 }
 
 // Tell R of our available Fortran functions
 static const R_CallMethodDef CallEntries[] = {
-  {"c_oscar_cox_f",	(DL_FUNC) &c_oscar_cox_f,		24},
-  {"c_oscar_mse_f",	(DL_FUNC) &c_oscar_mse_f,		24},
-  {"c_oscar_logistic_f",	(DL_FUNC) &c_oscar_logistic_f,		24},
+  {"c_oscar_cox_f",	(DL_FUNC) &c_oscar_cox_f,		25},
+  {"c_oscar_mse_f",	(DL_FUNC) &c_oscar_mse_f,		25},
+  {"c_oscar_logistic_f",	(DL_FUNC) &c_oscar_logistic_f,		25},
   {NULL,				NULL,						0}
 };
 
