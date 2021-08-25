@@ -20,7 +20,7 @@ void F77_NAME(oscar_logistic_f)(double *x, int *y, int *kits, double *cvec, int 
 // Define the C wrapper function for Cox regression
 extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start, SEXP kmax,
 						SEXP mrounds, SEXP mit, SEXP mroundsesc, SEXP b1, SEXP b2, SEXP b, SEXP m, SEXP mclarke,
-						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol, SEXP nKitOnes,SEXP extratesti){
+						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol, SEXP nKitOnes){
 	// Define constants (dimensions in data / features)
 	const int nr = asInteger(nrow);
 	const int nc = asInteger(ncol);
@@ -191,7 +191,7 @@ extern SEXP c_oscar_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, 
 
 // Tell R of our available Fortran functions
 static const R_CallMethodDef CallEntries[] = {
-  {"c_oscar_cox_f",	(DL_FUNC) &c_oscar_cox_f,		26},
+  {"c_oscar_cox_f",	(DL_FUNC) &c_oscar_cox_f,		25},
   {"c_oscar_mse_f",	(DL_FUNC) &c_oscar_mse_f,		25},
   {"c_oscar_logistic_f",	(DL_FUNC) &c_oscar_logistic_f,		25},
   {NULL,				NULL,						0}
