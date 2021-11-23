@@ -3,7 +3,7 @@ title: "Vignette oscar"
 output: rmarkdown::html_vignette
 date: "`r Sys.Date()`"
 vignette: >
-  %\VignetteIndexEntry{CASSO vignette}
+  %\VignetteIndexEntry{OSCAR vignette}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---

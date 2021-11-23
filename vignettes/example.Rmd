@@ -1,15 +1,15 @@
 ---
-title: "Example use of the CASSO package"
+title: "Example use of the OSCAR package"
 author: "Teemu Daniel Laajala"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Example use of the CASSO package}
+  %\VignetteIndexEntry{Example use of the OSCAR package}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
 
-Example use of CASSO and fine-tuning parameters
+Example use of OSCAR and fine-tuning parameters
 
 ```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Model coefficients as a function of k."}
 
@@ -34,7 +34,8 @@ visu(fit, y="target")
 Fit model object can be inspected based on visual diagnostics such as cross-validation and bootstrapping:
 
 ```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="10-fold cross-validation for optimally generalizable cardinality 'k'"}
-
+# Set seed for reproducibility
+set.seed(1)
 # Perform 10-fold cross-validation to find out optimal k
 cv <- cv.casso(fit, fold=10, seed=0)
 # Visualize model generalization performance as a function of k
