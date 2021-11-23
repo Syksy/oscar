@@ -17,7 +17,6 @@ Optimal Subset CArdinality Regression (OSCAR) models with R
 * ...
 * 0.x - Make sure there are no WARNINGs or NOTEs in 'R CMD check pckg.tar.gz --as-cran'
 * 0.x - Roxygenize R package documentation
-* 0.x - Use omp_lib for parallelization in Fortran (or a similar approach)
 * 0.x - Testing for final modeling procedure (Ideally R unit testing folder)
 * 0.x - Variants allowed for goodness measures for the three model families
 * ...
