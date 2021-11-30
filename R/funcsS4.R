@@ -194,3 +194,29 @@ setMethod("kits", "oscar",
 		kits
 	}
 )
+
+#' Return total cost of model fit based on provided kit/variable costs vector
+#'
+#' @rdname generics
+#'
+#' @export
+setGeneric("cost",
+	function(object, k){
+		standardGeneric("cost")
+	}
+)
+setMethod("cost", "oscar",
+	function(object, k){
+		# Sanity checking for k-values
+		if(missing(k)){
+			stop("You need to provide parameter 'k' for obtaining total cost at a certain k-step")
+		}else if(k<1 | k>object@kmax | !is.numeric(k)){
+			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
+		}
+		# Returning the correct kit indices while naming them
+		kits <- object@kperk[[k]]
+		# Sum the cost of the kits at k cardinality
+		sum(object@w[kits])
+	}
+)
+
