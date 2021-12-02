@@ -16,7 +16,7 @@ Example use of OSCAR and fine-tuning parameters
 # Use example swiss-data for quickness
 library(casso)
 data(swiss)
-fit <- casso(x=swiss[,-1], y=swiss[,1], family="mse", print=0)
+fit <- oscar(x=swiss[,-1], y=swiss[,1], family="mse", print=0)
 
 # Plot model coefficients as a function of cardinality k
 plot(fit) 
@@ -37,7 +37,7 @@ Fit model object can be inspected based on visual diagnostics such as cross-vali
 # Set seed for reproducibility
 set.seed(1)
 # Perform 10-fold cross-validation to find out optimal k
-cv <- cv.casso(fit, fold=10, seed=0)
+cv <- cv.oscar(fit, fold=10, seed=0)
 # Visualize model generalization performance as a function of k
 cv.visu(cv)
 
@@ -48,7 +48,7 @@ Appears that k-values 3 or 4 saturate the model, with no further coefficients co
 ```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Bootstrapped coefficient trajectories"}
 
 # Bootstrap original data 25 times (sampling with replacement and refitting)
-bs <- bs.casso(fit, bootstrap=25, seed=0)
+bs <- bs.oscar(fit, bootstrap=25, seed=0)
 # Visualize trajectories of bootstrapped coefficients
 bs.visu(bs)
 
@@ -60,5 +60,7 @@ Useful commands for understanding the model and the casso object:
 
 coef(fit, k=3) # All potential coefficients at cardinality k=3
 feat(fit, k=3) # All features chosen at cardinality k=3
+cost(fit, k=3) # Kit sum costs at various k cardinalities
 
 ```
+
