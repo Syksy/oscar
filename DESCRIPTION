@@ -16,7 +16,7 @@ License: GPL-3
 LazyData: true
 NeedsCompilation: yes
 Depends: R (>= 3.6.0)
-Imports: survival, knitr, hamlet
+Imports: survival, knitr, hamlet, rPref
 Suggests: glmnet, ePCR, rmarkdown, pROC
 Encoding: UTF-8
 VignetteBuilder: knitr
