@@ -119,6 +119,34 @@ visu <- function(
 	}
 }
 
+#' @title Visualize pareto-optimal front in respect to cross-validation and variable/kit costs
+#' @description FUNCTION_DESCRIPTION
+#' @param object PARAM_DESCRIPTION
+#' @param cv PARAM_DESCRIPTION
+#' @param k PARAM_DESCRIPTION
+#' @param plot PARAM_DESCRIPTION
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples
+#' \dontrun{
+#' if(interactive()){
+#'  #EXAMPLE1
+#'  }
+#' }
+#'
+#' @rdname pareto
+#' @export
+pareto <- function(
+	object, # OSCAR model fit
+	cv, # OSCAR cross-validation object
+	k = 1:object@kmax, # k cardinalities to plot the cost (x-axis) versus cv metric (y-axis)
+	plot = TRUE # Should a pareto front be plotted in addition to returning those points
+){
+	
+
+	invisible(paretopoints)
+}
+
 #' @title Visualize bootstrapping of a fit oscar object
 #' @description FUNCTION_DESCRIPTION
 #' @param bs PARAM_DESCRIPTION

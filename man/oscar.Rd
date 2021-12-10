@@ -3,7 +3,7 @@
 \docType{package}
 \name{oscar}
 \alias{oscar}
-\title{FUNCTION_TITLE}
+\title{Main OSCAR fitting function}
 \usage{
 oscar(
   x,
@@ -58,7 +58,7 @@ oscar(
 Fitted oscar-object
 }
 \description{
-FUNCTION_DESCRIPTION
+This function fits an OSCAR model object to the provided training data with the desired model family.
 
 OSCAR models utilize the L0-pseudonorm to select an optimal subset of features that generalizes linear regression models to a variety of families. Currently supported models include conventional Gaussian regression (family="mse" or family="gaussian"), Binomial/Logistic regression (family="logistic"), and Cox proportional hazards modeling (family="cox").
 }

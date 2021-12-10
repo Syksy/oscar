@@ -69,8 +69,8 @@ setClass("oscar", # abbreviation
 )
 
 
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
+#' @title Main OSCAR fitting function
+#' @description This function fits an OSCAR model object to the provided training data with the desired model family.
 #' @param x Data matrix 'x'
 #' @param y Response vector/two-column matrix 'y' (see: family); number of rows equal to nrow(x)
 #' @param k Integer (0/1) kit indicator matrix; number of columns equal to ncol(x)
@@ -93,7 +93,7 @@ setClass("oscar", # abbreviation
 #' }
 #' @rdname oscar
 #' @export 
-#' @importFrom survival coxph coxph.control
+#' @importFrom survival coxph
 #' @importFrom stats glm
 oscar <- function(
 	# Data matrix x
