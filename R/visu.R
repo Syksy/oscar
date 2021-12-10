@@ -369,3 +369,81 @@ bs.plot <- function(
 	axis(2, at=h$rowtext$yseq, labels=h$rowtext$rownam, cex.axis=cex.axis, las=1)
 	hamlet::hmap.key(h)
 }
+					
+					
+## Plot cost and C-indexes with pareto-front
+plot.pareto.costCI <- function(
+	costs,  # Cost vector
+	cindexes, # C-index vector
+	nzeros, # Number of non-zeros at corresponding points
+	col, # Colors for points, if missing -> determined by the number of non-zeros
+	ylab="cindexes", # Title of y-axis
+	xlab="cost", # Title of x-axis
+	pch=19, # Point style
+	cex=0.2, # Point size
+        las=1,  # Direction of tick labels
+	title="",  # Plot title
+	width.of.layout =  c(2.2,0.8), # Widths of the two plot regions
+	height.of.layout= c(1,1), # Heights of the plot regions
+        mar.1st=c(4,4,2,0), # Margins for the left (scatter) plot
+	mar.2nd =c(2.5,0,2,2)){ # Margins for the right (legend) plot
+  layout(matrix(1:2,ncol=2), width = width.of.layout,height = height.of.layout)
+  par(mar=mar.1st)
+  ncolors <- max(nzeros)-min(nzeros)+1
+  if(missing(col)){
+    col <- c()
+    if(min(nzeros)==0){
+      for(i in nzeros){
+        col <- c(col,rainbow(ncolors)[i+1])
+      }
+    }else{
+      for(i in nzeros){
+        col <- c(col,rainbow(ncolors)[i])
+      }
+    }
+  }
+  
+  plot(costs,cindexes,col=col,ylab=ylab,xlab=xlab,cex=cex,pch=pch,las=las)
+  library(rPref) ## !!!
+  pareto.points <- psel(data.frame("cost"=costs,"CI"=cindexes),pref=low(cost)*high(CI))
+  points(pareto.points[,1],pareto.points[,2],type='l',col="grey")
+  points(costs,cindexes,pch=pch,cex=cex,col=col)
+  title(title)
+  
+  par(mar=mar.2nd)
+  plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = 'Cardinality')
+
+  rect(rep(0.2,ncolors),seq(0,1-1/ncolors,by=1/ncolors),rep(1.2,ncolors),seq(1/ncolors,1,by=1/ncolors),col=rainbow(ncolors)
+       )
+  text(x=1.5, y = seq(1/(2*ncolors),1-1/(2*ncolors),1/ncolors), labels = rev(seq(max(nzeros),min(nzeros),-1)))
+  
+  
+}
+
+# Plot smoothing spline with the first and second derivatives
+plot.smoothing.spline <- function(
+	x, # X-values
+	y, # Y-values
+	ylab="y",  # Title of y-axis
+	xlab="x", # Title of x-axis
+	a.title="", # Title of the scatter plot with spline
+	df=ceiling(length(unique(x)))/2){ # Degrees of freedom
+  #browser()
+  spline<-smooth.spline(x=x,y=y,df=df)  
+  d2.spline <- predict(spline,seq(min(x),max(x),by=(max(x)-min(x))/100),deriv=2)
+  d1.spline <- predict(spline,seq(min(x),max(x),by=(max(x)-min(x))/100),deriv=1)
+  par(mfrow=c(1,3))
+  plot(x,y,col=rainbow(length(x)),pch=19,cex=0.2,las=1,ylab=ylab,xlab=xlab)
+  axis(side=2,col="red",las=1)
+  title(a.title)
+  lines(predict(spline.costCI,seq(100,720,by=10)),lwd=1)
+  
+  plot(d2.spline$x,d2.spline$y,type='l',lwd=2,xlab=xlab,ylab="D2(spline)",las=1)
+  abline(h=0)
+  title("b) Spline second derivative")
+  plot(d1.spline$x,d1.spline$y,type='l',lwd=2,xlab=xlab,ylab="D(spline)",las=1)
+  abline(h=0)
+  title("c) Spline first derivative")
+  
+}
+

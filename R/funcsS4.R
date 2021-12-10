@@ -220,3 +220,35 @@ setMethod("cost", "oscar",
 	}
 )
 
+		
+## Calculate the cost of the model fits if the cost is not included in the oscar object
+## If at least one measurement from a kit is included in the model, the kit cost is added.
+cost.after <- function(object, kit.matrix, cost.vector){
+  # Assume that the features are in the same order in x-matrix of oscar object and kit matrix
+  # Assume that the kits are in the same order in kit.matrix and cost.vector
+  
+  #Sanity checks
+  if(nrow(kit.matrix)!=length(cost.vector)){
+    stop("Number of kits in the kit matrix is different from the length of cost vector.")
+  }
+  if(ncol(kit.matrix)!=ncol(object@x)){
+    stop("Number of predictors in the kit.matrix differs from the number of predictors in x-matrix of oscar object.")
+  }
+  
+  costs <- c()
+  for(i in 1:object@kmax){ # Go through each cardinality
+    cost.tmp <-0
+    nzero <- which(object@bperk[i,]!=0)
+
+    for(j in 1:ncol(kit.matrix)){ #Go through kits
+      if(any(kit.matrix[j,nzero]!=0)){
+        cost.tmp <- cost.tmp+cost.vector[j] # Add kit price if any feature is incl.
+      }
+    }
+    costs<-c(costs,as.numeric(cost.tmp))
+  }
+  return(costs)
+}
+
+
+		
