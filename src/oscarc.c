@@ -50,7 +50,7 @@ extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	const int solver_id = asInteger(in_solver_id);
 	const int in_na = asInteger(na);
 	const int in_mcu = asInteger(mcu);
-	const int in_mcinit = asInteger(mcinit),
+	const int in_mcinit = asInteger(mcinit);
 	const double in_tolf = asInteger(tolf);
 	const double in_tolf2 = asInteger(tolf2);
 	const double in_tolg = asInteger(tolg);
@@ -119,7 +119,7 @@ extern SEXP c_oscar_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	const int solver_id = asInteger(in_solver_id);
 	const int in_na = asInteger(na);
 	const int in_mcu = asInteger(mcu);
-	const int in_mcinit = asInteger(mcinit),
+	const int in_mcinit = asInteger(mcinit);
 	const double in_tolf = asInteger(tolf);
 	const double in_tolf2 = asInteger(tolf2);
 	const double in_tolg = asInteger(tolg);
@@ -187,7 +187,7 @@ extern SEXP c_oscar_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, 
 	const int solver_id = asInteger(in_solver_id);
 	const int in_na = asInteger(na);
 	const int in_mcu = asInteger(mcu);
-	const int in_mcinit = asInteger(mcinit),
+	const int in_mcinit = asInteger(mcinit);
 	const double in_tolf = asInteger(tolf);
 	const double in_tolf2 = asInteger(tolf2);
 	const double in_tolg = asInteger(tolg);
