@@ -11956,7 +11956,7 @@ END MODULE lmbm_mod
                                                                           !   - If tolf2 < 0 the the parameter and the corresponding termination 
                                                                           !   criterion will be ignored. 
                                                                           !   - If tolf2 = 0 the default value 1.0E+4 will be used. 
-               REAL(KIND=c_double, INTENT(IN), VALUE) ::  in_tolg         ! Tolerance for the first termination criterion (default = 1.0E-5).
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolg         ! Tolerance for the first termination criterion (default = 1.0E-5).
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolg2        ! Tolerance for the second termination criterion (default = tolg). clustering code small data
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_eta          ! Distance measure parameter, eta >= 0.
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_epsL         ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
@@ -13048,7 +13048,7 @@ END MODULE lmbm_mod
                                                                           !   - If tolf2 < 0 the the parameter and the corresponding termination 
                                                                           !   criterion will be ignored. 
                                                                           !   - If tolf2 = 0 the default value 1.0E+4 will be used. 
-               REAL(KIND=c_double, INTENT(IN), VALUE) ::  in_tolg         ! Tolerance for the first termination criterion (default = 1.0E-5).
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolg         ! Tolerance for the first termination criterion (default = 1.0E-5).
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolg2        ! Tolerance for the second termination criterion (default = tolg). clustering code small data
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_eta          ! Distance measure parameter, eta >= 0.
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_epsL         ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
@@ -14142,7 +14142,7 @@ END MODULE lmbm_mod
                                                                           !   - If tolf2 < 0 the the parameter and the corresponding termination 
                                                                           !   criterion will be ignored. 
                                                                           !   - If tolf2 = 0 the default value 1.0E+4 will be used. 
-               REAL(KIND=c_double, INTENT(IN), VALUE) ::  in_tolg         ! Tolerance for the first termination criterion (default = 1.0E-5).
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolg         ! Tolerance for the first termination criterion (default = 1.0E-5).
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolg2        ! Tolerance for the second termination criterion (default = tolg). clustering code small data
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_eta          ! Distance measure parameter, eta >= 0.
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_epsL         ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
