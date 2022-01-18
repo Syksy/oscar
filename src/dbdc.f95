@@ -4655,9 +4655,69 @@
  
            END SUBROUTINE heapsort_k          
 
-          
+!**          
            
+        !********************************************************************************
+        !                                                                               |
+        !                FUNCTION VALUES OF THE FUNCTION f AT A POINT x                 |
+        !                                                                               |
+        !********************************************************************************
+
+           SUBROUTINE func(user_n, y, f, nproblem, set)     
+                !
+                ! Calculates the function at a point 'y' for LMBM.
+                !
+                ! NOTICE: The dimension of 'y' has to be 'user_n'.
+                !
+                !               
+                IMPLICIT NONE
+                !**************************** NEEDED FROM USER *************************************
+                REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: y    ! a point where the function value is calculated
+                INTEGER(KIND=c_int), INTENT(IN) :: user_n             ! the dimension of the problem
+                INTEGER(KIND=c_int), INTENT(IN) :: nproblem           ! the solved problem
+                REAL(KIND=c_double), INTENT(OUT) :: f                 ! the function value of f at a point y  
+                TYPE(set_info), INTENT(INOUT) :: set                  ! The set of information                  
+                !**************************** OTHER VARIABLES **************************************
+                REAL(KIND=c_double) :: fv1, fv2                       ! Function values of f1 and f2 at y
+                 
+                 fv1 = f1(set, y, nproblem, user_n)    
+                 fv2 = f2(set, y, nproblem, user_n)
+                 f = fv1 - fv2
+                               
+           END SUBROUTINE func   
            
+         
+        !********************************************************************************
+        !                                                                               |
+        !                  SUBGRADIENT OF THE FUNCTION f AT A POINT x                   |
+        !                                                                               |
+        !********************************************************************************
+        
+           SUBROUTINE subgra(user_n, y, grad, nproblem, set)          
+                !
+                ! Calculates the subgradient of function f at a point 'x' for LMBM.
+                !
+                ! NOTICE: The dimension of 'x' and 'grad' has to be 'user_n'.
+
+                
+                IMPLICIT NONE
+                !**************************** NEEDED FROM USER *************************************
+                REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: y         ! a point where the subgradient of the function f is calculated
+                REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: grad   ! subgradient
+                INTEGER(KIND=c_int), INTENT(IN) :: user_n         ! the dimension of the problem
+                INTEGER(KIND=c_int), INTENT(IN) :: nproblem       ! the solved problem
+                TYPE(set_info), INTENT(INOUT) :: set                   ! The set of information                                 
+                !**************************** OTHER VARIABLES **************************************             
+                REAL(KIND=c_double), DIMENSION(user_n) :: grad1, grad2     ! the subgradients of f1 and f2
+      
+                 grad1 = subgradient_f1(set, y, nproblem, user_n)           
+                 grad2 = subgradient_f2(set, y, nproblem, user_n)           
+                 grad = grad1 - grad2 
+
+           END SUBROUTINE subgra
+           
+           !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -                   
+!**          
            
       END MODULE functions     
        
@@ -6550,6 +6610,5085 @@
         
       END MODULE dbdc
 
+!----------------------------------------------------------------------------------------
+!
+!                           *************  LMBM  *************
+!
+!----------------------------------------------------------------------------------------
+MODULE param  ! Parameters
+  USE, INTRINSIC :: iso_c_binding
+  IMPLICIT NONE
+
+! Intrinsic Functions
+  INTRINSIC TINY,HUGE
+
+! Parameters
+  INTEGER(KIND=c_int), PARAMETER, PUBLIC :: maxeps = 20_c_int, maxnrs = 2000_c_int
+  REAL(KIND=c_double), PARAMETER, PUBLIC :: &
+       zero    = 0.0_c_double,    & ! 
+       half    = 0.5_c_double,    & ! 
+       one     = 1.0_c_double,    & ! 
+       large   = 3.40282347*10.**38,  & !
+       small   = 1.17549435*10.**(-38)     ! 
+
+END MODULE param
+
+
+MODULE exe_time  ! Execution time.
+  USE, INTRINSIC :: iso_c_binding
+  IMPLICIT NONE
+
+  PUBLIC :: getime
+
+CONTAINS
+  SUBROUTINE getime(tim)  ! Execution time.
+  IMPLICIT NONE
+      
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(OUT):: tim  ! Current time, REAL argument.
+
+! Intrinsic Functions
+    INTRINSIC CPU_TIME
+
+    CALL CPU_TIME(tim)
+
+  END SUBROUTINE getime
+
+END MODULE exe_time
+
+
+MODULE lmbm_sub  ! Subprograms for lmbm
+
+  USE, INTRINSIC :: iso_c_binding
+  IMPLICIT NONE
+
+! MODULE lmbm_sub includes the following subroutines (S) and functions (F).
+  PUBLIC :: &
+       vdot, &   ! F Dot product of two vectors.
+       vneg, &   ! S Change the signs of vector elements.
+       copy, &   ! S Copying a vector.
+       copy2, &  ! S Copying two vectors.
+       xdiffy, & ! S Difference of two vectors z:= x - y.
+       xsumy, &  ! S Sum of two vectors z:= x + y.
+       scdiff, & ! S Difference of the scaled vector and a vector z:= a*x - y.
+       scsum, &  ! S Sum of a vector and the scaled vector z:= y + a*x.
+       vxdiag, & ! S Vector is multiplied by a diagonal matrix y:=d*x.
+       symax, &  ! S Multiplication of a dense symmetric matrix A by a vector x.
+       cwmaxv, & ! S Multiplication of a columnwise stored dense rectangular matrix by a vector.
+       rwaxv2, & ! S Multiplication of two rowwise stored dense rectangular  
+                 !   matrices A and B by vectors X and Y.
+       trlieq, & ! S Solving x from linear equation u*x=y or u'*x=y, 
+                 !   where u is an upper triangular matrix.
+       lineq, &  ! S Solver from linear equation.
+       calq      ! S Solving x from linear equation A*x=y. Contains:
+                 !     S mxdpgf   Gill-Murray decomposition of a dense symmetric matrix.
+
+CONTAINS
+
+  FUNCTION vdot(n,x,y) RESULT(xty) ! Dot product of two vectors.
+    USE param, ONLY : zero
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x,y         ! Input vectors.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+
+! Local Scalars
+    REAL(KIND=c_double) xty
+    INTEGER :: i
+
+    xty = zero
+    DO i = 1,n
+       xty = xty + x(i)*y(i)
+    END DO
+
+  END FUNCTION vdot
+
+  SUBROUTINE vneg(n,x,y)  ! Change the signs of vector elements.
+    IMPLICIT NONE
+      
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x           ! Input vector.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         y           ! Output vector y:= -x.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO i = 1,n
+       y(i) = -x(i)
+    END DO
+
+  END SUBROUTINE vneg
+
+  SUBROUTINE scalex(n,a,x,y)  ! Scaling a vector y:= a*x.
+    IMPLICIT NONE
+      
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x           ! Input vector.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         y           ! Output vector y:= a*x.
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(IN) :: &
+         a           ! Scaling parameter.
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO i = 1,n
+       y(i) = a*x(i)
+    END DO
+      
+  END SUBROUTINE scalex
+
+  SUBROUTINE xdiffy(n,x,y,z)  ! Difference of two vectors z:= x - y.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x,y         ! Input vectors.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         z           ! Output vector z:= x - y.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+      
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO  i = 1,n
+       z(i) = x(i) - y(i)
+    END DO
+ 
+  END SUBROUTINE xdiffy
+
+  SUBROUTINE xsumy(n,x,y,z)  ! Sum of two vectors z:= x + y.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x,y         ! Input vectors.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         z           ! Output vector z:= x + y.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+      
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO  i = 1,n
+       z(i) = x(i) + y(i)
+    END DO
+
+  END SUBROUTINE xsumy
+
+  SUBROUTINE scdiff(n,a,x,y,z)  ! Difference of the scaled vector and a vector z:= a*x - y.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x,y         ! Input vectors.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         z           ! Output vector z:= a*x - y.
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(IN) :: &
+         a           ! Scaling factor.
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+      
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO  i = 1,n
+       z(i) = a*x(i) - y(i)
+    END DO
+ 
+  END SUBROUTINE scdiff
+
+  SUBROUTINE scsum(n,a,x,y,z)  ! Sum of a vector and the scaled vector z:= y + a*x.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x,y         ! Input vectors.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         z           ! Output vector z:= a*x + y.
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(IN) :: &
+         a           ! Scaling factor.
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+      
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO  i = 1,n
+       z(i) = a*x(i) + y(i)
+    END DO
+
+  END SUBROUTINE scsum
+
+  SUBROUTINE copy(n,x,y)  ! Copying of vector Y:= X.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x           ! Input vector.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         y           ! Output vector.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO i = 1,n
+       y(i) = x(i)
+    END DO
+      
+  END SUBROUTINE copy
+
+  SUBROUTINE copy2(n,x,y,z,v)  ! Copying of two vectors: y:=x, v:=z.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x,z         ! Input vectors.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         y,v         ! Output vectors.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO i = 1,n
+       y(i) = x(i)
+       v(i) = z(i)
+    END DO
+
+  END SUBROUTINE copy2
+
+  SUBROUTINE vxdiag(n,d,x,y)  ! Vector is multiplied by a diagonal matrix y:=d*x.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x, &        ! Input vector.
+         d           ! Diagonal matrix stored as a vector with n elements.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         y           ! Output vector y:= d*x.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+      
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO  i = 1,n
+       y(i) = x(i)*d(i)
+    END DO
+ 
+  END SUBROUTINE vxdiag
+
+  SUBROUTINE symax(n,m,iold,a,x,y)  ! Multiplication of a dense symmetric matrix A by a vector x.
+    USE param, ONLY : zero
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x, &        ! Input vector stored in a circular order.
+         a           ! Dense symmetric matrix stored in the packed form: a(n*(n+1)/2).
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         y           ! Output vector y:= a*x. Vector y has the same circular order than x.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n, &         ! Order of matrix A.
+         m, &         ! Length of vector x, m >= n, note that only n
+                      ! components from vector x are used.
+         iold         ! Index, which controlls the circular order of
+                      ! the vector x.
+
+! Local Scalars
+    INTEGER(KIND=c_int) :: i,j,k,l
+
+    DO j=1,n
+       l=j+iold-1
+       IF (l > m) l=l-m
+       y(l) = zero
+       k=l
+       DO i=j,n
+          y(l) = a((i-1)*i/2+j)*x(k)+y(l)
+          k=k+1
+          IF (k > m) k=k-m
+       END DO
+    END DO
+
+    DO j=2,n
+       l=j+iold-1
+       IF (l > m) l=l-m
+       k=iold
+       DO i=1,j-1
+          IF (k > m) k=k-m
+          y(l) = a((j-1)*j/2+i)*x(k)+y(l)
+          k=k+1
+       END DO
+    END DO
+      
+  END SUBROUTINE symax
+
+  SUBROUTINE cwmaxv(n,m,a,x,y)  ! Multiplication of a columnwise stored dense 
+                                ! rectangular matrix A by a vector x.
+    USE param, ONLY : zero
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x, &        ! Input vector (dimension m).
+         a           ! Rectangular matrix stored columnwise in the
+                     ! one-dimensional array (dimension n*m).
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         y           ! Output vector equal to s*a*x. If m = 0 y is a zero vector. 
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n, &        ! Number of rows of the matrix A.
+         m           ! Number of columns of the matrix A.
+
+! Local Scalars
+    INTEGER(KIND=c_int) :: i,j,k
+      
+    DO i = 1,n
+       y(i) = zero
+    END DO
+
+    k = 1
+    DO j = 1,m
+       CALL scsum(n,x(j),a(k:),y,y)
+       k = k + n
+    END DO
+
+  END SUBROUTINE cwmaxv
+
+  SUBROUTINE rwaxv2(n,m,a,b,x,y,v,w)  ! Multiplication of two rowwise stored dense rectangular  
+                                      ! matrices A and B by vectors X and Y.
+    USE param, ONLY : zero
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x,y, &      ! Input vectors (dimension n).
+         a,b         ! Rectangular matrices stored rowwise in the
+                     ! one-dimensional array (dimension n*m).
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         v,w         ! Output vectors v=a*x and w=b*y. 
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n, &        ! Number of columns of the matrices A and B.
+         m           ! Number of rows of the matrices A and B.
+
+! Local Scalars
+    REAL(KIND=c_double) :: tmp1,tmp2
+    INTEGER(KIND=c_int) :: i,j,k
+      
+    k = 0
+    DO i = 1,m
+       tmp1 = zero
+       tmp2 = zero
+       DO j = 1,n
+          tmp1 = tmp1 + a(k+j)*x(j)
+          tmp2 = tmp2 + b(k+j)*y(j)
+       END DO
+       v(i) = tmp1
+       w(i) = tmp2
+       k = k + n
+    END DO
+
+  END SUBROUTINE rwaxv2
+
+
+  SUBROUTINE trlieq(n,m,iold,u,x,y,job,ierr)  ! Solving x from linear equation u*x=y or u'*x=y, 
+                                              ! where u is an upper triangular matrix.
+    USE param, ONLY : small
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         y, &        ! Input vector stored in a circular order.
+         u           ! Triangular matrix.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         x           ! Output vector y:= a*x. Vector y has the same circular order than x.
+                     ! Note that x may be equal to y in calling sequence.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n, &         ! Order of matrix U.
+         m, &         ! Length of vectors x and y, m >= n, note that only n
+                      ! components from vectors are used.
+         iold, &      ! Index, which controlls the circular order of
+                      ! the vectors x and y.
+         job          ! Option:
+                      !   0  - x:=(u')**(-1)*y, u upper triangular.
+                      !   1  - x:=u**(-1)*y, u upper triangular.
+    INTEGER(KIND=c_int), INTENT(OUT) :: &
+         ierr         ! Error indicador: 
+                      !   0   - Everything is ok.
+                      !  -3   - Error; 0 at diagonal.
+
+! Local Scalars
+    INTEGER(KIND=c_int) :: i,ii,ij,j,k,l,ji
+
+! Intrinsic Functions
+    INTRINSIC ABS
+      
+    ierr = -3
+      
+    DO i=1,m
+       x(i)=y(i)
+    END DO
+      
+    IF (job == 0) THEN
+     
+! x=u'**(-1)*y, u' = [u1         ] is lower triangular.
+!                    [u2 u3      ]
+!                    [u4 u5 u6   ]
+!                    [.  .  .  . ]
+         
+       ii = 0
+       DO  i = 1,n
+          ii=ii+i
+          l=i+iold-1
+          IF (l > m) l=l-m
+          IF (ABS(u(ii)) <= small) RETURN
+          x(l) = x(l)/u(ii)
+          DO j = i+1,n
+             ji = (j-1)*j/2+i
+             k=j+iold-1
+             IF (k > m) k=k-m
+             x(k) = x(k) - u(ji)*x(l)
+          END DO
+       END DO
+             
+         
+    ELSE IF (job == 1) THEN
+     
+! x=u**(-1)*y, u = [u1 u2 u4 . ] is upper triangular.
+!                  [   u3 u5 . ]
+!                  [      u6 . ]
+!                  [         . ]
+         
+       ii = n* (n+1)/2
+       DO i = n,1,-1
+          l=i+iold-1
+          IF (l > m) l=l-m
+          IF (ABS(u(ii)) <= small) RETURN
+          ij = ii
+          DO j = i + 1,n
+             k=j+iold-1
+             IF (k > m) k=k-m
+             ij = ij + j - 1
+             x(l) = x(l) - u(ij)*x(k)
+          END DO
+          x(l)=x(l)/u(ii)
+          ii = ii - i
+       END DO
+         
+         
+    ELSE
+         
+       RETURN
+    END IF
+      
+    ierr = 0
+
+  END SUBROUTINE trlieq
+      
+  SUBROUTINE lineq(n,m,iold,a,x,y,ierr)  ! Solving X from linear equation A*X=Y. 
+                                         ! Positive definite matrix A+E is given using 
+                                         ! the factorization A+E=L*D*L' obtained by the
+                                         ! subroutine mxdpgf.
+    USE param, ONLY : small
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         y, &        ! Input vector stored in a circular order (dimension m).
+         a           ! Factorization a+e=l*d*l' obtained by the subroutine mxdpgf.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         x           ! Output vector y:= a*x. Vector x has the same circular order than y.
+                     ! Note that x may be equal to y in calling sequence.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n, &        ! Order of matrix a.
+         m, &        ! Length of vectors x and y, m >= n, note that only n
+                     ! components from vectors are used.
+         iold        ! Index, which controlls the circular order of
+                     ! the vectors x and y.
+    INTEGER(KIND=c_int), INTENT(OUT) :: &
+         ierr        ! Error indicador: 
+                     !   0   - Everything is ok.
+                     !  -2   - Error; indefinite matrix.
+
+! Local Scalars
+    INTEGER(KIND=c_int) :: i,ii,ij,j,k,l
+
+
+    ierr = -2
+      
+! Phase 1: x=l**(-1)*x
+
+    ij = 0
+    DO i = 1,n
+       l=i+iold-1
+       IF (l > m) l=l-m
+       x(l) = y(l)
+         
+       DO j = 1,i - 1
+          ij = ij + 1
+          k=j+iold-1
+          IF (k > m) k=k-m
+          x(l) = x(l) - a(ij)*x(k)
+       END DO
+       ij = ij + 1
+    END DO
+
+! Phase 2 : x:=d**(-1)*x
+
+    ii = 0
+    DO i = 1,n
+       ii = ii + i
+       IF (a(ii) <= small) RETURN
+       l=i+iold-1
+       IF (l > m) l=l-m
+       x(l) = x(l)/a(ii)
+    END DO
+
+! Phase 3 : x:=trans(l)**(-1)*x
+
+    ii = n* (n-1)/2
+    DO i = n - 1,1,-1
+       ij = ii
+       l=i+iold-1
+       IF (l > m) l=l-m
+       DO j = i + 1,n
+          k=j+iold-1
+          IF (k > m) k=k-m
+          ij = ij + j - 1
+          x(l) = x(l) - a(ij)*x(k)
+       END DO
+       ii = ii - i
+    END DO
+
+    ierr = 0
+
+  END SUBROUTINE lineq
+
+  SUBROUTINE calq(n,m,iold,a,x,y,iprint)  ! Solving x from linear equation A*x=y.
+    USE param, ONLY : zero,small,one
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         y           ! Input vector stored in a circular order (dimension m).
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+         a           ! On input: Dense symmetric matrix stored in the packed form. 
+                     ! On output: factorization A+E=L*D*trans(L).
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         x           ! Output vector y:= a*x. Vector x has the same circular order than y.
+                     ! Note that x may be equal to y in calling sequence.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n, &        ! Order of matrix a.
+         m, &        ! Length of vectors x and y, m >= n, note that only n
+                     ! components from vectors are used.
+         iold, &     ! Index, which controlls the circular order of
+                     ! the vectors x and y.
+         iprint      ! Printout specification.
+!    INTEGER, INTENT(OUT) :: &
+!         ierr        ! Error indicador: 
+!                     !   0   - Everything is ok.
+!                     !  -2   - Error; indefinite matrix.
+
+! Local Scalars
+    REAL(KIND=c_double) :: eta,bet
+    INTEGER(KIND=c_int) :: inf,ierr
+
+      
+    eta = small+small
+      
+    CALL mxdpgf(n,a,inf,eta,bet)
+
+
+    IF (iprint == 2) THEN
+       IF (inf < 0) THEN
+          WRITE (6,FMT='(1X,''Warning: Insufficiently positive'' &
+               '' definite matrix detected. '')')
+          WRITE (6,FMT='(1X,''Correction added.'')')
+         
+       ELSE IF (inf > 0) THEN
+          WRITE (6,FMT='(1X,''Warning: Indefinite'' &
+            '' matrix detected. Correction added.'')')
+       END IF
+    END IF
+      
+    CALL lineq(n,m,iold,a,x,y,ierr)
+    IF (ierr /= 0) THEN
+       PRINT*,'hihu'
+       IF (iprint == 2) THEN
+          WRITE (6,FMT='(1X,''Warning: Indefinite matrix detected. '')')
+       END IF
+    END IF
+
+  CONTAINS
+
+    SUBROUTINE mxdpgf(n,a,inf,alf,tau)  ! Factorization A+E=L*D*trans(L) of a dense symmetric positive
+                                        ! definite matrix A+E, where D and E are diagonal positive 
+                                        ! definite matrices and L is a lower triangular matrix. 
+                                        ! If A is sufficiently positive definite then E=0.
+      
+! Array Arguments
+      REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+           a         ! On input: Dense symmetric matrix stored in the packed form. 
+                     ! On output: factorization A+E=L*D*trans(L).
+
+! Scalar Arguments
+      REAL(KIND=c_double), INTENT(INOUT) :: &
+           alf       ! On input a desired tolerance for positive definiteness. 
+                     ! On output the most negative diagonal element used in the factorization
+                     ! process (if inf>0).
+      REAL(KIND=c_double), INTENT(OUT) :: &
+           tau       ! Maximum diagonal element of matrix E.
+
+      INTEGER(KIND=c_int), INTENT(IN) :: &
+           n         ! Order of matrix a.
+      INTEGER(KIND=c_int), INTENT(OUT) :: &
+           inf       ! An information obtained in the factorization process:
+                     !    inf=0  - A is sufficiently positive definite and E=0. 
+                     !    inf<0  - A is not sufficiently positive definite and E>0.
+                     !    inf>0  - A is indefinite and inf is an index of the most negative 
+                     !             diagonal element used in the factorization process.
+
+! Local Scalars
+      REAL(KIND=c_double) :: bet,del,gam,rho,sig,tol
+      INTEGER(KIND=c_int) :: i,ij,ik,j,k,kj,kk,l
+
+! Intrinsic Functions
+      INTRINSIC ABS,MAX
+
+      l = 0
+      inf = 0
+      tol = alf
+      
+
+! Estimation of the matrix norm
+
+      alf = zero
+      bet = zero
+      gam = zero
+      tau = zero
+      kk = 0
+
+      DO k = 1,n
+         kk = kk + k
+         bet = MAX(bet,ABS(a(kk)))
+         kj = kk
+         DO j = k + 1,n
+            kj = kj + j - 1
+            gam = MAX(gam,ABS(a(kj)))
+         END DO
+      END DO
+      bet = MAX(tol,bet,gam/n)
+
+      del = tol*MAX(bet,one)
+      kk = 0
+      DO k = 1,n
+         kk = kk + k
+
+!     Determination of a diagonal correction
+
+         sig = a(kk)
+         IF (alf > sig) THEN
+            alf = sig
+            l = k
+         END IF
+
+         gam = zero
+         kj = kk
+         DO j = k + 1,n
+            kj = kj + j - 1
+            gam = MAX(gam,ABS(a(kj)))
+         END DO
+         gam = gam*gam
+         rho = MAX(ABS(sig),gam/bet,del)
+         IF (tau < rho-sig) THEN
+            tau = rho - sig
+            inf = -1
+         END IF
+         
+! Gaussian elimination
+
+         a(kk) = rho
+         kj = kk
+         DO j = k + 1,n
+            kj = kj + j - 1
+            gam = a(kj)
+            a(kj) = gam/rho
+            ik = kk
+            ij = kj
+            DO i = k + 1,j
+               ik = ik + i - 1
+               ij = ij + 1
+               a(ij) = a(ij) - a(ik)*gam
+            END DO
+         END DO
+      END DO
+      IF (l > 0 .AND. ABS(alf) > del) inf = l
+      
+    END SUBROUTINE mxdpgf
+  END SUBROUTINE calq
+
+END MODULE lmbm_sub
+
+
+MODULE initializat  ! Initialization of parameters and x for LDGBM and LMBM
+
+  USE, INTRINSIC :: iso_c_binding
+  USE functions                  ! Contains INFORMATION from the USER
+
+  IMPLICIT NONE
+
+    ! Parameters 
+    INTEGER(KIND=c_int), SAVE :: &
+    
+        na, &                         ! Size of the bundle na >= 2.
+        !na     =    5_c_int, &       ! Size of the bundle na >= 2.
+        mcu, &                        ! Upper limit for maximum number of stored corrections, mcu >= 3.
+        !mcu    =    7_c_int, &       ! Upper limit for maximum number of stored corrections, mcu >= 3.
+        mcinit, &                     ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+        !mcinit =    7_c_int, &       ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+                                      ! If mcinit <= 0, the default value mcinit = 3 will be used. 
+                                      ! However, the value mcinit = 7 is recommented.
+        inma    = 3_c_int, &          ! Selection of line search method:
+                                      !   inma = 0, Armijo line search, Not here
+                                      !   inma = 1, nonmonotone Armijo line search. Not here
+                                      !   inma = 2, weak Wolfe line search.
+                                      !   inma = 3, nonmonotone  weak Wolfe line search.
+        mnma    = 10_c_int, &         ! Maximum number of function values used in nonmonotone line search.
+        maxnin  = 20_c_int            ! Maximum number of interpolations, maxnin >= 0.
+                                      ! The value maxnin = 2-20 is recommented with inma=0,
+                                      ! maxnin >= 20 with inma=1 and 3, and maxnin =200 with inma=2.
+                                      ! For example:
+                                      !   inma = 0, maxin = 20.
+                                      !   inma = 1, mnma = 20, maxin = 30.
+                                      !   inma = 2, maxnin = 200.
+                                      !   inma = 3, mnma=10, maxnin = 20.
+
+    REAL(KIND=c_double), PARAMETER :: &
+        time =  1000.0_c_double        !  Maximum CPU-time in seconds. If time <= 0.0 the maximum time 
+                                       !  is ignored. REAL argument.
+
+    ! Real parameters (if parameter value <= 0.0 the default value of the parameter will be used).
+    REAL(KIND=c_double), SAVE :: &
+        tolf, &                          ! Tolerance for change of function values (default = 1.0E-8).
+        !tolf  = 1.0E-5_c_double, &      ! Tolerance for change of function values (default = 1.0E-8).
+        tolf2, &                         ! Second tolerance for change of function values.
+        !tolf2 = 1.0E+4_c_double, &      ! Second tolerance for change of function values.
+                                         !   - If tolf2 < 0 the the parameter and the corresponding termination 
+                                         !   criterion will be ignored. 
+                                         !   - If tolf2 = 0 the default value 1.0E+4 will be used. 
+        tolb  =  -3.40282347*10.**38, &  ! + 1.17549435*10.**(-38), &  ! Tolerance for the function value (default = -large).
+        
+		tolg, &                          ! Tolerance for the first termination criterion (default = 1.0E-6).
+		!tolg  = 1.0E-5_c_double, &      ! Tolerance for the first termination criterion (default = 1.0E-6).
+        tolg2, &                         ! Tolerance for the second termination criterion (default = tolg). clustering code small data
+        !tolg2 = 1.0E-3_c_double, &      ! Tolerance for the second termination criterion (default = tolg). clustering code small data
+        !tolg2 = 1.0E-5_c_double, &      ! Tolerance for the second termination criterion (default = tolg).
+    
+        ! eta=0.5 on toistaiseksi antanut parhaita tuloksia
+        eta, &                           ! Distance measure parameter, eta >= 0. 
+        !eta   =    0.5_c_double, &      ! Distance measure parameter, eta >= 0. 
+        !eta   =    1.0E-4_c_double, &   ! Distance measure parameter, eta >= 0. 
+                                         !   - If eta < 0  the default value 0.5 will be used. 
+          
+        epsL, &    		                  ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.
+        !epsl  =    1.0E-4_c_double, &    ! Line search parameter, 0 < epsl < 0.25 (default = 1.0E-4.
+        !epsl  =    0.24E+00_c_double, &  ! Line search parameter, 0 < epsl < 0.25 (default = 1.0E-4.
+        !epsl  =    0.125E+00_c_double, & ! Line search parameter, 0 < epsl < 0.25 (default = 1.0E-4.
+    
+        !xmax  =    1.5_c_double      ! Maximum stepsize, 1 < XMAX (default = 1.5).
+        !xmax  =    10.0_c_double     ! Maximum stepsize, 1 < XMAX (default = 1.5).
+        xmax  =    100.0_c_double     ! Maximum stepsize, 1 < XMAX (default = 1.5).
+
+    INTEGER(KIND=c_int), SAVE :: n        ! The direction
+
+    INTEGER(KIND=c_int), SAVE :: nproblem ! The solved problem 
+
+
+    ! Integer parameters (if value <= 0 the default value of the parameter will be used).
+    INTEGER, SAVE :: &
+    
+        mittt    = 5000, &        ! Maximun number of iterations (default = 10000).
+        !mittt    = 5000, &       ! Maximun number of iterations (default = 10000). This is in original.
+        mfe    = 50000, &         ! Maximun number of function evaluations (default = n*mittt).
+        mtesf  =     10, &        ! Maximum number of iterations with changes of
+                                  ! function values smaller than tolf (default = 10).
+        iiprint =      0, &       ! Printout specification:
+                                  !     0  - Only the error messages.
+                                  !     1  - The final values of the objective function 
+                                  !          (default used if iiprint < -1).
+                                  !     2  - The final values of the objective function and the 
+                                  !          most serious warning messages.
+                                  !     3  - The whole final solution. 
+                                  !     4  - At each iteration values of the objective function.
+                                  !     5  - At each iteration the whole solution
+        method =      0, &        ! Selection of the method:
+                                  !     0  - Limited memory bundle method (default).
+                                  !     1  - L-BFGS bundle method.
+                                  !     2  - Limited memory discrete gradient bundle method.
+        iscale =      0           ! Selection of the scaling:
+                                  !     0  - Scaling at every iteration with STU/UTU (default).
+                                  !     1  - Scaling at every iteration with STS/STU.
+                                  !     2  - Interval scaling with STU/UTU.
+                                  !     3  - Interval scaling with STS/STU.
+                                  !     4  - Preliminary scaling with STU/UTU.
+                                  !     5  - Preliminary scaling with STS/STU.
+                                  !     6  - No scaling.      
+
+
+    REAL(KIND=c_double), DIMENSION(:), ALLOCATABLE, SAVE :: x   ! Vector of variables (initialize x in subroutine init_x)
+    
+    TYPE(set_info), SAVE :: LMBM_set          ! The set of information               
+    
+
+
+CONTAINS
+
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+!-------------------------------------------------------------------------------------------
+    SUBROUTINE allocate_xn(user_N) 
+        !
+        ! 
+        IMPLICIT NONE
+        !**************************** NEEDED FROM USER *************************************
+        INTEGER(KIND=c_int), INTENT(IN) :: user_N                 ! the of features/inputs in a data point   
+        !************************************************************************************
+        n=user_N
+   
+        ALLOCATE(x(n))
+  
+    END SUBROUTINE allocate_xn
+!-------------------------------------------------------------------------------------------
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+
+
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/    
+!-------------------------------------------------------------------------------------------  
+    SUBROUTINE deallocate_x() 
+        !
+        ! 
+        IMPLICIT NONE
+        !**************************** NEEDED FROM USER *************************************
+        !***********************************************************************************
+  
+        DEALLOCATE(x)
+  
+    END SUBROUTINE deallocate_x  
+!-------------------------------------------------------------------------------------------
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+  
+  
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/    
+!-------------------------------------------------------------------------------------------  
+    SUBROUTINE init_x(x_apu)  ! User supplied subroutine for initialization of vector x(n) and the solved problem
+
+        IMPLICIT NONE
+        !**************************** NEEDED FROM USER *************************************
+        REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: x_apu 
+                   
+        !***********************************************************************************
+        INTEGER(KIND=c_int) :: i
+    
+        DO i = 1, n
+            x(i) = x_apu(i)
+        END DO   
+    
+    END SUBROUTINE init_x
+!-------------------------------------------------------------------------------------------
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/    
+  
+  
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/    
+!-------------------------------------------------------------------------------------------  
+    SUBROUTINE init_LMBMinfo(problem, set)  ! User supplied subroutine for initialization of vector x(n) and the solved problem
+
+        IMPLICIT NONE
+        !**************************** NEEDED FROM USER *************************************
+        INTEGER(KIND=c_int), INTENT(IN) :: problem
+        TYPE(set_info), INTENT(INOUT) :: set                         ! The set of information                       
+        !***********************************************************************************
+        INTEGER(KIND=c_int) :: i
+    
+        nproblem = problem
+        LMBM_set = set
+    
+    END SUBROUTINE init_LMBMinfo
+!-------------------------------------------------------------------------------------------
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+
+
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+!------------------------------------------------------------------------------------------- 
+    SUBROUTINE copy_x(x_apu)  ! User supplied subroutine to copy the vector x(n).
+
+        IMPLICIT NONE
+        !**************************** NEEDED FROM USER *************************************
+        REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: x_apu 
+        !***********************************************************************************
+        INTEGER :: i
+    
+        DO i = 1, n
+            x_apu(i) = x(i)
+        END DO   
+    
+    END SUBROUTINE copy_x  
+!-------------------------------------------------------------------------------------------    
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+
+
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+!------------------------------------------------------------------------------------------- 
+    SUBROUTINE set_rho_LMBM(value_rho)  ! User supplied subroutine to pass rho value
+
+        IMPLICIT NONE
+        !**************************** NEEDED FROM USER *************************************
+        REAL(KIND=c_double), INTENT(IN) :: value_rho 
+        !***********************************************************************************
+        INTEGER :: i
+    
+       ! ***** penalization parameter 'rho' for L0-norm *****
+       IF ( (value_rho<0.0_c_double) ) THEN
+         LMBM_set%user_rho = 0.0_c_double
+       ELSE       
+         LMBM_set%user_rho = value_rho 
+       END IF  
+       
+    END SUBROUTINE set_rho_LMBM
+!-------------------------------------------------------------------------------------------    
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+
+  
+
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+!------------------------------------------------------------------------------------------- 
+    SUBROUTINE set_lambda_LMBM(value_lambda)  ! User supplied subroutine to pass rho value
+
+        IMPLICIT NONE
+        !**************************** NEEDED FROM USER *************************************
+        REAL(KIND=c_double), INTENT(IN) :: value_lambda 
+        !***********************************************************************************
+        INTEGER :: i
+    
+       ! ***** penalization parameter 'rho' for L1-norm *****
+       IF ( (value_lambda<0.0_c_double) ) THEN
+         LMBM_set%user_lambda = 0.0_c_double
+       ELSE       
+         LMBM_set%user_lambda = value_lambda 
+       END IF  
+       
+    END SUBROUTINE set_lambda_LMBM
+!-------------------------------------------------------------------------------------------    
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+     
+    
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+!-------------------------------------------------------------------------------------------  
+    SUBROUTINE init_par(in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, in_tolg, in_tolg2, in_eta, in_epsL)  
+                             ! User supplied subroutine for further initialization of parameters (when needed).
+                             ! This subroutine may be usefull if you want to run some test problems in loop.
+                             ! May be left empty.
+ 
+        IMPLICIT NONE
+        INTEGER(KIND=c_int) ::  in_na, in_mcu, in_mcinit
+        REAL(KIND=c_double) ::  in_tolf, in_tolf2
+        REAL(KIND=c_double) ::  in_tolg, in_tolg2
+        REAL(KIND=c_double) ::  in_eta, in_epsL
+        !na     =    5_c_int, &        ! Size of the bundle na >= 2.
+        !mcu    =    7_c_int, &        ! Upper limit for maximum number of stored corrections, mcu >= 3.
+        !mcinit =    7_c_int, &        ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+                                       ! If mcinit <= 0, the default value mcinit = 3 will be used. 
+                                       ! However, the value mcinit = 7 is recommented.
+        !tolf  = 1.0E-5_c_double, &       ! Tolerance for change of function values (default = 1.0E-8).
+        !tolf2 = 1.0E+4_c_double, &       ! Second tolerance for change of function values.
+                                         !   - If tolf2 < 0 the the parameter and the corresponding termination 
+                                         !   criterion will be ignored. 
+                                         !   - If tolf2 = 0 the default value 1.0E+4 will be used. 
+        !tolg  = 1.0E-5_c_double, &        ! Tolerance for the first termination criterion (default = 1.0E-6).
+        !tolg2 = 1.0E-3_c_double, &        ! Tolerance for the second termination criterion (default = tolg). clustering code small data
+        !eta   =    0.5_c_double, &     s  ! Distance measure parameter, eta >= 0. 
+        !epsL  =    0.24E+00_c_double, &   ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.
+
+        IF ( in_na >= 2) THEN 
+            na = in_na
+        ELSE
+            na = 3
+        END IF      
+        
+        IF ( in_mcu >= 3) THEN 
+            mcu = in_mcu
+        ELSE
+            mcu = 3
+        END IF    
+        
+        IF ( (in_mcinit >= 3) .AND. (in_mcinit <= mcu)) THEN 
+            mcinit = in_mcinit
+        ELSE
+            mcinit = mcu
+        END IF  
+        
+        IF ( in_tolf > 0.0_c_double) THEN 
+            tolf = in_tolf
+        ELSE
+            tolf = 1.0E-5_c_double
+        END IF          
+
+        IF ( in_tolf2 == 0.0_c_double) THEN 
+            tolf2 = 1.0E+4_c_double
+        ELSE
+            tolf2 = in_tolf2
+        END IF      
+
+        IF ( in_tolg > 0.0_c_double) THEN 
+            tolg = in_tolg
+        ELSE
+            tolg = 1.0E-5_c_double
+        END IF          
+
+        IF ( in_tolg2 > 0.0_c_double) THEN 
+            tolg2 = in_tolg2
+        ELSE
+            tolg2 = tolg
+        END IF          
+        
+        IF ( in_eta >= 0.0_c_double) THEN 
+            eta = in_eta
+        ELSE
+            eta = 0.5_c_double
+        END IF              
+        
+        IF ( (in_epsL > 0.0_c_double) .AND. (in_epsL < 0.25_c_double)) THEN 
+            epsL = in_epsL
+        ELSE
+            epsL = 1.0E-4_c_double
+        END IF  
+
+    END SUBROUTINE init_par
+!-------------------------------------------------------------------------------------------
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+
+END MODULE initializat
+
+
+MODULE obj_fun  ! Computation of the value and the subgradient of the 
+                ! objective function (supplied by the user).
+
+  USE, INTRINSIC :: iso_c_binding
+  IMPLICIT NONE
+
+  PUBLIC :: &
+       myf, &    ! Computation of the value of the objective. User spesified function. 
+       myg       ! Computation of the subgradient of the objective. User spesified function. 
+
+CONTAINS
+!************************************************************************
+!*                                                                      *
+!*     * SUBROUTINE myf *                                               *
+!*                                                                      *
+!*     Computation of the value of the objective. User spesified        *
+!*     function.                                                        *
+!*                                                                      *
+!************************************************************************
+     
+  SUBROUTINE myf(n,x,f,iterm,nproblem)
+
+    USE functions, ONLY : func       ! Computation of the value for problem next.
+                                     
+    USE initializat, ONLY : LMBM_set ! Data info
+
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(n), INTENT(IN) :: &
+         x  ! Vector of variables.
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(OUT) :: f          ! Value of the objective function. 
+    INTEGER(KIND=c_int), INTENT(IN) :: n           ! Number of variables.
+    INTEGER(KIND=c_int), INTENT(IN) :: nproblem    ! The number of the problem solved   
+    INTEGER(KIND=c_int), INTENT(OUT) :: iterm      ! Cause of termination:
+                                                   !   0  - Everything is ok.
+                                                   !  -3  - Failure in function calculations 
+                                                   !        (assigned by the user).
+
+    iterm = 0
+
+! Function evaluation (give your function here).
+
+    CALL func(n,x,f,nproblem,LMBM_set)         ! Only the value of the objective
+    !IF (next < 1) iterm = -3 ! Error checking. 
+      
+  END SUBROUTINE myf
+
+!************************************************************************
+!*                                                                      *
+!*     * SUBROUTINE MYG *                                               *
+!*                                                                      *
+!*     Computation of the subgradient of the objective function. User   *
+!*     spesified function. If discrete gradients are used, this         *
+!*     subroutine may be left empty.                                    *
+!*                                                                      *
+!************************************************************************
+     
+  SUBROUTINE myg(n,x,g,iterm,nproblem)
+
+    USE functions, ONLY : subgra       ! Computation of the subgradient for problem next.
+    USE initializat, ONLY : LMBM_set ! Data info
+
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(n), INTENT(IN) :: x  ! Vector of variables.
+    REAL(KIND=c_double), DIMENSION(n), INTENT(OUT) :: g ! Subgradient.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: n            ! Number of variables.
+    INTEGER(KIND=c_int), INTENT(IN) :: nproblem     ! The number of the problem solved
+    INTEGER(KIND=c_int), INTENT(OUT) :: iterm       ! Cause of termination:
+                                                    !   0  - Everything is ok.
+                                                    !  -3  - Failure in subgradient calculations 
+                                                    !        (assigned by the user).
+
+    iterm = 0
+
+! Subgradient evaluation (give your function here).
+
+    CALL subgra(n,x,g,nproblem,LMBM_set)         ! Only the subgradient
+    !IF (next < 1) iterm = -3  ! Error checking. 
+      
+  END SUBROUTINE myg
+
+END MODULE obj_fun
+
+
+MODULE lmbm_mod  ! Limited memory bundle method
+
+  USE, INTRINSIC :: iso_c_binding
+  IMPLICIT NONE
+
+! MODULE lmbm_mod includes the following subroutines (S) and functions (F).
+  PUBLIC :: &
+       init_lmbm, &  ! S Initialization for limited memory bundle subroutine.
+       lmbm          ! S Limited memory bundle subroutine for nonsmooth 
+                     !   large-scale optimization. Contains:
+                     !     S restar  Initialization and reinitialization.
+                     !     S dobun   Bundle construction.
+  PRIVATE :: &
+       indic1, &     ! S Initialization of indices.
+       tinit, &      ! S Calculation of initial step size. Contains:
+                     !     S destep  Stepsize selection using polyhedral 
+                     !                 approximation for descent steps.
+                     !     S nulstep Stepsize selection using polyhedral 
+                     !                 approximation for null steps.
+       lls, &        ! S Line search. Contains:
+                     !     F qint    Quadratic interpolation.
+       nmlls, &      ! S Nonmonotonic Weak Wolfe line search. Contains:
+                      !     F qint    Quadratic interpolation.
+       dlbfgs, &     ! S Computing the search direction by limited memory 
+                     !   BFGS update. Contains:
+                     !     F sclpar  Selection of scaling parameter.
+       dlskip, &     ! S Skipping the updates and computing the search
+                     !   direction by limited memory BFGS update.    
+       dlsr1, &      ! S Computing the search direction by limited
+                     !   memory SR1 update.    
+       agbfgs, &     ! S Simplified subgradient aggregation.
+       aggsr1, &     ! S Subgradient aggregation.
+       agskip, &     ! S Subgradient aggregation using BFGS update.
+       wprint, &     ! S Printout the error and warning messages.
+       rprint        ! S Printout the results.
+
+CONTAINS
+!***********************************************************************
+!*                                                                     *
+!*     * SUBROUTINE init_lmbm *                                        *
+!*                                                                     *
+!*     Initialization for limited memory bundle subroutine for         *
+!*     large-scale unconstrained nonsmooth optimization.               *
+!*                                                                     *
+!***********************************************************************
+      
+  SUBROUTINE init_lmbm(mc,iterm)
+    USE param, ONLY : zero,half,small,large
+    USE initializat, ONLY : &
+         n, &         ! Number of variables.
+         na, &        ! Maximum bundle dimension, na >= 2.
+         mcu, &       ! Upper limit for maximum number of stored corrections, mcu >= 3.
+         iiprint, &    ! Printout specification (see initializat for more details).
+         method, &    ! Selection of the method (see initializat for more details).
+         iscale, &    ! Selection of the scaling (see initializat for more details).
+         tolf, &      ! Tolerance for change of function values.
+         tolf2, &     ! Second tolerance for change of function values.
+         tolb, &      ! Tolerance for the function value.
+         tolg, &      ! Tolerance for the first termination criterion. 
+         tolg2, &     ! Tolerance for the second termination criterion.
+         xmax, &      ! Maximum stepsize, 1 < XMAX.
+         eta, &       ! Distance measure parameter, eta >= 0. 
+         epsl, &      ! Line search parameter, 0 < epsl < 0.25.
+         mtesf, &     ! Maximum number of iterations with changes of
+                      ! function values smaller than tolf.
+         mittt, &       ! Maximun number of iterations.
+         mfe          ! Maximun number of function evaluations.
+
+    IMPLICIT NONE
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(INOUT) :: mc     ! Initial maximum number of stored corrections.
+    INTEGER(KIND=c_int), INTENT(OUT) :: iterm    ! Cause of termination:
+                                                 !   0  - Everything is ok.
+                                                 !  -5  - Invalid input parameters.
+ 
+! Initialization and error checking
+
+    IF (iiprint < -1) iiprint  = 1     ! Printout specification. 
+    iterm = 0
+      
+    IF (n <= 0) THEN
+       iterm = -5
+       CALL wprint(iterm,iiprint,1)
+       RETURN 
+    END IF
+
+    IF (na < 2) THEN
+       iterm = -5
+       CALL wprint(iterm,iiprint,3)
+       RETURN
+    END IF
+
+    IF (epsl >= 0.25_c_double) THEN
+       iterm = -5
+       CALL wprint(iterm,iiprint,4)
+       RETURN
+    END IF
+
+    IF (mcu <= 3) THEN
+       iterm = -5
+       CALL wprint(iterm,iiprint,2)
+       RETURN
+    END IF
+
+    IF (mc > mcu) THEN
+       mc = mcu
+       CALL wprint(iterm,iiprint,-1)
+    END IF
+
+! Default values
+
+    IF (mc    <= 0) mc       = 3               ! Initial maximum number of corrections.
+    IF (mittt   <= 0) mittt      = 10000           ! Maximum number of iterations.
+    IF (mfe   <= 0) mfe      = n*mittt           ! Maximum number of function evaluations.
+    IF (tolf  <= zero) tolf  = 1.0E-08_c_double    ! Tolerance for change of function values.
+    IF (tolf2 == zero) tolf2 = 1.0E+04_c_double    ! Second tolerance for change of function values.
+    IF (tolb  == zero) tolb  = -large + small  ! Tolerance for the function value.
+    IF (tolg  <= zero) tolg  = 1.0E-06_c_double    ! Tolerance for the first termination criterion.
+    IF (tolg2 <= zero) tolg2 = tolg            ! Tolerance for the second termination criterion.
+    IF (xmax  <= zero) xmax  = 1.5_c_double        ! Maximum stepsize.
+    IF (eta   <  zero) eta   = half            ! Distance measure parameter
+    IF (epsl  <= zero) epsl  = 1.0E-04_c_double    ! Line search parameter,
+    IF (mtesf <= 0) mtesf    = 10              ! Maximum number of iterations with changes 
+                                               ! of function values smaller than tolf.
+    IF (method > 1 .OR. method < 0) method = 0 ! Selection of the method.
+    IF (iscale > 6 .OR. iscale < 0) iscale = 0 ! Selection of the scaling.
+
+     
+  END SUBROUTINE init_lmbm
+
+!***********************************************************************
+!*                                                                     *
+!*     * SUBROUTINE lmbm *                                             *
+!*                                                                     *
+!*     Limited memory bundle subroutine for nonsmooth optimization.    *
+!*                                                                     *
+!***********************************************************************
+      
+  SUBROUTINE lmbm(mc,f,nit,nfe,nge,iterm,strtim)
+    USE param, ONLY : small,large,zero,half,one
+    USE exe_time, ONLY : getime  ! Execution time.
+    USE initializat, ONLY : &
+         n, &         ! Number of variables.
+         x, &         ! Vector of variables
+         nproblem, &  ! The solved problem
+         na, &        ! Maximum bundle dimension, na >= 2.
+         mcu, &       ! Upper limit for maximum number of stored corrections, mcu >= 3.
+         inma, &      ! Selection of line search method.
+         mnma, &      ! Maximum number of function values used in nonmonotone line search.
+         iiprint, &    ! Printout specification (see initializat for more details).
+         method, &    ! Selection of the method (see initializat for more details).
+         iscale, &    ! Selection of the scaling (see initializat for more details).
+         tolf, &      ! Tolerance for change of function values.
+         tolf2, &     ! Second tolerance for change of function values.
+         tolb, &      ! Tolerance for the function value.
+         tolg, &      ! Tolerance for the first termination criterion. 
+         tolg2, &     ! Tolerance for the second termination criterion.
+         xmax, &      ! Maximum stepsize, 1 < XMAX.
+         eta, &       ! Distance measure parameter, eta >= 0. 
+         epsl, &      ! Line search parameter, 0 < epsl < 0.25.
+         mtesf, &     ! Maximum number of iterations with changes of
+                      ! function values smaller than tolf.
+         mittt, &     ! Maximun number of iterations.
+         mfe, &       ! Maximun number of function evaluations.
+         time         ! Maximum time
+    USE obj_fun, ONLY : &
+         myf, &       ! Computation of the value of the objective function. 
+         myg          ! Computation of the subgradient of the objective function. 
+    USE lmbm_sub, ONLY : &
+         vdot, &      ! Dot product.
+         vneg, &      ! Copying of a vector with change of the sign.
+         xdiffy, &    ! Difference of two vectors.
+         copy, &      ! Copying of a vector.
+         copy2        ! Copying of two vectors.
+
+
+    IMPLICIT NONE
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(OUT) :: &
+         f            ! Value of the objective function.
+    INTEGER(KIND=c_int), INTENT(OUT) :: & 
+         nit,nfe,nge  ! Number of iterations, and function and subgradient evaluations.
+    INTEGER(KIND=c_int), INTENT(INOUT) :: &
+         mc           ! Maximum number of stored corrections.
+    INTEGER(KIND=c_int), INTENT(OUT) :: &
+         iterm        ! Cause of termination:
+                      !   1  - The problem has been solved with desired accuracy.
+                      !   2  - Changes in function values < tolf in mtesf
+                      !        subsequent iterations.
+                      !   3  - Changes in function value < tolf*small*MAX(|f_k|,|f_(k-1)|,1),
+                      !        where small is the smallest positive number such that 
+                      !        1.0 + small > 1.0.
+                      !   4  - Number of function calls > mfe.
+                      !   5  - Number of iterations > mittt.
+                      !   6  - Time limit exceeded. 
+                      !   7  - f < tolb.
+                      !  -1  - Two consecutive restarts.
+                      !  -2  - Number of restarts > maximum number of restarts.
+                      !  -3  - Failure in function or subgradient calculations 
+                      !        (assigned by the user).
+                      !  -4  - Failure in attaining the demanded accuracy.
+                      !  -5  - Invalid input parameters.
+                      !  -6  - Unspecified error.
+
+
+! Local Arrays
+    REAL(KIND=c_double), DIMENSION(n) :: &
+         xo, &        ! Previous vector of variables.
+         g, &         ! Subgradient of the objective function.
+         gp, &        ! Previous subgradient of the ohjective function.
+         ga, &        ! Aggregate subgradient.
+         s, &         ! Difference of current and previous variables.
+         u, &         ! Difference of current and previous subgradients.
+         d, &         ! Direction vector.
+         tmpn1        ! Auxiliary array.
+    REAL(KIND=c_double), DIMENSION(n*(mcu+1)) :: &
+         sm,um        ! Matrises whose columns are stored differences of
+                      ! variables (sm) and subgradients (um).
+    REAL(KIND=c_double), DIMENSION((mcu+2)*(mcu+1)/2) :: &
+         rm, &        ! pper triangular matrix stored columnwise in the 
+                      ! one-dimensional array.
+         umtum        ! Matrix whose columns are stored subgradient differences.
+    REAL(KIND=c_double), DIMENSION(mcu+1) :: &
+         cm, &        ! Diagonal matrix.
+         smtgp, &     ! smtgp = trans(sm)*gp.
+         umtgp, &     ! umtgp = trans(um)*gp.
+         tmpmc1, &    ! Auxiliary array.
+         tmpmc2       ! Auxiliary array.
+    REAL(KIND=c_double), DIMENSION(n*na) :: &
+         ax,ag        ! Matrix whose columns are bundle points and subgradients.
+    REAL(KIND=c_double), DIMENSION(na) :: &
+         af           ! Vector of bundle values.
+    REAL(KIND=c_double), DIMENSION(mnma) :: &
+         fold         ! Old function values.
+         
+! Local Scalars
+    REAL(KIND=c_double) :: &
+         alfn, &      ! Locality measure.
+         alfv, &      ! Aggregate locality measure.
+         epsr, &      ! Line search parameter.
+         dnorm, &     ! Euclidean norm of the direction vector.
+         gnorm, &     ! Euclidean norm of the aggregate subgradient.
+         xnorm, &     ! Stopping criterion.
+         pxnorm, &    ! Previous stopping criterion.
+         p, &         ! Directional derivative.
+         tmax, &      ! Maximum stepsize.
+         t, &         ! Stepsize.
+         theta, &     ! Correction parameter for stepsize.
+         fo, &        ! Previous value of the objective.
+         gamma, &     ! Scaling parameter.
+         rmse_best    ! The best RMSE for the validation set.
+    INTEGER(KIND=c_int) :: i, &
+         mcinit, &    ! Initial maximum number of stored corrections.
+         mcc, &       ! Current number of stored corrections.
+         inew, &      ! Index for the circular arrays.
+         inewnma, &   ! Index for the circular arrays containing function values.
+         ibfgs, &     ! Index of the type of BFGS update.
+         isr1, &      ! Index of the type of SR1 update.
+         iters, &     ! Null step indicator.
+                      !   0  - Null step.
+                      !   1  - Serious step.
+         nnk, &       ! Consecutive null steps counter.
+         ibun, &      ! Index for the circular arrays in bundle updating.
+         mal, &       ! Current size of the bundle.
+         ic, &        ! Correction indicator.
+         icn, &       ! Correction indicator for null steps.
+         iflag, &     ! Index for adaptive version.
+         neps, &      ! Number of consecutive equal stopping criterions.
+         ntesf, &     ! Number of tests on function decrease.
+         ncres, &     ! Number of restarts.
+         nres, &      ! Number of consecutive restarts.
+         nress, &     ! Number of consecutive restarts in case of tmax < tmin.
+         nout         ! Auxilary printout specification.
+
+! Intrinsic Functions
+    INTRINSIC ABS,MAX,SQRT
+
+! Computational Time
+    REAL(KIND=c_double) strtim,elapstim
+       
+! Parameters
+    REAL(KIND=c_double), PARAMETER :: &
+         fmin    = -large, &        ! Smallest acceptable value of the function.
+         tmin    = 1.0E-12_c_double, &  ! Minimum stepsize.
+         lengthd = 1.0E+20_c_double, &  ! Direction vector length.
+         rho     = 1.0E-12_c_double     ! Correction parameter.
+    INTEGER(KIND=c_int), PARAMETER :: &
+         maxeps = 20, &             ! Maximum number of consecutive equal stopping criterions.
+         maxnrs = 2000              ! Maximum number of restarts.
+      
+      
+    IF (iiprint > 3) THEN
+       IF (method == 0) WRITE (6,FMT='(1X,''Entry to LMBM:'')')
+       IF (method == 1) WRITE (6,FMT='(1X,''Entry to LBB:'')')
+    END IF
+      
+     
+! Initialization
+
+    inewnma = 1
+    nout   = 0
+    nit    = 0
+    nfe    = 0
+    nge    = 0
+    ntesf  = 0
+    nres   = 1
+    ncres  = -1
+    nress  = 0
+    neps   = 0
+    iterm  = 0
+    iters  = 1
+    nnk    = 0
+    isr1   = 0
+    alfn   = zero
+    alfv   = zero
+    mcinit = mc
+      
+    tmax   = xmax
+    xnorm  = large
+    fold   = -large
+    
+
+    !epsr   = 0.25_c_double+small
+    epsr   = 1.0E-05_c_double+small
+    IF (epsl+epsl >= epsr) THEN
+       epsr = epsl+epsl + small
+       IF (epsr >= half) THEN
+          CALL wprint(iterm,iiprint,-2)
+       END IF
+    END IF
+        
+! Computation of the value and the subgradient of the objective
+! function and the search direction for the first iteration
+
+    CALL myf(n,x,f,iterm,nproblem)
+    CALL myg(n,x,g,iterm,nproblem)
+
+       !WRITE(*,*)
+       !WRITE(*,*) 'x:'
+       !DO i =1, 31        
+       !WRITE(*,*) 'x(',i,')=', x(i)      
+       !END DO     
+       !WRITE(*,*)  
+       !WRITE(*,*) 'g='            
+       !DO i =1, 31        
+       !WRITE(*,*) 'g(',i,')=', g(i)      
+       !END DO  
+       !WRITE(*,*) 
+
+
+    nfe = nfe + 1
+    nge = nge + 1
+
+    IF (iterm /= 0) GO TO 900
+    
+    CALL restar(n,mc,mcc,mcinit,inew,ibun,ibfgs,iters,gp,g,nnk, &
+         alfv,alfn,gamma,d,ic,icn,mal,ncres,iflag)
+      
+    CALL dobun(n,na,mal,x,g,f,ax,ag,af,iters,ibun)
+
+     
+! Start of the iteration
+            
+    iteration: DO
+    
+! Computational time
+
+       IF (time > 0.0E+00) THEN
+          CALL getime(elapstim)
+          IF (elapstim-strtim > time) THEN
+             iterm = 6
+             EXIT iteration
+          END IF
+       END IF
+
+
+! Computation of norms
+
+       IF (iters > 0) THEN
+          gnorm = vdot(n,g,g)
+          dnorm = SQRT(vdot(n,d,d))
+
+          p = vdot(n,g,d)
+          
+       ELSE
+          gnorm = vdot(n,ga,ga)
+          dnorm = SQRT(vdot(n,d,d))
+
+          p = vdot(n,ga,d)
+       END IF
+
+   
+! Test on descent direction
+
+       IF (p+small*SQRT(gnorm)*dnorm <= zero) THEN
+          nres = 0
+          
+       ELSE
+          nres = nres + 1
+          IF (nres == 1) THEN
+             CALL wprint(iterm,iiprint,-3)
+             
+             CALL restar(n,mc,mcc,mcinit,inew,ibun,ibfgs,iters,gp,g,nnk, &
+                  alfv,alfn,gamma,d,ic,icn,mal,ncres,iflag)
+             IF (ncres > maxnrs) THEN
+                nout = maxnrs
+                iterm = -2
+                EXIT iteration
+             END IF
+             
+             CALL dobun(n,na,mal,x,g,f,ax,ag,af,iters,ibun)
+             
+             CYCLE iteration
+          END IF
+          nout = -1
+          iterm = -1
+          EXIT iteration
+       END IF
+       
+       
+! Stopping criterion
+
+       nit = nit + 1
+       pxnorm = xnorm
+       xnorm = -p + 2.0_c_double*alfv
+
+     
+! Tests for termination
+
+       IF (xnorm <= 1.0E+03_c_double*tolg .AND. &
+            (mcc > 0 .OR. ibfgs == 2)) THEN
+          
+          IF(half*gnorm + alfv <= tolg2 .AND. &
+               xnorm <= tolg) THEN
+          
+             iterm = 1
+             EXIT iteration
+          END IF
+       
+          IF (mc < mcu .AND. iflag == 0) THEN
+             mc = mc+1
+             iflag = 1
+          END IF
+       END IF
+
+
+       IF (nfe >= mfe) THEN
+          nout = mfe
+          iterm = 4
+          EXIT iteration
+       END IF
+
+      
+       IF (nit >= mittt) THEN
+          nout = mittt
+          iterm = 5
+          EXIT iteration
+       END IF
+
+      
+       IF (f <= tolb) THEN
+          iterm = 7
+          EXIT iteration
+       END IF
+    
+      
+       IF (iters == 0) THEN
+          IF (ABS(xnorm - pxnorm) <= small) THEN
+             neps = neps + 1
+          
+             IF (neps > maxeps) THEN
+                iterm = -4
+                EXIT iteration
+             END IF
+
+          ELSE
+             neps = 0
+          END IF
+
+       ELSE
+          neps = 0
+       END IF
+
+
+! Correction
+    
+       IF (-p < rho*gnorm .OR. icn == 1) THEN
+
+          xnorm = xnorm + rho*gnorm
+          dnorm = SQRT(dnorm*dnorm-2.0_c_double*rho*p+rho*rho*gnorm)
+         
+          IF (iters > 0) THEN
+             DO i=1,n
+                d(i) = d(i)-rho*g(i)
+             END DO
+
+          ELSE
+             DO i=1,n
+                d(i) = d(i)-rho*ga(i)
+             END DO
+             icn = 1
+          END IF
+
+          ic = 1
+            
+       ELSE
+          ic = 0
+       END IF
+
+
+       IF (pxnorm < xnorm .AND. nnk > 2) THEN
+          CALL wprint(iterm,iiprint,-4)
+       END IF
+      
+
+       CALL rprint(n,nit,nfe,nge,x,f,xnorm,half*gnorm+alfv,iterm,iiprint)
+      
+     
+!     Preparation of line search
+
+       fo = f
+       
+       IF (iters > 0) THEN
+          CALL copy2(n,x,xo,g,gp)
+       END IF
+
+       IF (dnorm > zero) tmax = xmax/dnorm
+       
+       IF (tmax > tmin) THEN
+          nress = 0
+
+       ELSE
+          nress = nress + 1
+          IF (nress == 1) THEN
+             CALL wprint(iterm,iiprint,-5)
+             
+             CALL restar(n,mc,mcc,mcinit,inew,ibun,ibfgs,iters,gp,g,nnk, &
+                  alfv,alfn,gamma,d,ic,icn,mal,ncres,iflag)
+             
+             IF (ncres > maxnrs) THEN
+                nout = maxnrs
+                iterm = -2
+                EXIT iteration
+             END IF
+             
+             CALL dobun(n,na,mal,x,g,f,ax,ag,af,iters,ibun)
+             CYCLE iteration
+          END IF
+          iterm = -1
+          EXIT iteration
+       END IF
+      
+
+! Initial step size
+
+       CALL tinit(n,na,mal,x,af,ag,ax,ibun,d,f,p,t,tmax,tmin, &
+            eta,iters,iterm)
+
+       IF (iterm /= 0) EXIT iteration
+     
+
+! Line search with directional derivatives which allows null steps
+
+       theta = one
+       IF (dnorm > lengthd) THEN
+          theta=lengthd/dnorm
+       END IF
+    
+       IF (inma == 2) THEN! Line search with directional derivatives which allows null steps
+                 ! With this the global convergence can be guaranteed.
+      
+                CALL lls(n,x,g,d,xo,t,fo,f,p,alfn,tmin,dnorm,xnorm, &
+                    theta,epsl,epsr,eta,iters,nfe,nge,nnk,iterm)
+            ELSE ! Nonmonotone line search with directional derivatives which allows null steps
+                 ! With this the global convergence can be guaranteed.
+
+                CALL nmlls(n,x,g,d,xo,t,fo,f,fold,p,alfn,tmin,dnorm,xnorm, &
+                    theta,epsl,epsr,eta,iters,inewnma,nfe,nge,nnk,iterm)
+
+            END IF
+          
+       IF (iterm /= 0) EXIT iteration
+       
+       IF (tolf2 >= 0) THEN
+          IF (ABS(fo-f) <= tolf2*small*MAX(ABS(f),ABS(fo),one) &
+               .AND. iters == 1) THEN
+             
+             iterm = 3
+             EXIT iteration
+          END IF
+       END IF
+
+       IF (ABS(fo-f) <= tolf) THEN
+          ntesf = ntesf + 1
+          
+          if (ntesf >= mtesf .AND. iters == 1) THEN
+             iterm = 2
+             EXIT iteration
+          END IF
+          
+       ELSE
+          ntesf = 0
+       END IF
+      
+
+! Bundle updating
+
+       CALL dobun(n,na,mal,x,g,f,ax,ag,af,iters,ibun)
+  
+
+! Computation of variables difference 
+
+       CALL xdiffy(n,x,xo,s)
+  
+
+! Computation of aggregate values and gradients difference
+
+       IF (iters == 0) THEN
+          nnk = nnk + 1
+
+          IF (nnk == 1) THEN
+             CALL copy(n,gp,tmpn1)
+             CALL xdiffy(n,g,gp,u)
+             
+             CALL agbfgs(n,mc,mcc,inew,ibfgs,iflag,g,gp,ga,u,d,sm,um, &
+                  rm,cm,umtum,alfn,alfv,gamma,ic,rho)
+             
+          ELSE
+             IF (method == 0) THEN
+                CALL copy(n,ga,tmpn1)
+                CALL aggsr1(n,mc,mcc,inew,iflag,g,gp,ga,d,alfn,alfv &
+                     ,umtum,rm,gamma,smtgp,umtgp,tmpmc1,tmpmc2,sm &
+                     ,um,icn,rho)
+                CALL xdiffy(n,g,gp,u)
+             ELSE
+                CALL copy(n,ga,tmpn1)
+                CALL xdiffy(n,g,gp,u)
+                CALL agskip(n,mc,mcc,inew,iflag,g,gp,ga,d,u,alfn,alfv &
+                     ,umtum,rm,cm,gamma,smtgp,umtgp,tmpmc1,tmpmc2,sm &
+                     ,um,icn,rho)
+             END IF
+          END IF
+          
+          CALL copy(n,xo,x)
+          f = fo
+          
+       ELSE
+          IF (nnk /= 0) THEN
+             CALL copy(n,ga,tmpn1)
+          ELSE
+             CALL copy(n,gp,tmpn1)
+          END IF
+          nnk = 0
+          CALL xdiffy(n,g,gp,u)
+       END IF
+
+     
+! Serious step initialization
+
+       IF (iters > 0) THEN
+          icn = 0
+          alfn = zero
+          alfv = zero
+       END IF
+
+      
+! Direction finding
+    
+       IF (iters > 0) THEN
+         
+     
+! BFGS update and direction determination
+
+          CALL dlbfgs(n,mc,mcc,inew,ibfgs,iflag,d,g,gp,s,u,sm,um,rm, &
+               umtum,cm,smtgp,umtgp,gamma,tmpn1,method,iscale)
+
+       ELSE
+          IF (method == 0) THEN
+            
+     
+! SR1 update and direction determination
+             
+             CALL dlsr1(n,mc,mcc,inew,isr1,iflag,d,gp,ga,s,u,sm,um,rm, &
+                  umtum,cm,smtgp,umtgp,gamma,tmpmc1,tmpmc2,tmpn1,nnk,iiprint)
+             ibfgs=0
+          ELSE
+             
+     
+! BFGS skipping and direction determination
+
+             CALL dlskip(n,mc,mcc,inew,ibfgs,iflag,d,ga,sm,um,rm, &
+                  umtum,cm,tmpmc1,tmpmc2,gamma,iscale)
+          END IF
+       END IF
+    
+    END DO iteration
+      
+
+900 CONTINUE
+        
+
+! Printout the final results
+
+    IF (iiprint > 3) THEN
+       IF (method == 0) WRITE (6,FMT='(1X,''Exit from LMBM:'')')
+       IF (method == 1) WRITE (6,FMT='(1X,''Exit from LBB:'')')
+    END IF
+    CALL wprint(iterm,iiprint,nout)
+    CALL rprint(n,nit,nfe,nge,x,f,xnorm,half*gnorm+alfv,iterm,iiprint)
+
+  CONTAINS
+
+    SUBROUTINE restar(n,mc,mcc,mcinit,inew,ibun,ibfgs,iters,gp,g,nnk, &
+         alfv,alfn,gamma,d,ic,icn,mal,ncres,iflag)  ! Initialization
+      
+!      USE param, ONLY : zero,one  ! given in host
+!      USE lmbm_sub, ONLY : vneg,copy  ! given in host
+      IMPLICIT NONE
+
+! Array Arguments
+      REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+           gp        ! Basic subgradient of the objective function.
+      REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+           g         ! Current (auxiliary) subgradient of the objective function.
+      REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+           d         ! Search direction.
+
+! Scalar Arguments
+      INTEGER, INTENT(IN) :: & 
+           n, &      ! Number of variables
+           mcinit    ! Initial maximum number of stored corrections.
+      INTEGER, INTENT(OUT) :: &
+           mc, &     ! Current maximum number of stored corrections.
+           mcc, &    ! Current number of stored corrections.
+           inew, &   ! Index for the circular arrays.
+           ibun, &   ! Index for the circular arrays in bundle updating.
+           ibfgs, &  ! Index of the type of BFGS update.
+           nnk, &    ! Consecutive null steps counter.
+           ic, &     ! Correction indicator.
+           icn, &    ! Correction indicator for null steps.
+           mal, &    ! Current size of the bundle.
+           iflag     ! Index for adaptive version.
+      INTEGER, INTENT(INOUT) :: &
+           iters, &  ! Null step indicator.
+                     !   0  - Null step.
+                     !   1  - Serious step.
+           ncres     ! Number of restarts.
+      REAL(KIND=c_double), INTENT(OUT) :: & 
+           alfn, &   ! Locality measure.
+           alfv, &   ! Aggregate locality measure.
+           gamma     ! Scaling parameter.
+
+
+! Restart
+      mc    = mcinit
+      mcc   = 0
+      inew  = 1
+      ibun  = 1
+      ibfgs = 0
+      ic    = 0
+      icn   = 0
+      mal   = 0
+      ncres = ncres + 1
+      iflag = 0
+        
+      IF (iters == 0) THEN
+         CALL copy(n,gp,g)
+         iters = 1
+         nnk = 0
+         alfv=zero
+         alfn=zero
+      END IF
+
+      gamma = one
+      CALL vneg(n,g,d)
+      
+    END SUBROUTINE restar
+    
+      
+    SUBROUTINE dobun(n,ma,mal,x,g,f,ay,ag,af,iters,ibun)  ! Bundle construction
+
+!      USE lmbm_sub, ONLY : copy2 ! given in host
+      IMPLICIT NONE
+
+! Array Arguments
+      REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+           x, &      ! Vector of variables
+           g         ! Subgradient of the objective function.
+      REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+           ay, &     ! Matrix whose columns are bundle points 
+                     ! (stored in one-dimensional n*ma -array).
+           ag, &     ! Matrix whose columns are bundle subgradients 
+                     ! (stored in one-dimensional n*ma -array).
+           af        ! Vector of values of bundle functions 
+                     ! (stored in one-dimensional ma -array).
+
+! Scalar Arguments
+      INTEGER(KIND=c_int), INTENT(IN) :: & 
+           n, &      ! Number of variables
+           iters, &  ! Null step indicator.
+                     !   0  - Null step.
+                     !   1  - Serious step.
+           ma        ! Maximum size of the bundle.
+      INTEGER(KIND=c_int), INTENT(INOUT) :: &
+           ibun, &   ! Index for the circular arrays in bundle updating.
+           mal       ! Current size of the bundle.
+      REAL(KIND=c_double), INTENT(IN) :: & 
+           f         ! Value of the objective function.
+
+! Local Scalars
+      INTEGER(KIND=c_int) :: i,j
+      
+      IF (iters == 1) THEN
+     
+! Serious step
+
+         af(ibun) = f
+         i = (ibun-1)*n + 1
+         CALL copy2(n,g,ag(i:),x,ay(i:))
+         
+      ELSE
+
+! Null step
+
+         IF (mal < ma) THEN
+            
+            af(ibun) = af(mal)
+            af(mal) = f
+            
+            i = mal*n + 1
+            CALL copy2(n,ag(i-n:),ag(i:),ay(i-n:),ay(i:))
+            CALL copy2(n,g,ag(i-n:),x,ay(i-n:))
+            
+         ELSE
+            i = ibun-1
+            IF (i < 1) i = mal
+            af(ibun) = af(i)
+            af(i) = f
+            
+            i = (ibun-2)*n + 1
+            IF (i < 1) i = (mal-1)*n + 1
+            j = (ibun-1)*n + 1
+            CALL copy2(n,ag(i:),ag(j:),ay(i:),ay(j:))
+            CALL copy2(n,g,ag(i:),x,ay(i:))
+         END IF
+         
+      END IF
+      
+      mal = mal + 1
+      IF (mal > ma) mal = ma
+      
+      ibun = ibun + 1
+      IF (ibun > ma) ibun = 1
+      
+    END SUBROUTINE dobun
+    
+  END SUBROUTINE lmbm
+
+!************************************************************************
+!*                                                                      *
+!*     * SUBROUTINE tinit *                                             *
+!*                                                                      *
+!*     Initial stepsize selection for limited memory bundle method      *
+!*                                                                      *
+!************************************************************************
+  SUBROUTINE tinit(n,na,mal,x,af,ag,ay,ibun,d,f,p,t,tmax,tmin,eta,iters,iterm)
+
+    USE param, ONLY : zero,half,one,large
+!    USE param, ONLY : zero,one  ! these are the one needed in tinit itself 
+                                 ! half and large are used in destep and nulstep
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x, &      ! Vector of variables (n array).
+         d, &      ! Direction vector (n array).
+         ay, &     ! Matrix whose columns are bundle points (stored in one-dimensional n*ma -array).
+         ag        ! Matrix whose columns are bundle subgradients (stored in one-dimensional n*ma -array).
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+         af        ! Vector of values of bundle functions (stored in one-dimensional ma -array).
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(OUT) :: & 
+         t         ! Initial stepsize
+    REAL(KIND=c_double), INTENT(IN) :: & 
+         p, &      ! Directional derivative.
+         eta, &    ! Distance measure parameter.
+         f, &      ! Value of the objective function.
+         tmax, &   ! Upper limit for stepsize parameter.
+         tmin      ! Lower limit for stepsize parameter.
+    INTEGER(KIND=c_int), INTENT(IN) :: & 
+         n, &      ! Number of variables
+         na, &     ! Maximum size of the bundle.
+         mal, &    ! Current size of the bundle.
+         ibun, &   ! Index for the circular arrays in bundle updating.
+         iters     ! Null step indicator.
+                   !   0  - Null step.
+                   !   1  - Serious step.
+    INTEGER(KIND=c_int), INTENT(OUT) :: &
+         iterm     ! Cause of termination:
+                   !   0  - Everything is ok.
+                   !  -6  - Error.
+
+
+! Intrinsic Functions
+    INTRINSIC MAX,MIN
+
+    t = MIN(one,tmax)
+
+    IF (p == zero) RETURN
+
+    IF (iters == 1) THEN
+       CALL destep(n,na,mal,x,af,ag,ay,ibun,d,f,p,t,eta,iterm)
+    ELSE
+       CALL nulstep(n,na,mal,x,af,ag,ay,ibun,d,f,p,t,eta,iterm)
+    END IF
+
+    t = MIN(MAX(t,tmin),tmax)
+
+  CONTAINS
+
+    SUBROUTINE destep(n,ma,mal,x,af,ag,ay,ibun,d,f,df,t,eta,iterm)  ! Stepsize selection
+
+!      USE param, ONLY : zero,half,one,large  ! given in host
+      IMPLICIT NONE
+
+! Scalar Arguments
+      REAL(KIND=c_double), INTENT(INOUT) :: & 
+           t         ! Initial stepsize
+      REAL(KIND=c_double), INTENT(IN) :: & 
+           df, &     ! Directional derivative.
+           eta, &    ! Distance measure parameter.
+           f         ! Value of the objective function.
+      INTEGER(KIND=c_int), INTENT(IN) :: & 
+           n, &      ! Number of variables
+           ma, &     ! Maximum size of the bundle.
+           mal, &    ! Current size of the bundle.
+           ibun      ! Index for the circular arrays in bundle updating.
+      INTEGER(KIND=c_int), INTENT(OUT) :: &
+           iterm     ! Cause of termination:
+                     !   0  - Everything is ok.
+                     !  -6  - Error.
+
+! Array Arguments
+      REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+           x, &      ! Vector of variables (n array).
+           d, &      ! Direction vector (n array).
+           ay, &     ! Matrix whose columns are bundle points (stored in one-dimensional n*ma -array).
+           ag, &     ! Matrix whose columns are bundle subgradients (stored in one-dimensional n*ma -array).
+           af        ! Vector of values of bundle functions (stored in one-dimensional ma -array).
+
+! Local Arrays
+      REAL(KIND=c_double), DIMENSION(2*ma) :: &
+           tmparray  ! Auxiliary array.
+
+! Local Scalars
+      REAL(KIND=c_double) :: alf,alfl,alfr,bet,betl,betr,dx,q,r,w
+      INTEGER(KIND=c_int) :: i,j,jn,k,l,lq,ib
+
+! Intrinsic Functions
+      INTRINSIC ABS,REAL,MAX,MIN,SQRT
+
+      iterm = 0
+      alfl = zero
+      betl = zero
+      
+      w = df*t* (one - t*half)
+      
+     
+! Initial choice of possibly active lines
+      
+      k = 0
+      l = -1
+      jn = (ibun-1)*n
+      betr = - large
+      DO j=1,mal-1
+         ib = ibun - 1 + j
+         IF (ib > mal) ib = ib - mal
+         IF (jn >= mal*n) jn = jn - mal*n
+         r = zero
+         bet = zero
+         alfl = af(ib) - f
+         DO i=1,n
+            dx = x(i) - ay(jn+i)
+            q = ag(jn+i)
+            r = r + dx*dx
+            alfl = alfl + dx*q
+            bet = bet + d(i)*q
+         END DO
+         alf = MAX(ABS(alfl),eta*r)
+         r = one - bet/df
+         IF (r*r + (alf+alf)/df > 1.0E-6_c_double) THEN
+            k = k + 1
+            tmparray(k) = alf
+            tmparray(ma+k) = bet
+            r = t*bet - alf
+            IF (r > w) THEN
+               w = r
+               l = k
+            END IF
+         END IF
+         
+         betr = MAX(betr,bet-alf)
+         jn = jn + n
+      END DO
+      lq = -1
+      IF (betr <= df*half) RETURN
+      lq = 1
+      IF (l <= 0) RETURN
+      betr = tmparray(ma+l)
+      IF (betr <= zero) THEN
+         IF (t < one .OR. betr == zero) RETURN
+         lq = 2
+      END IF
+      
+      alfr = tmparray(l)
+
+
+! Iteration loop
+
+      ds_iteration: DO 
+         
+         IF (lq >= 1) THEN
+            q = one - betr/df
+            r = q + SQRT(q*q + (alfr+alfr)/df)
+            IF (betr >= zero) r = - (alfr+alfr)/ (df*r)
+            r = MIN(1.95_c_double,MAX(zero,r))
+         ELSE
+            IF (ABS(betr-betl)+ABS(alfr-alfl)< -1.0E-4_c_double*df) RETURN
+            IF (betr-betl  == zero) THEN
+               iterm = -6
+               RETURN
+            END IF
+            r = (alfr-alfl)/ (betr-betl)
+         END IF
+       
+         IF (ABS(t-r) < 1.0E-4_c_double) RETURN
+         t = r
+         tmparray(l) = - one
+         w = t*betr - alfr
+         l = -1
+         DO j = 1,k
+            alf = tmparray(j)
+            IF (alf < zero) EXIT
+            bet = tmparray(ma+j)
+            r = t*bet - alf
+            IF (r > w) THEN
+               w = r
+               l = j
+            END IF
+         END DO
+         IF (l < 0) RETURN
+       
+         bet = tmparray(ma+l)
+         IF (bet == zero) RETURN
+     
+
+!     New interval selection
+
+         alf = tmparray(l)
+         IF (bet < zero) THEN
+            IF (lq == 2) THEN
+               alfr = alf
+               betr = bet
+               
+            ELSE
+               alfl = alf
+               betl = bet
+               lq = 0
+            END IF
+       
+         ELSE
+            IF (lq == 2) THEN
+               alfl = alfr
+               betl = betr
+               lq = 0
+            END IF
+       
+            alfr = alf
+            betr = bet
+         END IF
+       
+      END DO ds_iteration
+      
+    END SUBROUTINE destep
+
+     
+    SUBROUTINE nulstep(n,ma,mal,x,af,ag,ay,ibun,d,f,df,t,eta,iterm)  ! Stepsize selection
+
+!      USE param, ONLY : zero,half,one,large  ! given in host
+      IMPLICIT NONE
+
+! Scalar Arguments
+      REAL(KIND=c_double), INTENT(INOUT) :: & 
+           t         ! Initial stepsize
+      REAL(KIND=c_double), INTENT(IN) :: & 
+           df, &     ! Directional derivative.
+           eta, &    ! Distance measure parameter.
+           f         ! Value of the objective function.
+      INTEGER(KIND=c_int), INTENT(IN) :: & 
+           n, &      ! Number of variables
+           ma, &     ! Maximum size of the bundle.
+           mal, &    ! Current size of the bundle.
+           ibun      ! Index for the circular arrays in bundle updating.
+      INTEGER(KIND=c_int), INTENT(OUT) :: &
+           iterm     ! Cause of termination:
+                     !   0  - Everything is ok.
+                     !  -6  - Error.
+
+! Array Arguments
+      REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+           x, &      ! Vector of variables (n array).
+           d, &      ! Direction vector (n array).
+           ay, &     ! Matrix whose columns are bundle points (stored in one-dimensional n*ma -array).
+           ag, &     ! Matrix whose columns are bundle subgradients (stored in one-dimensional n*ma -array).
+           af        ! Vector of values of bundle functions (stored in one-dimensional 4*ma -array).
+
+! Local Arrays
+      REAL(KIND=c_double), DIMENSION(2*ma) :: &
+           tmparray  ! Auxiliary array.
+
+! Local Scalars
+      REAL(KIND=c_double) :: alf,alfl,alfr,bet,betl,betr,dx,q,r,w
+      INTEGER(KIND=c_int) :: i,j,jn,k,l,ib
+
+! Intrinsic Functions
+      INTRINSIC ABS,REAL,MAX,MIN,SQRT
+
+      iterm = 0
+      w = df*t
+     
+! Initial choice of possibly active parabolas
+
+      k = 0
+      l = -1
+      jn = (ibun-1)*n
+      betr = - large
+      DO j = 1,mal - 1
+         ib = ibun - 1 + j
+         IF (ib > mal) ib = ib - mal
+         IF (jn >= mal*n) jn = jn - mal*n
+         bet = zero
+         r = zero
+         alfl = af(ib) - f
+         DO i = 1,n
+            dx = x(i) - ay(jn+i)
+            r = r + dx*dx
+            q = ag(jn+i)
+            alfl = alfl + dx*q
+            bet = bet + d(i)*q
+         END DO
+         alf = MAX(ABS(alfl),eta*r)
+         betr = MAX(betr,bet-alf)
+         IF (alf < bet-df) THEN
+            k = k + 1
+            r = t*bet - alf
+            tmparray(k) = alf
+            tmparray(ma+k) = bet
+            IF (r > w) THEN
+               w = r
+               l = k
+            END IF
+         END IF
+         jn = jn + n
+      END DO
+      IF (l <= 0) RETURN
+      betr = tmparray(ma+l)
+      alfr = tmparray(l)
+      alf = alfr
+      bet = betr
+      alfl = zero
+      betl = df
+    
+     
+!     Iteration loop
+    
+      ns_iteration: DO
+
+         w = bet/df
+         IF (ABS(betr-betl)+ABS(alfr-alfl)< -1.0E-4_c_double*df) RETURN
+         IF (betr-betl  == zero) THEN
+            iterm = -6
+            RETURN
+         END IF
+         r = (alfr-alfl)/ (betr-betl)
+         IF (ABS(t-w) < ABS(t-r)) r = w
+         q = t
+         t = r
+         IF (ABS(t-q) < 1.0E-3_c_double) RETURN
+         tmparray(l) = - one
+         w = t*bet - alf
+         l = -1
+         DO j=1,k
+            alf = tmparray(j)
+            IF (alf < zero) EXIT
+            bet = tmparray(ma+j)
+            r = t*bet - alf
+            IF (r > w) THEN
+               w = r
+               l = j
+            END IF
+         END DO
+
+         IF (l <= 0) RETURN
+         bet = tmparray(ma+l)
+         q = bet - t*df
+         IF (Q == zero) RETURN
+
+     
+!     New interval selection
+
+         alf = tmparray(l)
+         IF (q < zero) THEN
+            alfl = alf
+            betl = bet
+         ELSE
+            alfr = alf
+            betr = bet
+         END IF
+
+      END DO ns_iteration
+
+    END SUBROUTINE nulstep
+
+  END SUBROUTINE tinit
+      
+!************************************************************************
+!*                                                                      *
+!*     * SUBROUTINE lls *                                               *
+!*                                                                      *
+!*     Special line search for limited memory bundle method             *
+!*                                                                      *
+!************************************************************************
+
+  SUBROUTINE lls(n,x,g,d,xo,t,fo,f,p,alfn,tmin,dnorm,wk,theta,epsl,epsr,&
+       eta,iters,nfe,nge,nnk,iterm)
+
+    USE param, ONLY : zero,half,one
+    USE obj_fun, ONLY : &
+         myf,myg   ! Computation of the value and the subgradient of
+                   ! the objective function. 
+    USE lmbm_sub, ONLY : &
+         scsum, &  ! Sum of a vector and the scaled vector.
+         vdot      ! Dot product of vectors.
+    USE initializat, ONLY : &
+        nproblem, &      ! the solved problem
+        maxint => maxnin ! Maximum number of interpolations.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         d, &      ! Direction vector.
+         xo        ! Previous vector of variables.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+         x         ! Vector of variables.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         g         ! Subgradient of the objective function.
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(INOUT) :: & 
+         epsl,&    ! Linesearch parameter.
+         epsr,&    ! Linesearch parameter.
+         t, &      ! Stepsize
+         p         ! Directional derivative.
+    REAL(KIND=c_double), INTENT(IN) :: & 
+         theta, &  ! Scaling parameter.
+         eta, &    ! Distance measure parameter.
+         fo, &     ! Previous value of the objective function.
+         wk, &     ! Stopping parameter.
+         dnorm, &  ! Euclidean norm of the direction vector.
+         tmin      ! Lower limit for stepsize parameter.
+    REAL(KIND=c_double), INTENT(OUT) :: & 
+         f, &      ! Value of the objective function.
+         alfn      ! Locality measure.
+    INTEGER(KIND=c_int), INTENT(IN) :: & 
+         n, &      ! Number of variables
+         nnk       ! Number of consequtive null steps.
+    INTEGER(KIND=c_int), INTENT(INOUT) :: & 
+         nfe, &    ! Number of function evaluations.
+         nge       ! Number of subgradient evaluations.
+    INTEGER(KIND=c_int), INTENT(OUT) :: &
+         iters, &  ! Null step indicator.
+                   !   0  - Null step.
+                   !   1  - Serious step.
+         iterm     ! Cause of termination:
+                   !   0  - Everything is ok.
+                   !  -3  - Failure in function or subgradient calculations.
+
+! Local Scalars
+    INTEGER(KIND=c_int) :: nin ! Number of interpolations.
+    REAL(KIND=c_double) :: &
+         tl,tu, &  ! Lower and upper limits for t used in interpolation.
+         fl,fu, &  ! Values of the objective function for t=tl and t=tu.
+         epsa,epst,epslk,epsrk, & ! Line search parameters.
+         thdnorm,epsawk,epstwk,epslwk,epsrwk ! Auxiliary scalars.
+
+! Parameters
+!    INTEGER, PARAMETER :: maxint = 200  ! Maximum number of interpolations.
+
+! Intrinsic Functions
+    INTRINSIC ABS,MAX
+    INTEGER(KIND=c_int) :: i
+      
+
+! Initialization
+
+    nin = 0
+
+    epst = epsl+epsl
+    epsa = half*(epsr - epst)
+    thdnorm = theta*dnorm
+
+    tl = zero
+    tu = t
+    fl = fo
+
+    IF (theta < one) THEN
+       epst  = theta*epst
+       epsa  = theta*epsa
+       epslk = epsl
+       epsl  = theta*epsl
+       epsrk = epsr
+       epsr  = theta*epsr
+    END IF
+ 
+    epsawk   = epsa*wk
+    epslwk   = epsl*wk
+    epsrwk   = epsr*wk
+    epstwk   = epst*wk
+
+
+! Function evaluation at a new point
+
+    lls_iteration: DO
+       
+       CALL scsum(n,theta*t,d,xo,x)
+
+       CALL myf(n,x,f,iterm,nproblem)
+       nfe = nfe + 1
+       IF (iterm /= 0) RETURN
+
+    
+! Null/descent step test (ITERS=0/1)
+
+       iters = 1
+       IF (f <= fo - t*epstwk) THEN
+          tl = t
+          fl = f
+       ELSE
+          tu = t
+          fu = f
+       END IF
+      
+
+! Additional interpolation
+
+       IF (f > fo .AND. tu-tl >= tmin*0.1_c_double &
+            .AND. nnk >= 1 .AND. nin < maxint) THEN
+
+          nin=nin+1
+          IF (tl == zero .AND. wk > zero) THEN
+             t = qint(tu,fl,fu,wk,one-half/(one-epst))
+          ELSE
+             t = half*(tu+tl)
+          END IF
+          CYCLE lls_iteration
+       END IF
+
+       CALL myg(n,x,g,iterm,nproblem)
+       
+       !WRITE(*,*)
+       !WRITE(*,*) 'x:'
+       !DO i =1, 31        
+       !WRITE(*,*) 'x(',i,')=', x(i)      
+       !WRITE(*,*) 'x(',i,')=', x(i)      
+       !END DO     
+       !WRITE(*,*)  
+       !WRITE(*,*) 'g='            
+       !DO i =1, 31        
+       !WRITE(*,*) 'g(',i,')=', g(i)      
+       !END DO  
+       !WRITE(*,*) 
+       nge = nge + 1
+       IF (iterm /= 0) RETURN
+
+       p = theta*vdot(n,g,d)
+       alfn = MAX(ABS(fo-f+p*t),eta*(t*thdnorm)**2)
+
+
+! Serious step
+
+       IF (f <= fo - t*epslwk .AND. (t >= tmin .OR. alfn > epsawk)) EXIT lls_iteration
+
+
+! Null step
+
+       IF (p-alfn >= -epsrwk .OR. tu-tl < tmin*0.1_c_double .OR. &
+            nin >= maxint) THEN
+          ITERS = 0
+          EXIT lls_iteration
+       END IF
+
+
+! Interpolation
+
+       nin=nin+1
+       IF (tl == zero .AND. wk > zero) THEN
+          t = qint(tu,fl,fu,wk,one-half/(one-epst))
+       ELSE
+          t = half*(tu+tl)
+       END IF
+
+    END DO lls_iteration
+
+    IF (theta /= one) THEN
+       epsl = epslk
+       epsr = epsrk
+    END IF
+
+  CONTAINS
+
+    FUNCTION qint(tu,fl,fu,wk,kappa) RESULT(t) ! Quadratic interpolation
+
+!      USE param, ONLY : half,one  ! given in host
+      IMPLICIT NONE
+      
+! Scalar Arguments
+      REAL(KIND=c_double), INTENT(IN) :: & 
+           fl, &  ! Value of the objective function.
+           fu, &  ! Value of the objective function for t=tu.
+           wk, &  ! Directional derivative.
+           tu, &  ! Upper value of the stepsize parameter.
+           kappa  ! Interpolation parameter.
+      REAL(KIND=c_double) :: & 
+           t      ! Stepsize.
+
+! Local Scalars
+      REAL(KIND=c_double) :: tmp1,tmp2
+
+! Intrinsic Functions
+      INTRINSIC MAX
+
+
+      tmp1 = (fu-fl)/ (-wk*tu)
+
+     
+! Quadratic interpolation with one directional derivative
+
+      tmp2 = 2.0_c_double * (one - tmp1)
+
+      IF (tmp2 > one) THEN
+   
+! Interpolation accepted
+       
+         t = MAX(kappa*tu,tu/tmp2)
+         RETURN
+      END IF
+      
+     
+! Bisection
+    
+      t = half*tu
+      
+    END FUNCTION qint
+
+  END SUBROUTINE lls
+
+!************************************************************************
+!*                                                                      *
+!*     * SUBROUTINE nmlls *                                             *
+!*                                                                      *
+!*     Nonmonotonic weak Wolfe-type line search                         *
+!*                                                                      *
+!************************************************************************
+
+SUBROUTINE nmlls(n,x,g,d,xo,t,fo,f,fold,p,alfn,tmin,dnorm,wk,theta,epsl,epsr,&
+    eta,iters,inewnma,nfe,nge,nnk,iterm)
+
+    USE param, ONLY : zero,half,one
+    USE obj_fun, ONLY : &
+        myf,myg    ! Computation of the value and the subgradient of
+                   ! the objective function.
+    USE lmbm_sub, ONLY : &
+        scsum      ! Sum of a vector and the scaled vector.
+    USE initializat, ONLY : &
+        nproblem, &  ! The solved problem
+        mnma, &      ! Maximum number of function values used in line search.
+        maxint => maxnin   ! Maximum number of interpolations.
+
+    IMPLICIT NONE
+
+    ! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+        d, &      ! Direction vector.
+        xo        ! Previous vector of variables.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+        x         ! Vector of variables.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+        g         ! Subgradient of the objective function.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+        fold           ! Old function values.
+
+    ! Scalar Arguments
+    REAL(KIND=c_double), INTENT(INOUT) :: &
+        epsl,&    ! Linesearch parameter.
+        epsr,&    ! Linesearch parameter.
+        t, &      ! Stepsize
+        p         ! Directional derivative.
+    REAL(KIND=c_double), INTENT(IN) :: &
+        theta, &  ! Scaling parameter.
+        eta, &    ! Distance measure parameter.
+        fo, &     ! Previous value of the objective function.
+        wk, &     ! Stopping parameter.
+        dnorm, &  ! Euclidean norm of the direction vector.
+        tmin      ! Lower limit for stepsize parameter.
+    REAL(KIND=c_double), INTENT(OUT) :: &
+        f, &      ! Value of the objective function.
+        alfn      ! Locality measure.
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+        n, &      ! Number of variables
+        nnk       ! Number of consequtive null steps.
+    INTEGER(KIND=c_int), INTENT(INOUT) :: &
+        inewnma, &! index for array.
+        nfe, &    ! Number of function evaluations.
+        nge       ! Number of subgradient evaluations.
+    INTEGER(KIND=c_int), INTENT(OUT) :: &
+        iters, &  ! Null step indicator.
+                  !   0  - Null step.
+                  !   1  - Serious step.
+        iterm     ! Cause of termination:
+                  !   0  - Everything is ok.
+                  !  -3  - Failure in function or subgradient calculations.
+
+    ! Local Scalars
+    INTEGER(KIND=c_int) :: nin ! Number of interpolations.
+    REAL(KIND=c_double) :: &
+        tl,tu, &  ! Lower and upper limits for t used in interpolation.
+        fl,fu, &  ! Values of the objective function for t=tl and t=tu.
+        ftmp, &   ! Maximum function value from mnma last iterations.
+        epsa,epst,epslk,epsrk, & ! Line search parameters.
+        thdnorm,epsawk,epstwk,epslwk,epsrwk ! Auxiliary scalars.
+
+    ! Intrinsic Functions
+    INTRINSIC ABS,MAX,MAXVAL,DOT_PRODUCT
+
+
+
+    ! Initialization
+
+    nin = 0
+
+    epst = epsl+epsl
+    epsa = half*(epsr - epst)
+    thdnorm = theta*dnorm
+
+    tl = zero
+    tu = t
+    fl = fo
+
+    IF (theta < one) THEN
+        epst  = theta*epst
+        epsa  = theta*epsa
+        epslk = epsl
+        epsl  = theta*epsl
+        epsrk = epsr
+        epsr  = theta*epsr
+    END IF
+
+    epsawk   = epsa*wk
+    epslwk   = epsl*wk
+    epsrwk   = epsr*wk
+    epstwk   = epst*wk
+
+    ! Updating circular array fold
+
+    IF (iters==1) THEN
+        fold(inewnma) = fo
+        inewnma = inewnma + 1
+        IF (inewnma > mnma) inewnma = 1
+    END IF
+    ftmp = MAXVAL(fold)
+
+
+    ! Function evaluation at a new point
+
+    lls_iteration: DO
+
+        CALL scsum(n,theta*t,d,xo,x)
+
+        CALL myf(n,x,f,iterm,nproblem)
+        nfe = nfe + 1
+        IF (iterm /= 0) RETURN
+
+
+        ! Null/descent step test (ITERS=0/1)
+
+        iters = 1
+        IF (f <= ftmp - t*epstwk) THEN
+            tl = t
+            fl = f
+        ELSE
+            tu = t
+            fu = f
+        END IF
+
+
+        ! Additional interpolation
+
+        IF (f > ftmp .AND. tu-tl >= tmin*0.1_c_double &
+            .AND. nnk >= 1 .AND. nin < maxint) THEN
+
+            nin=nin+1
+            IF (tl == zero .AND. wk > zero) THEN
+                t = qint(tu,fl,fu,wk,one-half/(one-epst))
+            ELSE
+                t = half*(tu+tl)
+            END IF
+            CYCLE lls_iteration
+        END IF
+
+        CALL myg(n,x,g,iterm,nproblem)
+        nge = nge + 1
+        IF (iterm /= 0) RETURN
+
+        p = theta*DOT_PRODUCT(g,d)
+        alfn = MAX(ABS(fo-f+p*t),eta*(t*thdnorm)**2)
+
+
+        ! Serious step
+
+        IF (f <= ftmp - t*epslwk .AND. (t >= tmin .OR. alfn > epsawk)) EXIT lls_iteration
+
+
+        ! Null step
+
+        IF (p-alfn >= -epsrwk .OR. tu-tl < tmin*0.1_c_double .OR. &
+            nin >= maxint) THEN
+            ITERS = 0
+            EXIT lls_iteration
+        END IF
+
+
+        ! Interpolation
+
+        nin=nin+1
+        IF (tl == zero .AND. wk > zero) THEN
+            t = qint(tu,fl,fu,wk,one-half/(one-epst))
+        ELSE
+            t = half*(tu+tl)
+        END IF
+
+    END DO lls_iteration
+
+    IF (theta /= one) THEN
+        epsl = epslk
+        epsr = epsrk
+    END IF
+
+CONTAINS
+
+    FUNCTION qint(tu,fl,fu,wk,kappa) RESULT(t) ! Quadratic interpolation
+
+        !      USE param, ONLY : half,one  ! given in host
+        IMPLICIT NONE
+
+        ! Scalar Arguments
+        REAL(KIND=c_double), INTENT(IN) :: &
+            fl, &  ! Value of the objective function.
+            fu, &  ! Value of the objective function for t=tu.
+            wk, &  ! Directional derivative.
+            tu, &  ! Upper value of the stepsize parameter.
+            kappa  ! Interpolation parameter.
+        REAL(KIND=c_double) :: &
+            t      ! Stepsize.
+
+        ! Local Scalars
+        REAL(KIND=c_double) :: tmp1,tmp2
+
+        ! Intrinsic Functions
+        INTRINSIC MAX
+
+
+        tmp1 = (fu-fl)/ (-wk*tu)
+
+
+        ! Quadratic interpolation with one directional derivative
+
+        tmp2 = 2.0_c_double * (one - tmp1)
+
+        IF (tmp2 > one) THEN
+
+            ! Interpolation accepted
+
+            t = MAX(kappa*tu,tu/tmp2)
+            RETURN
+        END IF
+
+
+        ! Bisection
+
+        t = half*tu
+
+    END FUNCTION qint
+
+END SUBROUTINE nmlls
+
+
+
+!************************************************************************
+!*                                                                      *
+!*     * SUBROUTINE dlbfgs *                                            *
+!*                                                                      *
+!*     Matrix update and computation of the search direction d = -dm*g  *
+!*     by the limited memory BFGS update.                               *
+!*                                                                      *
+!************************************************************************
+    
+  SUBROUTINE dlbfgs(n,mc,mcc,inew,ibfgs,iflag,d,g,gp,s,u,sm,um,rm, &
+       umtum,cm,smtgp,umtgp,gamma,tmpn1,method,iscale)
+      
+    USE param, ONLY : zero,small,one,half ! half is used at sclpar
+    USE lmbm_sub, ONLY : &
+         vdot, &   ! Dot product.
+         vneg, &   ! Copying of a vector with change of the sign.
+         xdiffy, & ! Difference of two vectors.
+         xsumy, &  ! Sum of two vectors.
+         scdiff, & ! Difference of the scaled vector and a vector.
+         scsum, &  ! Sum of a vector and the scaled vector.
+         vxdiag, & ! Multiplication of a vector and a diagonal matrix.
+         symax, &  ! Multiplication of a dense symmetric matrix by a vector.
+         cwmaxv, & ! Multiplication of a vector by a dense rectangular matrix.
+         rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
+                   ! matrices A and B by vectors x and y.         
+         trlieq, & ! Solving x from linear equation L*x=y or trans(L)*x=y.
+         copy2     ! Copying of two vectors.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         g, &      ! Current subgradient of the objective function.
+         gp        ! Previous subgradient of the objective function.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+         sm, &     ! Matrix whose columns are stored corrections.
+         um, &     ! Matrix whose columns are stored subgradient differences.
+         rm, &     ! Upper triangular matrix.
+         cm, &     ! Diagonal matrix.
+         umtum, &  ! Matrix umtum = trans(um) * um.
+         smtgp, &  ! Vector smtgp = trans(sm)*gp.
+         umtgp, &  ! vector umtgp = trans(um)*gp.
+         s, &      ! Difference of current and previous variables.
+         u, &      ! Difference of current and previous subgradients.
+         tmpn1     ! Auxiliary array. On input: previous aggregate subgradient.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         d         ! Direction vector.
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(INOUT) :: & 
+         gamma     ! Scaling parameter.
+    INTEGER(KIND=c_int), INTENT(IN) :: & 
+         n, &      ! Number of variables
+         mc, &     ! Declared number of stored corrections.
+         method, & ! Selection of the method:
+                   !   0  - Limited memory bundle method.
+                   !   1  - L-BFGS bundle method.
+         iscale    ! Selection of the scaling:
+                   !   0  - Scaling at every iteration with STU/UTU.
+                   !   1  - Scaling at every iteration with STS/STU.
+                   !   2  - Interval scaling with STU/UTU.
+                   !   3  - Interval scaling with STS/STU.
+                   !   4  - Preliminary scaling with STU/UTU.
+                   !   5  - Preliminary scaling with STS/STU.
+                   !   6  - No scaling.      
+    INTEGER(KIND=c_int), INTENT(INOUT) :: & 
+         mcc, &    ! Current number of stored corrections.
+         inew, &   ! Index for circular arrays.
+         iflag     ! Index for adaptive version:
+                   !   0  - Maximum number of stored corrections
+                   !        has not been changed at this iteration.
+                   !   1  - Maximum number of stored corrections
+                   !        has been changed at this iteration.
+    INTEGER(KIND=c_int), INTENT(OUT) :: & 
+         ibfgs     ! Index of the type of BFGS update:
+                   !   1  - BFGS update: the corrections are stored.
+                   !   2  - BFGS update: the corrections are not stored.
+                   !   3  - BFGS update is skipped.
+      
+! Local Arrays
+    REAL(KIND=c_double), DIMENSION(mcc+1) :: &
+         tmpmc1,tmpmc2,tmpmc3,tmpmc4
+
+! Local Scalars
+    REAL(KIND=c_double) :: &
+         stu, &    ! stu = trans(s)*u. 
+         sts       ! sts = trans(s)*s. 
+    INTEGER(KIND=c_int) :: i,j,k, &
+         mcnew, &  ! Current size of vectors.
+         iold, &   ! Index of the oldest corrections.
+         iflag2, & ! Index for adaptive version.
+         ierr      ! Error indicator
+
+! Intrinsic Functions
+    INTRINSIC SQRT,MIN,MAX
+
+
+    ierr = 0
+    ibfgs = 0
+    iflag2 = 0
+    stu = vdot(n,s,u)
+    sts = vdot(n,s,s)
+
+
+! Positive definiteness
+
+    IF (stu > zero) THEN
+       IF (-vdot(n,d,u)-vdot(n,tmpn1,s) < -small .OR. method == 1) THEN
+          
+     
+! Update matrices
+         
+          ibfgs = 1
+
+! Initialization of indices.
+
+          CALL indic1(mc,mcc,mcnew,inew,iold,iflag,iflag2,ibfgs)
+            
+     
+! Update sm and um
+
+          CALL copy2(n,s,sm((inew-1)*n+1:),u,um((inew-1)*n+1:))
+           
+     
+! Computation of trans(sm)*g and trans(um)*g
+
+          IF (inew >= mcnew) THEN
+             CALL rwaxv2(n,mcnew,sm((inew-mcnew)*n+1:),&
+                  um((inew-mcnew)*n+1:),g,g,tmpmc1(iold:),tmpmc2(iold:))
+          ELSE
+             CALL rwaxv2(n,inew,sm,um,g,g,tmpmc1,tmpmc2)
+             CALL rwaxv2(n,mcnew-inew,sm((iold-1)*n+1:),&
+                  um((iold-1)*n+1:),g,g,tmpmc1(iold:),tmpmc2(iold:))
+          END IF
+            
+            
+! Computation of trans(sm)*u and trans(um)*u
+
+          IF (inew >= mcnew) THEN
+             DO i=iold,inew-1
+                tmpmc3(i) = tmpmc1(i) - smtgp(i)
+                smtgp(i)  = tmpmc1(i)
+                tmpmc4(i) = tmpmc2(i) - umtgp(i)
+                umtgp(i)  = tmpmc2(i)
+             END DO
+          ELSE
+             DO i=1,inew-1
+                tmpmc3(i) = tmpmc1(i) - smtgp(i)
+                smtgp(i)  = tmpmc1(i)
+                tmpmc4(i) = tmpmc2(i) - umtgp(i)
+                umtgp(i)  = tmpmc2(i)
+             END DO
+             DO i=iold,mcnew+1
+                tmpmc3(i) = tmpmc1(i) - smtgp(i)
+                smtgp(i)  = tmpmc1(i)
+                tmpmc4(i) = tmpmc2(i) - umtgp(i)
+                umtgp(i)  = tmpmc2(i)
+             END DO
+          END IF
+          tmpmc3(inew) = tmpmc1(inew) - vdot(n,s,gp)
+          smtgp(inew)  = tmpmc1(inew)
+          tmpmc4(inew) = tmpmc2(inew) - vdot(n,u,gp)
+          umtgp(inew)  = tmpmc2(inew)
+            
+         
+! Update rm and umtum
+
+          IF (mcc >= mc .AND. iflag2 /= 1) THEN
+             DO i=1,mcnew-1
+                j=(i-1)*i/2+1
+                k=i*(i+1)/2+2
+                CALL copy2(i,rm(k:),rm(j:),umtum(k:),umtum(j:))
+             END DO
+          END IF
+                      
+          IF (inew >= mcnew) THEN
+             CALL copy2(mcnew,tmpmc3(iold:),rm((mcnew-1)*mcnew/2+1:),&
+                  tmpmc4(iold:),umtum((mcnew-1)*mcnew/2+1:))
+          ELSE
+             CALL copy2(mcnew-inew,tmpmc3(iold:),rm((mcnew-1)*mcnew/2+1:)&
+                  ,tmpmc4(iold:),umtum((mcnew-1)*mcnew/2+1:))
+             CALL copy2(inew,tmpmc3,rm((mcnew-1)*mcnew/2+mcnew-inew+1:),&
+                  tmpmc4,umtum((mcnew-1)*mcnew/2+mcnew-inew+1:))
+          END IF
+            
+
+! Update CM
+
+          cm(inew) = stu
+            
+! Computation of gamma
+
+          gamma = sclpar(mcc,iscale,method,sts,stu,tmpmc4(inew))
+            
+          inew = inew + 1
+          IF (inew > mc + 1) inew = 1
+          IF (iflag == 0 .AND. mcc < mc + 1) mcc = mcc + 1
+          
+       ELSE
+
+            
+! BFGS update, corrections are not saved.
+     
+          ibfgs = 2
+
+! Initialization of indices.
+
+          CALL indic1(mc,mcc,mcnew,inew,iold,iflag,iflag2,ibfgs)
+          
+! Update sm and um
+          
+          CALL copy2(n,s,sm((inew-1)*n+1:),u,um((inew-1)*n+1:))
+            
+! Computation of trans(sm)*g and trans(um)*g
+
+          CALL rwaxv2(n,mcnew,sm,um,g,g,tmpmc1,tmpmc2)
+
+! Computation of trans(sm)*u and trans(um)*u
+          
+          IF (iold /= 1) THEN
+             DO i=1,inew-1
+                tmpmc3(i) = tmpmc1(i) - smtgp(i)
+                smtgp(i)  = tmpmc1(i)
+                tmpmc4(i) = tmpmc2(i) - umtgp(i)
+                umtgp(i)  = tmpmc2(i)
+             END DO
+             DO i=iold,mcnew
+                tmpmc3(i) = tmpmc1(i) - smtgp(i)
+                smtgp(i)  = tmpmc1(i)
+                tmpmc4(i) = tmpmc2(i) - umtgp(i)
+                umtgp(i)  = tmpmc2(i)
+             END DO
+          ELSE
+             DO i=1,mcnew-1
+                tmpmc3(i) = tmpmc1(i) - smtgp(i)
+                smtgp(i)  = tmpmc1(i)
+                tmpmc4(i) = tmpmc2(i) - umtgp(i)
+                umtgp(i)  = tmpmc2(i)
+             END DO
+          END IF
+          tmpmc3(inew) = tmpmc1(inew) - vdot(n,s,gp)
+          smtgp(inew)  = tmpmc1(inew)
+          tmpmc4(inew) = tmpmc2(inew) - vdot(n,u,gp)
+          umtgp(inew)  = tmpmc2(inew)
+
+
+! Update rm and umtum
+
+          IF (iold /= 1) THEN
+             CALL copy2(mcnew-inew,tmpmc3(iold:),&
+                  rm((mcnew-1)*mcnew/2+1:),tmpmc4(iold:),&
+                  umtum((mcnew-1)*mcnew/2+1:))
+             CALL copy2(inew,tmpmc3,rm((mcnew-1)*mcnew/2+mcnew-inew+1:),tmpmc4,&
+                  umtum((mcnew-1)*mcnew/2+mcnew-inew+1:))
+          ELSE
+             CALL copy2(mcnew,tmpmc3,rm((mcnew-1)*mcnew/2+1:)&
+                  ,tmpmc4,umtum((mcnew-1)*mcnew/2+1:))
+          END IF
+            
+
+! Update cm
+
+          cm(inew) = stu
+            
+
+! Computation of gamma
+
+          gamma = sclpar(mcc,iscale,method,sts,stu,tmpmc4(inew))
+               
+       END IF
+    ELSE
+         
+     
+! BFGS update is skipped
+
+       ibfgs = 3
+
+       IF (mcc == 0) THEN
+          iflag = 0
+          CALL vneg(n,g,d)
+          RETURN
+       END IF
+         
+
+!     Initialization of indices.
+
+       CALL indic1(mc,mcc,mcnew,inew,iold,iflag,iflag2,ibfgs)
+
+
+!     Computation of gamma
+
+       IF (iscale >= 4) gamma = one
+               
+         
+!     Computation of trans(sm)*g and trans(um)*g and the two intermediate values
+
+       IF (iold <= 2) THEN
+          CALL rwaxv2(n,mcnew,sm((iold-1)*n+1:),um((iold-1)*n+1:),g,g,&
+               smtgp(iold:),umtgp(iold:))
+       ELSE
+          CALL rwaxv2(n,inew-1,sm,um,g,g,smtgp,umtgp)
+          CALL rwaxv2(n,mcnew-inew+1,sm((iold-1)*n+1:),&
+               um((iold-1)*n+1:),g,g,smtgp(iold:),umtgp(iold:))
+       END IF
+    END IF
+
+
+! Computation of two intermediate values tmpmc1 and tmpmc2
+
+    IF (iold == 1 .OR. ibfgs == 2) THEN
+       CALL trlieq(mcnew,mcnew,iold,rm,tmpmc1,smtgp,1,ierr)
+       CALL symax(mcnew,mcnew,iold,umtum,tmpmc1,tmpmc3)
+       CALL vxdiag(mcnew,cm,tmpmc1,tmpmc2)
+       CALL scsum(mcnew,gamma,tmpmc3,tmpmc2,tmpmc2)
+       CALL scsum(mcnew,-gamma,umtgp,tmpmc2,tmpmc3)
+       CALL trlieq(mcnew,mcnew,iold,rm,tmpmc2,tmpmc3,0,ierr)
+
+    ELSE IF (iflag == 0) THEN
+       CALL trlieq(mcnew,mc+1,iold,rm,tmpmc1,smtgp,1,ierr)
+       CALL symax(mcnew,mc+1,iold,umtum,tmpmc1,tmpmc3)
+       CALL vxdiag(mc+1,cm,tmpmc1,tmpmc2)
+       CALL scsum(mc+1,gamma,tmpmc3,tmpmc2,tmpmc2)
+       CALL scsum(mc+1,-gamma,umtgp,tmpmc2,tmpmc3)
+       CALL trlieq(mcnew,mc+1,iold,rm,tmpmc2,tmpmc3,0,ierr)
+
+    ELSE
+       CALL trlieq(mcnew,mc,iold,rm,tmpmc1,smtgp,1,ierr)
+       CALL symax(mcnew,mc,iold,umtum,tmpmc1,tmpmc3)
+       CALL vxdiag(mc,cm,tmpmc1,tmpmc2)
+       CALL scsum(mc,gamma,tmpmc3,tmpmc2,tmpmc2)
+       CALL scsum(mc,-gamma,umtgp,tmpmc2,tmpmc3)
+       CALL trlieq(mcnew,mc,iold,rm,tmpmc2,tmpmc3,0,ierr)
+    END IF
+
+      
+! Computation of the search direction d
+
+    IF (iold == 1 .OR. ibfgs == 2) THEN
+       CALL cwmaxv(n,mcnew,um,tmpmc1,d)
+       CALL xdiffy(n,d,g,d)
+       CALL cwmaxv(n,mcnew,sm,tmpmc2,tmpn1)
+       CALL scdiff(n,gamma,d,tmpn1,d)
+    ELSE 
+       CALL cwmaxv(n,inew-1,um,tmpmc1,d)
+       CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc1(iold:),tmpn1)
+       CALL xsumy(n,d,tmpn1,d)
+       CALL xdiffy(n,d,g,d)
+       CALL cwmaxv(n,inew-1,sm,tmpmc2,tmpn1)
+       CALL scdiff(n,gamma,d,tmpn1,d)
+       CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc2(iold:),tmpn1)
+       CALL xdiffy(n,d,tmpn1,d)
+    END IF
+
+  CONTAINS
+
+    FUNCTION sclpar(mcc,iscale,method,sts,stu,utu) RESULT(spar) ! Calculation of the scaling parameter.
+      
+!      USE param, ONLY : small,one,half ! given in host
+      IMPLICIT NONE
+
+! Scalar Arguments
+      REAL(KIND=c_double), INTENT(IN) :: & 
+           sts, &    ! sts = trans(s)*s. 
+           stu, &    ! stu = trans(s)*u. 
+           utu       ! utu = trans(u)*u. 
+      REAL(KIND=c_double) :: & 
+           spar      ! Scaling parameter.
+      INTEGER, INTENT(IN) :: & 
+           mcc, &    ! Current number of stored corrections.
+           method, & ! Selection of the method:
+                     !   0  - Limited memory bundle method.
+                     !   1  - L-BFGS bundle method.
+           iscale    ! Selection of the scaling:
+                     !   0  - Scaling at every iteration with STU/UTU.
+                     !   1  - Scaling at every iteration with STS/STU.
+                     !   2  - Interval scaling with STU/UTU.
+                     !   3  - Interval scaling with STS/STU.
+                     !   4  - Preliminary scaling with STU/UTU.
+                     !   5  - Preliminary scaling with STS/STU.
+                     !   6  - No scaling.      
+
+! Intrinsic Functions
+      INTRINSIC SQRT
+
+
+! Computation of scaling parameter.
+
+      SELECT CASE(iscale)
+     
+! Scaling parameter = STU/UTU
+
+      CASE(0,2,4)
+         IF (utu < SQRT(small)) THEN
+            spar = one
+            RETURN
+         ELSE
+            spar = stu/utu
+         END IF
+    
+! Scaling parameter = STS/STU
+
+      CASE(1,3,5)
+         IF (stu < SQRT(small)) THEN
+            spar = one
+            RETURN
+         ELSE
+            spar = sts/stu
+         END IF
+
+! No scaling
+
+      CASE DEFAULT
+         spar = one
+         RETURN
+      END SELECT
+
+               
+!     Scaling
+            
+      IF (MCC == 0) THEN
+         IF (spar < 0.01_c_double) spar=0.01_c_double
+         IF (spar > 100.0_c_double) spar=100.0_c_double
+
+      ELSE 
+
+         SELECT CASE(iscale)
+
+! Interval scaling
+         CASE(2)
+            IF (method == 0) THEN
+               IF (spar < 0.6_c_double .OR. spar > 6.0_c_double) spar = one
+            ELSE
+               IF (spar < 0.01_c_double .OR. spar > 100.0_c_double) spar = one
+            END IF
+
+         CASE(3)
+            IF (spar < half .OR. spar > 5.0_c_double) spar = one
+               
+! Preliminary scaling
+         CASE(4,5)
+            spar = one
+
+! Scaling at every iteration
+         CASE DEFAULT
+            CONTINUE
+         END SELECT
+
+      END IF
+
+      IF (spar < 1.0E+03_c_double*small) spar = 1.0E+03_c_double*small
+         
+    END FUNCTION sclpar
+
+  END SUBROUTINE dlbfgs
+
+!************************************************************************
+!*                                                                      *
+!*     * SUBROUTINE dlskip *                                            *
+!*                                                                      *
+!*     Matrix skipping and computation of the search direction          *
+!*     d = -dm*ga by the limited memory BFGS update.                    *
+!*                                                                      *
+!************************************************************************
+
+  SUBROUTINE dlskip(n,mc,mcc,inew,ibfgs,iflag,d,ga,sm,um,rm,&
+       umtum,cm,tmpmc1,tmpmc2,gamma,iscale)
+   
+    USE param, ONLY : zero,small,one
+    USE lmbm_sub, ONLY : &
+         vneg, &   ! Copying of a vector with change of the sign.
+         xsumy, &  ! Sum of two vectors.
+         xdiffy, & ! Difference of two vectors.
+         scsum, &  ! Sum of a vector and the scaled vector.
+         scdiff, & ! Difference of the scaled vector and a vector.
+         symax, &  ! Multiplication of a dense symmetric matrix by a vector.
+         cwmaxv, & ! Multiplication of a vector by a dense rectangular matrix.
+         rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
+                   ! matrices A and B by vectors x and y.         
+         trlieq, & ! Solving x from linear equation L*x=y or trans(L)*x=y.
+         vxdiag    ! Multiplication of a vector and a diagonal matrix.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         ga, &     ! Current aggregate subgradient of the objective function.
+         sm, &     ! Matrix whose columns are stored corrections.
+         um, &     ! Matrix whose columns are stored subgradient differences.
+         rm, &     ! Upper triangular matrix.
+         cm, &     ! Diagonal matrix.
+         umtum     ! Matrix umtum = trans(um) * um.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         tmpmc1, & ! Auxiliary array. On output: trans(sm)*ga.
+         tmpmc2, & ! Auxiliary array. On output: trans(um)*ga.
+         d         ! Direction vector.
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(INOUT) :: & 
+         gamma     ! Scaling parameter.
+    INTEGER(KIND=c_int), INTENT(IN) :: & 
+         n, &      ! Number of variables
+         mc        ! Declared number of stored corrections.
+    INTEGER(KIND=c_int), INTENT(INOUT) :: & 
+         mcc, &    ! Current number of stored corrections.
+         inew, &   ! Index for circular arrays.
+         iflag, &  ! Index for adaptive version:
+                   !   0  - Maximum number of stored corrections
+                   !        has not been changed at this iteration.
+                   !   1  - Maximum number of stored corrections
+                   !        has been changed at this iteration.
+         iscale    ! Selection of the scaling:
+                   !   0   - Scaling at every iteration with STU/UTU.
+                   !   1  - Scaling at every iteration with STS/STU.
+                   !   2  - Interval scaling with STU/UTU.
+                   !   3  - Interval scaling with STS/STU.
+                   !   4  - Preliminary scaling with STU/UTU.
+                   !   5  - Preliminary scaling with STS/STU.
+                   !   6  - No scaling.      
+    INTEGER(KIND=c_int), INTENT(OUT) :: & 
+         ibfgs     ! Index of the type of L-SR1 update:
+                   !   3  - BFGS update is skipped.
+      
+! Local Arrays
+    REAL(KIND=c_double), DIMENSION(n) :: tmpn1
+    REAL(KIND=c_double), DIMENSION(mcc+1) :: tmpmc3,tmpmc4,tmpmc5
+ 
+! Local Scalars
+    INTEGER(KIND=c_int) :: &
+         mcnew, &  ! Current size of vectors.
+         iold, &   ! Index of the oldest corrections.
+         ierr,&    ! Error indicator.
+         iflag2    ! Index for adaptive version.
+
+
+! BFGS update is skipped
+
+    ierr = 0
+    ibfgs = 3
+
+    IF (mcc == 0) THEN
+       iflag = 0
+       CALL vneg(n,ga,d)
+       RETURN
+    END IF
+      
+   
+! Initialization of indices.
+ 
+    CALL indic1(mc,mcc,mcnew,inew,iold,iflag,iflag2,ibfgs)
+      
+         
+! Computation of trans(sm)*ga and trans(um)*ga
+    
+    IF (iold <= 2) THEN
+       CALL rwaxv2(n,mcnew,sm((iold-1)*n+1:),um((iold-1)*n+1:),ga,ga,&
+            tmpmc1(iold:),tmpmc2(iold:))
+    ELSE
+       CALL rwaxv2(n,inew-1,sm,um,ga,ga,tmpmc1,tmpmc2)
+       CALL rwaxv2(n,mcnew-inew+1,sm((iold-1)*n+1:),um((iold-1)*n+1:),&
+            ga,ga,tmpmc1(iold:),tmpmc2(iold:))
+    END IF
+
+
+! Computation of GAMMA
+
+    IF (iscale >= 4) gamma = one
+
+
+! Computation of two intermediate values tmpmc3 and tmpmc4
+
+    IF (iold == 1) THEN
+       CALL trlieq(mcnew,mcnew,iold,rm,tmpmc3,tmpmc1,1,ierr)
+       CALL symax(mcnew,mcnew,iold,umtum,tmpmc3,tmpmc5)
+       CALL vxdiag(mcnew,cm,tmpmc3,tmpmc4)
+       CALL scsum(mcnew,gamma,tmpmc5,tmpmc4,tmpmc4)
+       CALL scsum(mcnew,-gamma,tmpmc2,tmpmc4,tmpmc5)
+       CALL trlieq(mcnew,mcnew,iold,rm,tmpmc4,tmpmc5,0,ierr)
+
+    ELSE IF (iflag == 0) THEN
+       CALL trlieq(mcnew,mc+1,iold,rm,tmpmc3,tmpmc1,1,ierr)
+       CALL symax(mcnew,mc+1,iold,umtum,tmpmc3,tmpmc5)
+       CALL vxdiag(mc+1,cm,tmpmc3,tmpmc4)
+       CALL scsum(mc+1,gamma,tmpmc5,tmpmc4,tmpmc4)
+       CALL scsum(mc+1,-gamma,tmpmc2,tmpmc4,tmpmc5)
+       CALL trlieq(mcnew,mc+1,iold,rm,tmpmc4,tmpmc5,0,ierr)
+    ELSE
+       CALL trlieq(mcnew,mc,iold,rm,tmpmc3,tmpmc1,1,ierr)
+       CALL symax(mcnew,mc,iold,umtum,tmpmc3,tmpmc5)
+       CALL vxdiag(mc,cm,tmpmc3,tmpmc4)
+       CALL scsum(mc,gamma,tmpmc5,tmpmc4,tmpmc4)
+       CALL scsum(mc,-gamma,tmpmc2,tmpmc4,tmpmc5)
+       CALL trlieq(mcnew,mc,iold,rm,tmpmc4,tmpmc5,0,ierr)
+    END IF
+      
+
+! Computation of the search direction d
+    
+    IF (iold == 1) THEN
+       CALL cwmaxv(n,mcnew,um,tmpmc3,d)
+    ELSE 
+       CALL cwmaxv(n,inew-1,um,tmpmc3,d)
+       CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc3(iold:),tmpn1)
+       CALL xsumy(n,d,tmpn1,d)
+    END IF
+
+    CALL xdiffy(n,d,ga,d)
+      
+    IF (iold == 1) THEN
+       CALL cwmaxv(n,mcnew,sm,tmpmc4,tmpn1)
+       CALL scdiff(n,gamma,d,tmpn1,d)
+    ELSE
+       CALL cwmaxv(n,inew-1,sm,tmpmc4,tmpn1)
+       CALL scdiff(n,gamma,d,tmpn1,d)
+       CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc4(iold:),tmpn1)
+       CALL xdiffy(n,d,tmpn1,d)
+    END IF
+
+  END SUBROUTINE dlskip
+      
+!************************************************************************
+!*                                                                      *
+!*     * SUBROUTINE dlsr1 *                                             *
+!*                                                                      *
+!*     Matrix update and computation of the search direction d = -dm*ga *
+!*     by the limited memory SR1 update.                                *
+!*                                                                      *
+!************************************************************************
+
+  SUBROUTINE dlsr1(n,mc,mcc,inew,isr1,iflag,d,gp,ga,s,u,sm,um,rm,&
+       umtum,cm,smtgp,umtgp,gamma,tmpmc1,tmpmc2,tmpn1,nnk,iiprint)
+      
+    USE param, ONLY : zero,small,one
+    USE lmbm_sub, ONLY : &
+         vdot, &   ! Dot product.   
+         vneg, &   ! Copying of a vector with change of the sign.
+         scalex, & ! Scaling a vector.
+         xdiffy, & ! Difference of two vectors.
+         scdiff, & ! Difference of the scaled vector and a vector.
+         xsumy, &  ! Sum of two vectors.
+         cwmaxv, & ! Multiplication of a vector by a dense rectangular matrix.
+         rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
+                   ! matrices A and B by vectors x and y.
+         calq, &   ! Solving x from linear equation A*x=y.
+         copy, &   ! Copying of a vector.
+         copy2     ! Copying of two vectors.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         ga, &     ! Current aggregate subgradient of the objective function.
+         gp        ! Basic subgradient of the objective function.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+         sm, &     ! Matrix whose columns are stored corrections.
+         um, &     ! Matrix whose columns are stored subgradient differences.
+         rm, &     ! Upper triangular matrix.
+         cm, &     ! Diagonal matrix.
+         umtum, &  ! Matrix umtum = trans(um) * um.
+         smtgp, &  ! Vector smtgp = trans(sm)*gp.
+         umtgp, &  ! vector umtgp = trans(um)*gp.
+         s, &      ! Difference of current and previous variables.
+         u, &      ! Difference of current and previous subgradients.
+         tmpn1     ! Auxiliary array. On input: previous aggregate subgradient.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         tmpmc1, & ! Auxiliary array. On output: trans(sm)*ga.
+         tmpmc2, & ! Auxiliary array. On output: trans(um)*ga.
+         d         ! Direction vector.
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(INOUT) :: & 
+         gamma     ! Scaling parameter.
+    INTEGER(KIND=c_int), INTENT(IN) :: & 
+         n, &      ! Number of variables
+         mc, &     ! Declared number of stored corrections.
+         nnk, &    ! Consecutive null steps counter.
+         iiprint    ! Printout specification.
+    INTEGER(KIND=c_int), INTENT(INOUT) :: & 
+         mcc, &    ! Current number of stored corrections.
+         inew, &   ! Index for circular arrays.
+         iflag     ! Index for adaptive version:
+                   !   0  - Maximum number of stored corrections
+                   !        has not been changed at this iteration.
+                   !   1  - Maximum number of stored corrections
+                   !        has been changed at this iteration.
+    INTEGER(KIND=c_int), INTENT(OUT) :: & 
+         isr1      ! Index of the type of L-SR1 update:
+                   !   1  - SR1 update: the corrections are stored.
+                   !   3  - SR1 update is skipped.
+      
+! Local Arrays
+    REAL(KIND=c_double), DIMENSION(n) :: tmpn2
+    REAL(KIND=c_double), DIMENSION((mcc+1)*(mcc+2)/2) :: tmpmat
+    REAL(KIND=c_double), DIMENSION(mcc+1) :: tmpmc3,tmpmc4,tmpmc5,tmpmc6
+
+! Local Scalars
+    REAL(KIND=c_double) :: &
+         stu, &    ! stu = trans(s)*u. 
+         a, &      ! a = trans(ga) dm_(k-1) ga.
+         b         ! b = trans(ga) dm_k ga.
+    INTEGER(KIND=c_int) :: i,j,k, &
+         mcnew, &  ! Current size of vectors.
+         iold, &   ! Index of the oldest corrections.
+         iflag2    ! Index for adaptive version.
+
+
+    iflag2 = 0
+    isr1 = 0 
+      
+
+! Initialization of indices
+      
+    CALL indic1(mc,mcc,mcnew,inew,iold,iflag,iflag2,3)
+      
+         
+! Computation of gamma 
+
+    gamma = one
+
+
+! Computation of trans(sm)*ga and trans(um)*ga
+
+    IF (iold <= 2) THEN
+       CALL rwaxv2(n,mcnew,sm((iold-1)*n+1:),um((iold-1)*n+1:),ga,ga,&
+            tmpmc1(iold:),tmpmc2(iold:))
+    ELSE
+       CALL rwaxv2(n,inew-1,sm,um,ga,ga,tmpmc1,tmpmc2)
+       CALL rwaxv2(n,mcnew-inew+1,sm((iold-1)*n+1:),um((iold-1)*n+1:),&
+            ga,ga,tmpmc1(iold:),tmpmc2(iold:))
+    END IF
+
+
+! Positive definiteness
+
+    IF (-vdot(n,d,u) - vdot(n,tmpn1,s) >= -small) THEN
+      
+     
+! SR1 update is skipped
+
+       isr1 = 3
+       
+       IF (mcc == 0) THEN
+          iflag = 0
+          CALL vneg(n,ga,d)
+          RETURN
+       END IF
+
+    ELSE
+      
+       stu = vdot(n,s,u)
+        
+       tmpmc1(inew) = vdot(n,s,ga)
+       tmpmc2(inew) = vdot(n,u,ga)
+      
+
+!     Convergence conditions
+
+       IF ((nnk == 1 .OR. mcc < mc) .OR. &
+            (iflag == 1 .AND. (inew == 1 .OR. inew == mc))) THEN
+
+! SR1 Update
+
+          isr1 = 1
+ 
+
+! Initialization of indices
+
+          CALL indic1(mc,mcc,mcnew,inew,iold,iflag,iflag2,1)        
+
+          if (iflag2 == 1 .and. iold == 2) then
+             tmpmc1(inew) = tmpmc1(1)
+             tmpmc2(inew) = tmpmc2(1)
+          end if
+
+
+! Update sm and um
+
+          CALL copy2(n,s,sm((inew-1)*n+1:),u,um((inew-1)*n+1:))
+
+         
+! Update trans(sm)*gp and trans(um)*gp
+
+          smtgp(inew) = vdot(n,s,gp)
+          umtgp(inew) = vdot(n,u,gp)
+
+     
+! Computation of trans(sm)*u and trans(um)*u
+
+          IF (iold <= 2) THEN
+             CALL rwaxv2(n,mcnew-1,sm((iold-1)*n+1:),um((iold-1)*n+1:),&
+                  u,u,tmpmc3(iold:),tmpmc4(iold:))
+          ELSE
+             CALL rwaxv2(n,inew-1,sm,um,u,u,tmpmc3,tmpmc4)
+             CALL rwaxv2(n,mcnew-inew,sm((iold-1)*n+1:),um((iold-1)*n+1:),&
+                  u,u,tmpmc3(iold:),tmpmc4(iold:))
+          END IF
+
+          tmpmc3(inew) = stu
+          tmpmc4(inew) = vdot(n,u,u)
+
+         
+! Update rm and umtum
+
+          IF (mcc >= mc .AND. iflag2 /= 1) THEN
+             DO i=1,mcnew-1
+                j=(i-1)*i/2+1
+                k=i*(i+1)/2+2
+                CALL copy2(i,rm(k:),rm(j:),umtum(k:),umtum(j:))
+             END DO
+          END IF
+
+
+          IF (inew >= mcnew) THEN
+             CALL copy2(mcnew,tmpmc3(iold:),rm((mcnew-1)*mcnew/2+1:),&
+                  tmpmc4(iold:),umtum((mcnew-1)*mcnew/2+1:))
+          ELSE
+             CALL copy2(mcnew-inew,tmpmc3(iold:),&
+                  rm((mcnew-1)*mcnew/2+1:),tmpmc4(iold:),&
+                  umtum((mcnew-1)*mcnew/2+1:))
+             CALL COPY2(inew,tmpmc3,rm((mcnew-1)*mcnew/2+mcnew-inew+1:),tmpmc4,&
+                  umtum((mcnew-1)*mcnew/2+mcnew-inew+1:))
+          END IF
+
+      
+! Update CM
+
+          cm(inew) = stu
+
+          inew = inew + 1
+          IF (inew > mc + 1) inew = 1
+          IF (iflag == 0 .AND. mcc < mc + 1) mcc = mcc + 1
+
+       ELSE
+
+
+! Calculation of matrix (umtum-rm-trans(rm)+cm) from previous iteration
+         
+          DO  i=1,mcnew*(mcnew+1)/2
+             tmpmat(i)= gamma * umtum(i) - rm(i)
+          END DO
+
+     
+! Computation of tmpmat*tmpmc4 = gamma*trans(um)*ga-trans(sm)*ga
+
+          IF (iold == 1) THEN
+             CALL scdiff(mcnew,gamma,tmpmc2,tmpmc1,tmpmc5)
+             CALL calq(mcnew,mcnew,iold,tmpmat,tmpmc4,tmpmc5,0)
+
+          ELSE IF (iflag == 0) THEN
+             CALL scdiff(mc+1,gamma,tmpmc2,tmpmc1,tmpmc5)
+             CALL calq(mcnew,mc+1,iold,tmpmat,tmpmc4,tmpmc5,0)
+
+          ELSE
+             CALL scdiff(mc,gamma,tmpmc2,tmpmc1,tmpmc5)
+             CALL calq(mcnew,mc,iold,tmpmat,tmpmc4,tmpmc5,0)
+          END IF
+
+
+! Computation of a = -trans(ga)*dm_(k-1)*ga
+      
+          IF (iold <= 2) THEN
+             CALL scalex(mcnew,gamma,tmpmc4(iold:),tmpmc3(iold:))
+             CALL cwmaxv(n,mcnew,sm((iold-1)*n+1:),tmpmc4(iold:),tmpn1)
+             CALL scdiff(n,-gamma,ga,tmpn1,tmpn2)
+             CALL cwmaxv(n,mcnew,um((iold-1)*n+1:),tmpmc3(iold:),tmpn1)
+             CALL xsumy(n,tmpn2,tmpn1,tmpn2)
+             
+          ELSE
+             CALL scalex(mcc,gamma,tmpmc4,tmpmc3)
+             CALL cwmaxv(n,inew-1,sm,tmpmc4,tmpn1)
+             CALL scdiff(n,-gamma,ga,tmpn1,tmpn2)
+             CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc4(iold:),&
+                  tmpn1)
+             CALL xdiffy(n,tmpn2,tmpn1,tmpn2)
+             CALL cwmaxv(n,inew-1,um,tmpmc3,tmpn1)
+             CALL xsumy(n,tmpn2,tmpn1,tmpn2)
+             CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc3(iold:),&
+                  tmpn1)
+             CALL xsumy(n,tmpn2,tmpn1,tmpn2)
+          END IF
+          
+          a = vdot(n,ga,tmpn2)
+          
+          IF (iflag == 0) THEN
+             mcnew = mc
+             iold = inew + 2
+             IF (iold > mc+1) iold = iold - mc - 1
+          ELSE
+             mcnew = mc - 1
+             iold = inew + 2
+             IF (iold > mc) iold = iold - mc
+          END IF
+      
+
+! Calculation of the new canditate for search direction
+! Updates are not necessarily saved
+
+! Update sm and um
+
+          CALL copy2(n,s,sm((inew-1)*n+1:),u,um((inew-1)*n+1:))
+
+     
+! Computation of trans(sm)*u and trans(um)*u
+
+          IF (iold == 1 .OR. iold == 2) THEN
+             CALL rwaxv2(n,mcnew-1,sm((iold-1)*n+1:),um((iold-1)*n+1:),u,u,&
+                  tmpmc3(iold:),tmpmc4(iold:))
+          ELSE
+             CALL rwaxv2(n,inew-1,sm,um,u,u,tmpmc3,tmpmc4)
+             CALL rwaxv2(n,mcnew-inew,sm((iold-1)*n+1:),um((iold-1)*n+1:),u,u,&
+                  tmpmc3(iold:),tmpmc4(iold:))
+          END IF
+       
+          tmpmc3(inew) = stu
+          tmpmc4(inew) = vdot(n,u,u)
+
+
+! Calculation of matrix (umtum-rm-trans(rm)+cm) without updating
+! matrices rm, umtum and cm
+      
+          DO i=1,mcnew*(mcnew+1)/2
+             tmpmat(i)= gamma * umtum(i) - rm(i)
+          END DO
+
+          DO i=1,mcnew-1
+             j=(i-1)*i/2+1
+             k=i*(i+1)/2+2
+             CALL copy(i,tmpmat(k:),tmpmat(j:))
+          END DO
+         
+          CALL scdiff(mcnew+1,gamma,tmpmc4,tmpmc3,tmpmc5)
+         
+          IF (inew >= mcnew) THEN
+             CALL copy(mcnew,tmpmc5(iold:),tmpmat((mcnew-1)*mcnew/2+1:))
+          ELSE
+             CALL copy(mcnew-inew,tmpmc5(iold:),tmpmat((mcnew-1)*mcnew/2+1:))
+             CALL copy(inew,tmpmc5,tmpmat((mcnew-1)*mcnew/2+mcnew-inew+1:))
+          END IF
+      
+          IF (iflag == 0) THEN
+             CALL scdiff(mc+1,gamma,tmpmc2,tmpmc1,tmpmc5)
+             CALL calq(mcnew,mc+1,iold,tmpmat,tmpmc5,tmpmc5,iiprint)
+
+          ELSE
+             CALL scdiff(mc,gamma,tmpmc2,tmpmc1,tmpmc5)
+             CALL calq(mcnew,mc,iold,tmpmat,tmpmc5,tmpmc5,iiprint)
+          END IF
+
+
+! Calculation of the new canditate for search direction d = -dm_k*ga
+! and computation of b = -trans(ga)*dm_k*ga
+      
+          IF (iold <= 2) THEN
+             CALL scalex(mcnew,gamma,tmpmc5(iold:),tmpmc6(iold:))
+             CALL cwmaxv(n,mcnew,sm((iold-1)*n+1:),tmpmc5(iold:),tmpn1)
+             CALL scdiff(n,-gamma,ga,tmpn1,d)
+             CALL cwmaxv(n,mcnew,um((iold-1)*n+1:),tmpmc6(iold:),tmpn1)
+             CALL xsumy(n,d,tmpn1,d)
+         
+          ELSE
+             CALL scalex(mcnew+1,gamma,tmpmc5,tmpmc6)
+             CALL cwmaxv(n,inew,sm,tmpmc5,tmpn1)
+             CALL scdiff(n,-gamma,ga,tmpn1,d)
+             CALL cwmaxv(n,mcnew-inew,sm((iold-1)*n+1:),tmpmc5(iold:),&
+                  tmpn1)
+             CALL xdiffy(n,d,tmpn1,d)
+             CALL cwmaxv(n,inew,um,tmpmc6,tmpn1)
+             CALL xsumy(n,d,tmpn1,d)
+             CALL cwmaxv(n,mcnew-inew,um((iold-1)*n+1:),tmpmc6(iold:),&
+                  tmpn1)
+             CALL xsumy(n,d,tmpn1,d)
+          END IF
+
+          b = vdot(n,ga,d)
+
+
+! Checking the convergence conditions
+
+          IF (b - a < zero) THEN
+             isr1 = 3
+             CALL copy(n,tmpn2,d)
+            
+          ELSE
+
+             isr1 = 1
+         
+     
+! Update trans(sm)*gp and trans(um)*gp
+     
+             smtgp(inew) = vdot(n,s,gp)
+             umtgp(inew) = vdot(n,u,gp)
+
+                     
+! Update rm and umtum
+
+             DO i=1,mcnew-1
+                j=(i-1)*i/2+1
+                k=i*(i+1)/2+2
+                CALL copy2(i,rm(k:),rm(j:),umtum(k:),umtum(j:))
+             END DO
+
+             IF (inew >= mcnew) THEN
+                CALL copy2(mcnew,tmpmc3(iold:),rm((mcnew-1)*mcnew/2+1:),tmpmc4(iold:),&
+                     umtum((mcnew-1)*mcnew/2+1:))
+             ELSE
+                CALL copy2(mcnew-inew,tmpmc3(iold:),rm((mcnew-1)*mcnew/2+1:),tmpmc4(iold:),&
+                     umtum((mcnew-1)*mcnew/2+1:))
+                CALL copy2(inew,tmpmc3,rm((mcnew-1)*mcnew/2+mcnew-inew+1:),tmpmc4,&
+                     umtum((mcnew-1)*mcnew/2+mcnew-inew+1:))
+             END IF
+            
+
+! Update cm
+
+             cm(inew) = stu
+                     
+             inew = inew + 1
+             IF (inew > mc + 1) inew = 1
+             IF (iflag == 0 .AND. mcc < mc + 1) mcc = mcc + 1
+            
+          END IF
+         
+          RETURN
+         
+       END IF
+    END IF
+      
+    DO i=1,mcnew*(mcnew+1)/2
+       tmpmat(i)= gamma * umtum(i) - rm(I)
+    END DO
+      
+     
+! Computation of tmpmat*tmpmc4 = gamma*trans(um)*ga-trans(sm)*ga
+
+    IF (iold == 1) THEN
+       CALL scdiff(mcnew,gamma,tmpmc2,tmpmc1,tmpmc4)
+       CALL calq(mcnew,mcnew,iold,tmpmat,tmpmc4,tmpmc4,iiprint)
+    ELSE IF (iflag == 0) THEN
+       CALL scdiff(mc+1,gamma,tmpmc2,tmpmc1,tmpmc4)
+       CALL calq(mcnew,mc+1,iold,tmpmat,tmpmc4,tmpmc4,iiprint)
+    ELSE
+       CALL scdiff(mc,gamma,tmpmc2,tmpmc1,tmpmc4)
+       CALL calq(mcnew,mc,iold,tmpmat,tmpmc4,tmpmc4,iiprint)
+    END IF
+      
+
+! Computation of the search direction d
+      
+    IF (iold <= 2) THEN
+       CALL scalex(mcnew,gamma,tmpmc4(iold:),tmpmc3(iold:))
+       CALL cwmaxv(n,mcnew,sm((iold-1)*n+1:),tmpmc4(iold:),tmpn1)
+       CALL scdiff(n,-gamma,ga,tmpn1,d)
+       CALL cwmaxv(n,mcnew,um((iold-1)*n+1:),tmpmc3(iold:),tmpn1)
+       CALL xsumy(n,d,tmpn1,d)
+    ELSE
+       CALL scalex(mcc,gamma,tmpmc4,tmpmc3)
+       CALL cwmaxv(n,inew-1,sm,tmpmc4,tmpn1)
+       CALL scdiff(n,-gamma,ga,tmpn1,d)
+       CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc4(iold:),&
+            tmpn1)
+       CALL xdiffy(n,d,tmpn1,d)
+       CALL cwmaxv(n,inew-1,um,tmpmc3,tmpn1)
+       CALL xsumy(n,d,tmpn1,d)
+       CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc3(iold:),&
+            tmpn1)
+       CALL xsumy(n,d,tmpn1,d)
+    END IF
+      
+  END SUBROUTINE dlsr1
+
+!************************************************************************
+!*                                                                      *
+!*     * SUBROUTINE indic1 *                                            *
+!*                                                                      *
+!*     Initialization of indices.                                       *
+!*                                                                      *
+!************************************************************************
+
+  SUBROUTINE indic1(mc,mcc,mcnew,inew,iold,iflag,iflag2,itype)
+
+    IMPLICIT NONE
+
+! Scalar Arguments
+
+    INTEGER(KIND=c_int), INTENT(IN) :: & 
+         mc, &     ! Declared number of stored corrections.
+         mcc, &    ! Current number of stored corrections.
+         itype     ! Type of Initialization:
+                   !   1  - corrections are stored,
+                   !   2  - corrections are not stored,
+                   !   3  - update is skipped.
+    INTEGER(KIND=c_int), INTENT(INOUT) :: & 
+         inew, &   ! Index for circular arrays.
+         iflag, &  ! Index for adaptive version:
+                   !   0  - Maximum number of stored corrections
+                   !        has not been changed at this iteration.
+                   !   1  - Maximum number of stored corrections
+                   !        has been changed at this iteration.
+         iflag2    ! Index for adaptive version.
+                   !   0  - iflag has not been changed.
+                   !   1  - iflag has been changed.
+    INTEGER(KIND=c_int), INTENT(OUT) :: & 
+         mcnew, &  ! Current size of vectors.
+         iold      ! Index of the oldest corrections.
+      
+    IF (itype == 1) THEN
+       IF (mcc < mc) THEN
+          mcnew = mcc + 1
+          iold = 1
+          iflag = 0
+       ELSE
+          IF (iflag == 0) THEN
+             mcnew = mc
+             iold = inew + 2
+             IF (iold > mc+1) iold = iold - mc - 1
+          ELSE
+             IF (inew == 1) THEN
+                inew = mc + 1
+                mcnew = mc
+                iold = 2
+                iflag = 0
+                iflag2 = 1
+             ELSE IF (inew == mc) THEN
+                mcnew = mc
+                iold = 1
+                iflag = 0
+                iflag2 = 1
+             ELSE
+                mcnew = mc - 1
+                iold = inew + 2
+                IF (iold > mc) iold = iold - mc
+             END IF
+          END IF
+       END IF
+      
+    ELSE IF (itype == 2) THEN
+       IF (mcc < mc) THEN
+          mcnew = mcc + 1
+          iold = 1
+          iflag = 0
+       ELSE
+          IF (iflag == 0) THEN
+             mcnew = mc + 1
+             iold = inew + 1
+             IF (iold > mc + 1) iold = 1
+          ELSE
+             mcnew = mc
+             iold = inew + 1
+             IF (iold > mc) iold = 1
+          END IF
+       END IF
+
+    ELSE 
+       IF (mcc < mc) THEN
+          mcnew = mcc
+          iold = 1
+          iflag = 0
+       ELSE
+          IF (iflag == 0) THEN
+             mcnew = mc
+             iold = inew + 1
+             IF (iold > mc + 1) iold = 1
+          ELSE
+             mcnew = mc - 1
+             iold = inew + 1
+             IF (iold > mc) iold = 1
+          END IF
+       END IF
+    END IF
+  END SUBROUTINE indic1
+  
+!************************************************************************
+!*
+!*     * SUBROUTINE agbfgs *
+!*
+!*     Computation of aggregate values by the limited memory BFGS update.
+!*
+!************************************************************************
+
+  SUBROUTINE agbfgs(n,mc,mcc,inew,ibfgs,iflag,g,gp,ga,u,d,sm,um, &
+       rm,cm,umtum,alfn,alfv,gamma,ic,rho)
+
+    USE param, ONLY : zero,half,one
+    USE lmbm_sub, ONLY : &
+         symax, &  ! Multiplication of a dense symmetric matrix by a vector.
+         rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
+                   ! matrices A and B by vectors x and y.
+         trlieq, & ! Solving x from linear equation L*x=y or trans(L)*x=y.
+         vdot      ! Dot product.
+
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         d, &      ! Direction vector.
+         g, &      ! Current (auxiliary) subgradient of the objective function.
+         gp, &     ! Previous subgradient of the objective function.
+         u, &      ! Difference of trial and aggregate gradients.
+         sm, &     ! Matrix whose columns are stored corrections.
+         um, &     ! Matrix whose columns are stored subgradient differences.
+         rm, &     ! Upper triangular matrix.
+         umtum, &  ! Matrix umtum = trans(um) * um.
+         cm        ! Diagonal matrix.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+         ga        ! Next aggregate subgradient of the objective function.
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(OUT) :: & 
+         alfv      ! Aggregate locality measure.
+    REAL(KIND=c_double), INTENT(IN) :: & 
+         gamma, &  ! Scaling parameter.
+         alfn, &   ! Locality measure.
+         rho       ! Correction parameter.
+    INTEGER(KIND=c_int), INTENT(IN) :: & 
+         n, &      ! Number of variables
+         mc, &     ! Declared number of stored corrections.
+         mcc, &    ! Current number of stored corrections.
+         inew, &   ! Index for circular arrays.
+         ibfgs, &  ! Index of the type of BFGS update.
+         ic        ! Correction indicator.
+    INTEGER(KIND=c_int), INTENT(INOUT) :: & 
+         iflag     ! Index for adaptive version:
+                   !   0  - Maximum number of stored corrections
+                   !        has not been changed at this iteration.
+                   !   1  - Maximum number of stored corrections
+                   !        has been changed at this iteration.
+
+! Local arrays
+    REAL(KIND=c_double), DIMENSION(mcc+1) :: tmpmc1, tmpmc2
+
+! Local Scalars
+    REAL(KIND=c_double) :: &
+         p, &      ! p = trans(d)*u - alfn.
+         q, &      ! q = trans(u)*dm*u, where dm is the inverse approximation of 
+                   ! the Hessian calculated by using the L-BFGS formula.
+         lam, &    ! Multiplier used to calculate aggregate values.
+         w         ! Correction.
+    INTEGER(KIND=c_int) :: i, &
+         mcnew, &  ! Current size of vectors.
+         iold, &   ! Index of the oldest corrections.
+         ierr      ! Error indicador.
+
+! Intrinsic Functions
+    INTRINSIC MAX,MIN,SIGN
+
+    ierr = 0
+
+    IF (mcc < mc) THEN
+       IF (ibfgs == 2) THEN
+          mcnew = mcc + 1
+       ELSE
+          mcnew = mcc
+       END IF
+       iold = 1
+
+    ELSE
+       IF (iflag == 0) THEN
+          IF (ibfgs == 2) THEN
+             mcnew = mc + 1
+          ELSE
+             mcnew = mc
+          END IF
+          iold = inew + 1
+          IF (iold > mc+1) iold = 1
+
+       ELSE
+          IF (ibfgs == 2) THEN
+             mcnew = mc
+          ELSE
+             mcnew = mc - 1
+          END IF
+          iold = inew + 1
+          IF (iold > mc) iold = 1
+       END IF
+    END IF
+      
+      
+! Computation of trans(d) * u - alfn
+
+    p = vdot(n,d,u) - alfn
+    q = vdot(n,u,u)
+
+    IF (ic == 1) THEN
+       w = rho * q
+    ELSE
+       w = zero
+    END IF
+         
+     
+! Computation of the product trans(u)*dm*u
+
+    IF (mcc > 0 .OR. ibfgs == 2) THEN
+
+       IF (iold == 1 .OR. ibfgs == 2) THEN
+          CALL rwaxv2(n,mcnew,sm,um,u,u,tmpmc1,tmpmc2)
+          CALL trlieq(mcnew,mcnew,iold,rm,tmpmc1,tmpmc1,1,ierr)
+
+          q = q - 2.0_c_double*vdot(mcnew,tmpmc2,tmpmc1)
+          q = gamma*q
+            
+          DO i=1,mcnew
+             tmpmc2(i) = cm(i)*tmpmc1(i)
+          END DO
+
+          q = q + vdot(mcnew,tmpmc1,tmpmc2)
+
+          CALL symax(mcnew,mcnew,iold,umtum,tmpmc1,tmpmc2)
+
+          q = q + gamma*vdot(mcnew,tmpmc1,tmpmc2)
+
+       ELSE
+          CALL rwaxv2(n,inew-1,sm,um,u,u,tmpmc1,tmpmc2)
+          CALL rwaxv2(n,mcc-inew,sm((iold-1)*n+1:),um((iold-1)*n+1:), &
+               u,u,tmpmc1(iold:),tmpmc2(iold:))
+          CALL trlieq(mcnew,mcc,iold,rm,tmpmc1,tmpmc1,1,ierr)
+
+          q = q - 2.0_c_double*(vdot(mcc-inew,tmpmc2(iold:),tmpmc1(iold:)) + &
+               vdot(inew-1,tmpmc2,tmpmc1))
+          q = gamma*q
+
+          DO i=1,mcc
+             tmpmc2(i) = cm(i)*tmpmc1(i)
+          END DO
+
+          q = q + vdot(mcc-inew,tmpmc1(iold:),tmpmc2(iold:)) + &
+               vdot(inew-1,tmpmc1,tmpmc2)
+
+          CALL symax(mcnew,mcc,iold,umtum,tmpmc1,tmpmc2)
+
+          q = q + gamma*(vdot(mcc-inew,tmpmc1(iold:),tmpmc2(iold:)) + &
+               vdot(inew-1,tmpmc1,tmpmc2))
+       END IF
+
+    END IF
+    
+    q = q + w
+    
+    lam = half + SIGN(half,p)
+
+    IF (q > zero) lam = MIN(one,MAX(zero,p/q))
+      
+
+! Computation of the aggregate values
+
+    p = one - lam
+    DO i=1,n
+       ga(i)=lam*g(i) + p*gp(i)
+    END DO
+      
+    alfv = lam*alfn
+      
+  END SUBROUTINE agbfgs
+
+!************************************************************************
+!*
+!*     * SUBROUTINE aggsr1 *
+!*
+!*     Computation of aggregate values by the limited memory SR1 update.
+!*
+!************************************************************************
+      
+  SUBROUTINE aggsr1(n,mc,mcc,inew,iflag,g,gp,ga,d,alfn,alfv, &
+       umtum,rm,gamma,smtgp,umtgp,smtga,umtga,sm,um,icn,rho)
+      
+    USE param, ONLY : zero,one,small
+    USE lmbm_sub, ONLY : &
+         vdot, &   ! Dot product.
+         scalex, & ! Scaling a vector.
+         xsumy, &  ! Sum of two vectors.
+         xdiffy, & ! Difference of two vectors.
+         scsum, &  ! Sum of a vector and the scaled vector.
+         scdiff, & ! Difference of the scaled vector and a vector.
+         rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
+                   ! matrices A and B by vectors x and y.   
+         cwmaxv, & ! Multiplication of a vector by a dense rectangular matrix.
+         lineq, &  ! Solver for linear equation.
+         calq      ! Solving x from linear equation A*x=y.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         d, &      ! Direction vector.
+         g, &      ! Current (auxiliary) subgradient of the objective function.
+         gp, &     ! Previous subgradient of the objective function.
+         sm, &     ! Matrix whose columns are stored corrections.
+         um, &     ! Matrix whose columns are stored subgradient differences.
+         rm, &     ! Upper triangular matrix.
+         umtum, &  ! Matrix umtum = trans(um) * um.
+         smtgp, &  ! Vector smtgp = trans(sm)*gp.
+         umtgp, &  ! vector umtgp = trans(um)*gp.
+         smtga, &  ! vector smtga = trans(sm)*ga.
+         umtga     ! vector umtga = trans(um)*ga.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+         ga        ! Aggregate subgradient of the objective function.
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(INOUT) :: & 
+         alfv      ! Aggregate locality measure.
+    REAL(KIND=c_double), INTENT(IN) :: & 
+         gamma, &  ! Scaling parameter.
+         alfn, &   ! Locality measure.
+         rho       ! Correction parameter.
+    INTEGER(KIND=c_int), INTENT(IN) :: & 
+         n, &      ! Number of variables
+         mc, &     ! Declared number of stored corrections.
+         mcc, &    ! Current number of stored corrections.
+         inew, &   ! Index for circular arrays.
+         icn       ! Correction indicator.
+    INTEGER(KIND=c_int), INTENT(INOUT) :: & 
+         iflag     ! Index for adaptive version:
+                   !   0  - Maximum number of stored corrections
+                   !        has not been changed at this iteration.
+                   !   1  - Maximum number of stored corrections
+                   !        has been changed at this iteration.
+      
+! Local arrays
+    REAL(KIND=c_double), DIMENSION(n) :: tmpn2,tmpn3,tmpn4
+    REAL(KIND=c_double), DIMENSION((mcc+1)*(mcc)/2) :: tmpmat
+    REAL(KIND=c_double), DIMENSION(mcc+1) :: tmpmc3, tmpmc4
+
+! Local Scalars
+    REAL(KIND=c_double) :: &
+         pr, &     ! pr = trans(gp-ga) dm (gp-ga), where dm
+                   ! presents the L-SR1- approximation of Hessian.
+         rrp, &    ! rrp = trans(gp-ga) dm ga - alfv.
+         prqr, &   ! prqr = trans(gp-ga) dm (g-ga).
+         rrq, &    ! rrq = trans(g-ga) dm ga - alfv + alfn.
+         qr, &     ! qr = trans(g-ga) dm (g-ga).
+         pq, &     ! pq = trans(g-gp) dm (g-gp).
+         qqp, &    ! qqp = trans(g-gp) dm g + alfn.
+         lam1, &   ! Multiplier used to calculate aggregate values.
+         lam2, &   ! Multiplier used to calculate aggregate values.
+         w, &      ! Correction.
+         tmp1, &   ! Auxiliary scalar.
+         tmp2      ! Auxiliary scalar.
+    INTEGER(KIND=c_int) :: i, &
+         mcnew, &  ! Current size of vectors.
+         iold, &   ! Index of the oldest corrections.
+         ierr      ! Error indicador.
+
+      
+! Intrinsic Functions
+    INTRINSIC MIN,MAX
+
+
+    ierr = 0
+      
+    IF (mcc < mc) THEN
+       iold = 1
+       mcnew = mcc
+    ELSE IF (iflag == 0) THEN
+       mcnew = mc
+       iold = inew + 1
+       IF (iold > mc+1) iold = 1
+    ELSE
+       mcnew = mc - 1
+       iold = inew + 1
+       IF (iold > mc) iold = 1
+    END IF
+      
+    CALL xdiffy(n,gp,ga,tmpn2)
+     
+      
+! Calculation of tmpn3 = trans(gp - ga)dm
+
+    IF (mcc > 0) THEN
+
+       DO i=1,mcnew*(mcnew+1)/2
+          tmpmat(i)= gamma * umtum(i) - rm(i)
+       END DO
+
+       IF (iold == 1) THEN
+          CALL xdiffy(mcnew,umtgp,umtga,tmpmc4)
+          CALL scdiff(mcnew,gamma,tmpmc4,smtgp,tmpmc4)
+          CALL xsumy(mcnew,tmpmc4,smtga,tmpmc4)
+          
+          CALL calq(mcnew,mcnew,iold,tmpmat,tmpmc3,tmpmc4,0)
+          CALL scalex(mcnew,gamma,tmpmc3,tmpmc4)
+          
+          CALL cwmaxv(n,mcnew,sm,tmpmc3,tmpn4)
+          CALL scsum(n,gamma,tmpn2,tmpn4,tmpn3)
+          CALL cwmaxv(n,mcnew,um,tmpmc4,tmpn4)
+          CALL xdiffy(n,tmpn3,tmpn4,tmpn3)
+
+       ELSE
+          CALL xdiffy(mcc,umtgp,umtga,tmpmc4)
+          CALL scdiff(mcc,gamma,tmpmc4,smtgp,tmpmc4)
+          CALL xsumy(mcc,tmpmc4,smtga,tmpmc4)
+
+          CALL calq(mcnew,mcc,iold,tmpmat,tmpmc3,tmpmc4,0)
+          CALL scalex(mcc,gamma,tmpmc3,tmpmc4)
+          
+          CALL cwmaxv(n,inew-1,sm,tmpmc3,tmpn4)
+          CALL scsum(n,gamma,tmpn2,tmpn4,tmpn3)
+          CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc3(iold:)&
+               ,tmpn4)
+          CALL xsumy(n,tmpn3,tmpn4,tmpn3)
+          CALL cwmaxv(n,inew-1,um,tmpmc4,tmpn4)
+          CALL xdiffy(n,tmpn3,tmpn4,tmpn3)
+          CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc4(iold:)&
+               ,tmpn4)
+          CALL xdiffy(n,tmpn3,tmpn4,tmpn3)
+       END IF
+       
+       IF (icn == 1) THEN
+          CALL scsum(n,rho,tmpn2,tmpn3,tmpn3)
+       END IF
+         
+       pr = vdot(n,tmpn3,tmpn2)
+       rrp = vdot(n,tmpn3,ga) 
+       CALL xdiffy(n,g,ga,tmpn4)
+       prqr = vdot(n,tmpn3,tmpn4)
+       rrq = -vdot(n,tmpn4,d)
+
+    ELSE
+
+       pr = vdot(n,tmpn2,tmpn2)
+       rrp = vdot(n,tmpn2,ga) 
+       CALL xdiffy(n,g,ga,tmpn4)
+       prqr = vdot(n,tmpn2,tmpn4)
+       rrq = -vdot(n,tmpn4,d)
+    END IF
+
+! calculation of qr = trans(g - ga) dm (g - ga)
+
+    qr = vdot(n,tmpn4,tmpn4)
+    IF (icn == 1) THEN
+       w = rho*qr
+    ELSE
+       w = zero
+    END IF
+      
+    IF (mcc > 0) THEN
+       qr = gamma*qr
+
+       IF (iold == 1) THEN
+          CALL rwaxv2(n,mcnew,sm,um,tmpn4,tmpn4,tmpmc4,tmpmc3)
+          CALL scsum(mcnew,-gamma,tmpmc3,tmpmc4,tmpmc4)
+          CALL lineq(mcnew,mcnew,iold,tmpmat,tmpmc3,tmpmc4,ierr)
+            
+          qr = qr - vdot(mcnew,tmpmc4,tmpmc3) + w
+
+       ELSE
+          CALL rwaxv2(n,inew-1,sm,um,tmpn4,tmpn4,tmpmc4,tmpmc3)
+          CALL rwaxv2(n,mcnew-inew+1,sm((iold-1)*n+1:),&
+               um((iold-1)*n+1:),tmpn4,tmpn4,tmpmc4(iold:),tmpmc3(iold:))
+          CALL scsum(mcc,-gamma,tmpmc3,tmpmc4,tmpmc4)
+          CALL lineq(mcnew,mcc,iold,tmpmat,tmpmc3,tmpmc4,ierr)
+          
+          qr = qr - vdot(mcc-inew,tmpmc4(iold:),tmpmc3(iold:)) -&
+               vdot(inew-1,tmpmc4,tmpmc3) + w
+       END IF
+
+    END IF
+      
+    pq = qr - prqr - prqr + pr
+    qqp = pq + prqr + rrq - pr - rrp + alfn
+    rrp = rrp - alfv
+    rrq = rrq + alfn - alfv
+
+! computation of multipliers lam1 and lam2
+
+    IF (pr > zero .AND. qr > zero) THEN
+       tmp1 = rrq/qr
+       tmp2 = prqr/qr
+       w = pr - prqr*tmp2
+       IF (w /= zero) THEN
+          lam1 = (tmp1*prqr - rrp)/w
+          lam2 = -tmp1 - lam1*tmp2
+          IF (lam1*(lam1 - one) < zero .AND. &
+               lam2*(lam1 + lam2 - one) < zero) GO TO 200
+       END IF
+    END IF
+
+! Minimum on the boundary
+
+100 continue
+    lam1 = zero
+    lam2 = zero
+    IF (alfn <= alfv) lam2 = one
+    IF (qr > zero) lam2 = MIN(one,MAX(zero,-rrq/qr))
+    w = (lam2*qr + rrq+rrq)*lam2
+!    w = (lam2*qr + 2.0_c_double*rrq)*lam2
+    tmp1 = zero
+    IF (alfv >= zero) tmp1 = one
+    IF (pr > zero) tmp1 = MIN(one,MAX(zero,-rrp/pr))
+!    tmp2 = (tmp1*pr + 2.0_c_double*rrp)*tmp1
+    tmp2 = (tmp1*pr + rrp+rrp)*tmp1
+    IF (tmp2 < w) THEN
+       w = tmp2
+       lam1 = tmp1
+       lam2 = zero
+    END IF
+    
+    IF (qqp*(qqp - pq) < zero) THEN
+       IF (qr + rrq + rrq - qqp*qqp/pq < W) THEN
+          lam1 = qqp/pq
+          lam2 = one - lam1
+       END IF
+    END IF
+    
+200 CONTINUE
+    IF (lam1 == zero .AND. lam2*(lam2 - one) < zero &
+         .AND. -rrp - lam2*prqr > zero .AND. pr > zero) &
+         lam1 = MIN(one - lam2, (-rrp-lam2*prqr)/pr)
+
+! Computation of the aggregate values
+      
+    tmp1 = one - lam1 - lam2
+    DO i=1,n
+       ga(i)=lam1*gp(i)+lam2*g(i)+tmp1*ga(i)
+    END DO
+    
+    alfv = lam2*alfn + tmp1*alfv
+    
+  END SUBROUTINE aggsr1
+      
+!************************************************************************
+!*
+!*     * SUBROUTINE agskip *
+!*
+!*     Computation of aggregate values after consecutive null steps
+!*     by the limited memory BFGS update.
+!*
+!************************************************************************
+      
+  SUBROUTINE agskip(n,mc,mcc,inew,iflag,g,gp,ga,d,u,alfn,alfv, &
+       umtum,rm,cm,gamma,smtgp,umtgp,smtga,umtga,sm,um,icn,rho)
+      
+    USE param, ONLY : zero,half,one,small
+    USE lmbm_sub, ONLY : &
+         xdiffy, & ! Difference of two vectors.
+         symax, &  ! Multiplication of a dense symmetric matrix by a vector.
+         rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
+                   ! matrices A and B by vectors x and y.         
+         trlieq, & ! Solving x from linear equation l*x=y or trans(l)*x=y.
+         vdot      ! Dot product
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         d, &      ! Direction vector.
+         g, &      ! Current (auxiliary) subgradient of the objective function.
+         gp, &     ! Previous subgradient of the objective function.
+         u, &      ! Difference of trial and aggregate gradients.
+         sm, &     ! Matrix whose columns are stored corrections.
+         um, &     ! Matrix whose columns are stored subgradient differences.
+         rm, &     ! Upper triangular matrix.
+         cm, &     ! Diagonal matrix.
+         umtum, &  ! Matrix umtum = trans(um) * um.
+         smtgp, &  ! Vector smtgp = trans(sm)*gp.
+         umtgp, &  ! vector umtgp = trans(um)*gp.
+         smtga, &  ! vector smtga = trans(sm)*ga.
+         umtga     ! vector umtga = trans(um)*ga.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+         ga        ! Aggregate subgradient of the objective function.
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(INOUT) :: & 
+         alfv      ! Aggregate locality measure.
+    REAL(KIND=c_double), INTENT(IN) :: & 
+         gamma, &  ! Scaling parameter.
+         alfn, &   ! Locality measure.
+         rho       ! Correction parameter.
+    INTEGER(KIND=c_int), INTENT(IN) :: & 
+         n, &      ! Number of variables
+         mc, &     ! Declared number of stored corrections.
+         mcc, &    ! Current number of stored corrections.
+         inew, &   ! Index for circular arrays.
+         icn       ! Correction indicator.
+    INTEGER(KIND=c_int), INTENT(INOUT) :: & 
+         iflag     ! Index for adaptive version:
+                   !   0  - Maximum number of stored corrections
+                   !        has not been changed at this iteration.
+                   !   1  - Maximum number of stored corrections
+                   !        has been changed at this iteration.
+      
+! Local arrays
+    REAL(KIND=c_double), DIMENSION(n) :: tmpn2
+    REAL(KIND=c_double), DIMENSION(mcc+1) :: tmpmc3, tmpmc4
+
+! Local Scalars
+    REAL(KIND=c_double) :: &
+         pr, &     ! pr = trans(gp-ga) dm (gp-ga), where dm
+                   ! presents the L-SR1- approximation of Hessian.
+         rrp, &    ! rrp = trans(gp-ga) dm ga - alfv.
+         prqr, &   ! prqr = trans(gp-ga) dm (g-ga).
+         rrq, &    ! rrq = trans(g-ga) dm ga - alfv + alfn.
+         qr, &     ! qr = trans(g-ga) dm (g-ga).
+         pq, &     ! pq = trans(g-gp) dm (g-gp).
+         qqp, &    ! qqp = trans(g-gp) dm g + alfn.
+         lam1, &   ! Multiplier used to calculate aggregate values.
+         lam2, &   ! Multiplier used to calculate aggregate values.
+         w, &      ! Correction.
+         tmp1, &   ! Auxiliary scalar.
+         tmp2      ! Auxiliary scalar.
+    INTEGER(KIND=c_int) :: i, &
+         mcnew, &  ! Current size of vectors.
+         iold, &   ! Index of the oldest corrections.
+         ierr      ! Error indicador.
+    
+! Intrinsic Functions
+    INTRINSIC MIN,MAX
+
+    ierr = 0
+           
+    IF (mcc < mc) THEN
+       iold = 1
+       mcnew = mcc
+    ELSE
+       IF (iflag == 0) THEN
+          mcnew = mc
+          iold = inew + 1
+          IF (iold > mc+1) iold = 1
+       ELSE
+          mcnew = mc - 1
+          iold = inew + 1
+          IF (iold > mc) iold = 1
+       END IF
+    END IF
+
+      
+! Calculation of pq = trans(g-gp) dm (g-gp) = trans(u) dm u.
+
+    pq = vdot(n,u,u)
+
+    IF (icn == 1) THEN
+       w = rho * pq
+    ELSE
+       w = zero
+    END IF
+    
+    IF (mcc > 0) THEN
+
+       IF (iold == 1) THEN
+          CALL rwaxv2(n,mcnew,sm,um,u,u,tmpmc3,tmpmc4)
+          CALL trlieq(mcnew,mcnew,iold,rm,tmpmc3,tmpmc3,1,ierr)
+          
+          pq = pq - 2.0_c_double*vdot(mcnew,tmpmc4,tmpmc3)
+          pq = gamma*pq
+          
+          DO i=1,mcnew
+             tmpmc4(i) = cm(i)*tmpmc3(i)
+          END DO
+
+          pq = pq + vdot(mcnew,tmpmc3,tmpmc4)
+          
+          CALL symax(mcnew,mcnew,iold,umtum,tmpmc3,tmpmc4)
+          
+          pq = pq + gamma*vdot(mcnew,tmpmc3,tmpmc4)
+
+       ELSE
+          CALL rwaxv2(n,inew-1,sm,um,u,u,tmpmc3,tmpmc4)
+          CALL rwaxv2(n,mcc-inew,sm((iold-1)*n+1:),um((iold-1)*n+1:),&
+               u,u,tmpmc3(iold:),tmpmc4(iold:))
+          CALL trlieq(mcnew,mcc,iold,rm,tmpmc3,tmpmc3,1,ierr)
+
+          pq = pq - 2.0_c_double*(vdot(mcc-inew,tmpmc4(iold:),tmpmc3(iold:)) + &
+               vdot(inew-1,tmpmc4,tmpmc3))
+          pq = gamma*pq
+          
+          DO i=1,mcc
+             tmpmc4(i) = cm(i)*tmpmc3(i)
+          END DO
+
+          pq = pq + vdot(mcc-inew,tmpmc3(iold:),tmpmc4(iold:)) + &
+               vdot(inew-1,tmpmc3,tmpmc4)
+
+          CALL symax(mcnew,mcc,iold,umtum,tmpmc3,tmpmc4)
+          
+          pq = pq + gamma*(vdot(mcc-inew,tmpmc3(iold:),tmpmc4(iold:)) &
+               + vdot(inew-1,tmpmc3,tmpmc4))
+       END IF
+
+    END IF
+
+    pq = pq + w
+      
+
+! Calculation of pr = trans(gp-ga) dm (gp-ga).
+      
+    CALL xdiffy(n,gp,ga,tmpn2)
+    pr = vdot(n,tmpn2,tmpn2)
+
+    IF (icn == 1) THEN
+       w = rho * pr
+    ELSE
+       w = zero
+    END IF
+
+    IF (mcc > 0) THEN
+       
+       IF (iold == 1) THEN 
+          DO i=1, mcnew
+             tmpmc3(i)=smtgp(i)-smtga(i)
+             tmpmc4(i)=umtgp(i)-umtga(i)
+          END DO
+          CALL trlieq(mcnew,mcnew,iold,rm,tmpmc3,tmpmc3,1,ierr)
+             
+          pr = pr - 2.0_c_double*vdot(mcnew,tmpmc4,tmpmc3)
+          pr = gamma*pr
+            
+          DO i=1,mcnew
+             tmpmc4(i) = cm(i)*tmpmc3(i)
+          END DO
+
+          pr = pr + vdot(mcnew,tmpmc3,tmpmc4)
+
+          CALL symax(mcnew,mcnew,iold,umtum,tmpmc3,tmpmc4)
+
+          pr = pr + gamma*vdot(mcnew,tmpmc3,tmpmc4)
+
+       ELSE
+          DO i=1, mcc
+             tmpmc3(i)=smtgp(i)-smtga(i)
+             tmpmc4(i)=umtgp(i)-umtga(i)
+          END DO
+          CALL trlieq(mcnew,mcc,iold,rm,tmpmc3,tmpmc3,1,ierr)
+
+          pr = pr - 2.0_c_double*(vdot(mcc-inew,tmpmc4(iold:),tmpmc3(iold:)) + &
+               vdot(inew-1,tmpmc4,tmpmc3))
+          pr = gamma*pr
+
+          DO  i=1,mcc
+             tmpmc4(i) = cm(i)*tmpmc3(i)
+          END DO
+
+          pr = pr + vdot(mcc-inew,tmpmc3(iold:),tmpmc4(iold:)) + &
+               vdot(inew-1,tmpmc3,tmpmc4)
+
+          CALL symax(mcnew,mcc,iold,umtum,tmpmc3,tmpmc4)
+
+          pr = pr + gamma*(vdot(mcc-inew,tmpmc3(iold:),tmpmc4(iold:)) &
+               + vdot(inew-1,tmpmc3,tmpmc4))
+       END IF
+
+    END IF
+
+    pr = pr + w
+
+      
+! Calculation of rrp = trans(gp-ga) dm ga - alfv.
+      
+    rrp = - vdot(n,tmpn2,d) - alfv
+      
+
+! Calculation of qr = trans(g-ga) dm (g-ga).
+
+    CALL xdiffy(n,g,ga,tmpn2)
+    qr = vdot(n,tmpn2,tmpn2)
+
+    IF (icn == 1) THEN
+       w = rho * qr
+    ELSE
+       w = zero
+    END IF
+
+    IF (mcc > 0) THEN
+
+       IF (iold == 1) THEN
+          CALL rwaxv2(n,mcnew,sm,um,tmpn2,tmpn2,tmpmc3,tmpmc4)
+          CALL trlieq(mcnew,mcnew,iold,rm,tmpmc3,tmpmc3,1,ierr)
+
+          qr = qr - 2.0_c_double*vdot(mcnew,tmpmc4,tmpmc3)
+          qr = gamma*qr
+            
+          DO i=1,mcnew
+             tmpmc4(i) = cm(i)*tmpmc3(i)
+          END DO
+
+          qr = qr + vdot(mcnew,tmpmc3,tmpmc4)
+          
+          CALL symax(mcnew,mcnew,iold,umtum,tmpmc3,tmpmc4)
+          
+          qr = qr + gamma*vdot(mcnew,tmpmc3,tmpmc4)
+
+       ELSE
+          CALL rwaxv2(n,inew-1,sm,um,tmpn2,tmpn2,tmpmc3,tmpmc4)
+          CALL rwaxv2(n,mcc-inew,sm((iold-1)*n+1:),um((iold-1)*n+1:),&
+               tmpn2,tmpn2,tmpmc3(iold:),tmpmc4(iold:))
+          CALL trlieq(mcnew,mcc,iold,rm,tmpmc3,tmpmc3,1,ierr)
+
+          qr = qr - 2.0_c_double*(vdot(mcc-inew,tmpmc4(iold:),tmpmc3(iold:)) + &
+               vdot(inew-1,tmpmc4,tmpmc3))
+          qr = gamma*qr
+          
+          DO i=1,mcc
+             tmpmc4(i) = cm(i)*tmpmc3(i)
+          END DO
+          
+          qr = qr + vdot(mcc-inew,tmpmc3(iold:),tmpmc4(iold:)) + &
+               vdot(inew-1,tmpmc3,tmpmc4)
+          
+          CALL symax(mcnew,mcc,iold,umtum,tmpmc3,tmpmc4)
+          
+          qr = qr + gamma*(vdot(mcc-inew,tmpmc3(iold:),tmpmc4(iold:)) &
+               +vdot(inew-1,tmpmc3,tmpmc4))
+       END IF
+       
+    END IF
+    
+    qr = qr + w
+      
+
+! Calculation of rrq = trans(g-ga) dm ga - alfv + alfn.
+
+    rrq = - vdot(n,tmpn2,d) - alfv + alfn
+
+     
+! Calculation of prqr = trans(gp-ga) dm (g-ga).
+      
+    prqr = half*(qr - pq + pr)
+
+     
+! Calculation of qqp = trans(g-gp) dm g + alfn.
+
+    qqp = pq + prqr + rrq - pr - rrp
+
+     
+! Computation of multipliers lam1 and lam2
+
+    IF (pr > zero .AND. qr > zero) THEN
+       tmp1 = rrq/qr
+       tmp2 = prqr/qr
+       w = pr - prqr*tmp2
+       IF (w /= zero) THEN
+
+          lam1 = (tmp1*prqr - rrp)/w
+          lam2 = -tmp1 - lam1*tmp2
+
+          IF (lam1*(lam1 - one) < zero .AND. &
+               lam2*(lam1 + lam2 - one) < zero) GO TO 200
+       END IF
+    END IF
+
+
+! Minimum on the boundary
+
+    lam1 = zero
+    lam2 = zero
+    IF (alfn <= alfv) lam2 = one
+    IF (qr > zero) lam2 = MIN(one,MAX(zero,-rrq/qr))
+    w = (lam2*qr + rrq + rrq)*lam2
+    tmp1 = zero
+    IF (alfv >= zero) tmp1 = one
+    IF (pr > zero) tmp1 = MIN(one,MAX(zero,-rrp/pr))
+    tmp2 = (tmp1*pr + rrp + rrp)*tmp1
+    IF (tmp2 < w) THEN
+       w = tmp2
+       lam1 = tmp1
+       lam2 = zero
+    END IF
+      
+    IF (qqp*(qqp - pq) < zero) THEN
+       IF (qr + rrq + rrq - qqp*qqp/pq < w) THEN
+          lam1 = qqp/pq
+          lam2 = one - lam1
+       END IF
+    END IF
+
+200 CONTINUE
+    IF (lam1 == zero .AND. lam2*(lam2 - one) < zero &
+         .AND. -rrp - lam2*prqr > zero .AND. pr > zero) &
+         lam1 = MIN(one - lam2, (-rrp-lam2*prqr)/pr)
+      
+
+! Computation of the aggregate values
+      
+    tmp1 = one - lam1 - lam2
+    DO i=1,n
+       ga(i)=lam1*gp(i)+lam2*g(i)+tmp1*ga(i)
+    END DO
+    
+    alfv = lam2*alfn + tmp1*alfv
+      
+  END SUBROUTINE agskip
+
+!************************************************************************
+!*
+!*     * SUBROUTINE wprint *
+!*
+!*     Printout the warning and error messages.
+!*
+!************************************************************************
+      
+  SUBROUTINE wprint(iterm,iiprint,nout)
+    IMPLICIT NONE
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         iiprint, &    ! Printout specification:
+                      !  -1  - No printout.
+                      !   0  - Only the error messages.
+                      !   1  - The final values of the objective
+                      !        function.
+                      !   2  - The final values of the objective
+                      !        function and the most serious
+                      !        warning messages.
+                      !   3  - The whole final solution. 
+                      !   4  - At each iteration values of the
+                      !        objective function.
+                      !   5  - At each iteration the whole
+                      !        solution
+         nout, &      ! Auxilary printout specification.
+         iterm        ! Cause of termination:
+                      !   1  - The problem has been solved with desired accuracy.
+                      !   2  - Changes in function values < tolf in mtesf
+                      !        subsequent iterations.
+                      !   3  - Changes in function value < tolf*small*MAX(|f_k|,|f_(k-1)|,1),
+                      !        where small is the smallest positive number such that 
+                      !        1.0 + small > 1.0.
+                      !   4  - Number of function calls > mfe.
+                      !   5  - Number of iterations > mittt.
+                      !   6  - Time limit exceeded. 
+                      !   7  - f < tolb.
+                      !  -1  - Two consecutive restarts.
+                      !  -2  - Number of restarts > maximum number of restarts.
+                      !  -3  - Failure in function or subgradient calculations 
+                      !        (assigned by the user).
+                      !  -4  - Failure in attaining the demanded accuracy.
+                      !  -5  - Invalid input parameters.
+
+
+    IF (iiprint >= 0) THEN
+
+! Initial error messages
+
+       IF (iterm == -5) THEN
+          IF (nout == 1) WRITE (6,FMT='(1X,''Error: '' &
+               ''Number of variables (n) is too small, iterm='',I3)') iterm
+          IF (nout == 2) WRITE (6,FMT='(1X,''Error: '' &
+               ''The maximum number of stored corrections (mcu) '' &
+               ''is too small, iterm='',I3)') iterm
+          IF (nout == 3) WRITE (6,FMT='(1X,''Error: '' &
+               ''The size of the bundle (na) is too small, iterm='' &
+               ,I3)') iterm
+          IF (nout == 4) WRITE (6,FMT='(1X,''Error: '' &
+               ''Line search parameter epsl >= 0.25, iterm='',I3)') iterm
+          RETURN
+       END IF
+
+        
+! Warning messages
+
+       IF (iiprint >= 2) THEN
+          IF (iterm == 0) THEN
+             IF (nout == -1) WRITE (6,FMT='(1X,''Warning: '' &
+                  ''mc > mcu. Assigned mc = mcu.'')')
+             IF (nout == -2) WRITE (6,FMT='(1X,''Warning: '' &
+                  ''A line search parameter epsr >= 0.5.'')')
+             IF (nout == -3) WRITE (6,FMT='(1X,''Warning: '' &
+                  ''A nondescent search direction occured. Restart.'')')
+             IF (nout == -4) WRITE (6,FMT='(1X,''Warning: '' &
+                  ''Does not converge.'')')
+             IF (nout == -5) WRITE (6,FMT='(1X,''Warning: '' &
+                  ''tmax < tmin. Restart.'')')
+             RETURN
+          END IF
+         
+
+! Printout the final results
+            
+          IF (iterm == 6) WRITE (6,FMT='(1X,''Abnormal exit: Time is up.'')')
+          IF (iterm == 7) WRITE (6,FMT='(1X,''Abnormal exit: f < tolb.'')')
+          IF (iterm == 2) WRITE (6,FMT='(1X,''Abnormal exit: '' &
+               ''Too many steps without significant progress.'')')
+          IF (iterm == 3) WRITE (6,FMT='(1X,''Abnormal exit: '' &
+               ''The value of the function does not change.'')')
+          IF (iterm == 5) WRITE (6,FMT='(1X,''Abnormal exit: '' &
+               ''Number of iterations > '',I5)') nout
+          IF (iterm == 4) WRITE (6,FMT='(1X,''Abnormal exit: '' &
+               ''Number of function evaluations > '',I5)') nout
+          IF (iterm == -1) THEN
+             IF (nout == -1) THEN
+                WRITE (6,FMT='(1X,''Abnormal exit: Two consecutive restarts.'')')
+             ELSE
+                WRITE (6,FMT='(1X,''Abnormal exit: tmax < tmin in two subsequent iterations.'')')
+             END IF
+          END IF
+          IF (iterm == -2) WRITE (6,FMT='(1X,''Abnormal exit: '' &
+               ''Number of restarts > '',I5''.'')') nout
+          IF (iterm == -3) WRITE (6,FMT='(1X,''Abnormal exit: '' &
+               ''Failure in function or subgradient calculations.'')')
+          IF (iterm == -4) WRITE (6,FMT='(1X,''Abnormal exit: '' &
+               ''Failure in attaining the demanded accuracy.'')')
+       END IF
+    END IF
+      
+  END SUBROUTINE wprint
+
+            
+!************************************************************************
+!*
+!*     * SUBROUTINE rprint *
+!*      
+!*     Printout the (final) results.
+!*
+!************************************************************************
+      
+  SUBROUTINE rprint(n,nit,nfe,nge,x,f,wk,qk,iterm,iiprint)
+    IMPLICIT NONE
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: & 
+         n, &         ! Number of variables 
+         nit, &       ! Number of used iterations.
+         nfe, &       ! Number of used function evaluations.
+         nge, &       ! Number of used subgradient evaluations.
+         iiprint, &    ! Printout specification:
+                      !  -1  - No printout.
+                      !   0  - Only the error messages.
+                      !   1  - The final values of the objective
+                      !        function.
+                      !   2  - The final values of the objective
+                      !        function and the most serious
+                      !        warning messages.
+                      !   3  - The whole final solution. 
+                      !   4  - At each iteration values of the
+                      !        objective function.
+                      !   5  - At each iteration the whole
+                      !        solution
+         iterm        ! Cause of termination:
+                      !   1  - The problem has been solved with desired accuracy.
+                      !   2  - Changes in function values < tolf in mtesf
+                      !        subsequent iterations.
+                      !   3  - Changes in function value < tolf*small*MAX(|f_k|,|f_(k-1)|,1),
+                      !        where small is the smallest positive number such that 
+                      !        1.0 + small > 1.0.
+                      !   4  - Number of function calls > mfe.
+                      !   5  - Number of iterations > mittt.
+                      !   6  - Time limit exceeded. 
+                      !   7  - f < tolb.
+                      !  -1  - Two consecutive restarts.
+                      !  -2  - Number of restarts > maximum number of restarts.
+                      !  -3  - Failure in function or subgradient calculations 
+                      !        (assigned by the user).
+                      !  -4  - Failure in attaining the demanded accuracy.
+                      !  -5  - Invalid input parameters.
+
+
+    REAL(KIND=c_double), INTENT(IN) :: &
+         f, &         ! Value of the objective function.
+         wk, &        ! Value of the first stopping criterion.
+         qk           ! Value of the second stopping criterion.
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x            ! Vector of variables
+         
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+! Intermediate results
+    
+    IF (iterm == 0) THEN
+       IF (iiprint > 3) WRITE (6,FMT='(1X,''nit='',I5,2X, &
+            ''nfe='',I5,2X,''nge='',I5,2X,''f='',D15.8,2X,''wk='',D11.4,2X, &
+            ''qk='',D11.4,2X)') nit,nfe,nge,f,wk,qk
+       IF (iiprint == 5) WRITE (6,FMT='(1X,''x='', &
+            5D15.7:/(4X,5D15.7))')(x(i),i=1,n)
+       RETURN
+    END IF
+         
+
+! Final results
+
+    IF (iiprint > 0) WRITE (6,FMT='(1X,''nit='',I5,2X, &
+         ''nfe='',I5,2X,''nge='',I5,2X,''f='',D15.8,2X,''wk='',D11.4,2X, &
+         ''qk='',D11.4,2X,''iterm='',I3)') nit,nfe,nge,f,wk,qk,iterm
+    IF (iiprint .EQ. 3 .OR. iiprint .EQ. 5) &
+         WRITE (6,FMT='(1X,''x='',5D15.7:/(4X,5D15.7))')(x(i),i=1,n)
+      
+  END SUBROUTINE rprint
+      
+END MODULE lmbm_mod
+!LMBM ENDS
+
 
   MODULE oscar
     
@@ -6607,7 +11746,9 @@
        & in_print, in_start, in_k_max, &
        & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
        & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &
-       & nKitOnes, betakits ) &
+       & nKitOnes, betakits, &
+       & solver_id, in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
+       & in_tolg, in_tolg2, in_eta, in_epsL ) & 
         & BIND(C, name = "oscar_cox_f_")               
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -6622,7 +11763,9 @@
           !                     & beta, fperk, in_print, in_start, in_k_max, &
           !                     & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
           !                     & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, & 
-          !                     & nKitOnes, betakits )    
+          !                     & nKitOnes, betakits, solver_id, & 
+          !                     & in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
+          !                     & in_tolg, in_tolg2, in_eta, in_epsL)    
           !--------------------------------------------------------------------------            
           ! ^^^^ END: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------   
@@ -6652,6 +11795,8 @@
             !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
             !
             !         * 'nKitOnes'    : the number of value 1 in kit matrix
+			!
+            !         * 'solver_id'   : the used solver (1=DBDC and 2=LMBM) INTEGER
             !         
             !         PARAMETERS in DBDC method:
             !
@@ -6671,6 +11816,23 @@
             !         * in_eps1        : the enlargement parameter
             !         * in_eps         : the stopping tolerance: proximity measure  
             !         * in_crit_tol    : the stopping tolerance: criticality tolerance          
+            !
+            !         PARAMETERS in LMBM method:
+            !
+            !         * in_na        : Size of the bundle na >= 2.
+            !         * in_mcu       : Upper limit for maximum number of stored corrections, mcu >= 3.
+            !         * in_mcinit    : Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+            !                          If mcinit <= 0, the default value mcinit = 3 will be used. 
+            !                          However, the value mcinit = 7 is recommented.             
+            !         * in_tolf      : Tolerance for change of function values (default = 1.0E-5).
+            !         * in_tolf2     : Second tolerance for change of function values.
+            !                          - If tolf2 < 0 the the parameter and the corresponding termination 
+            !                            criterion will be ignored. 
+            !                          - If tolf2 = 0 the default value 1.0E+4 will be used
+            !         * in_tolg      : Tolerance for the first termination criterion (default = 1.0E-5).   
+            !         * in_tolg2     : Tolerance for the second termination criterion (default = tolg). clustering code small data  
+            !         * in_eta       : Distance measure parameter, eta >= 0.   
+            !         * in_epsL      : Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.)  
             !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vectors one after another
             !
@@ -6734,6 +11896,24 @@
                ! REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
                
                ! INTEGER(KIND=c_int), INTENT(IN) :: nKitOnes                ! the number of value 1 in kit matrix
+			   ! INTEGER(KIND=c_int), INTENT(IN) :: solver_id               ! the used solver (1=DBDC and 2=LMBM)
+
+!**
+               ! INTEGER(KIND=c_int), INTENT(IN) ::  in_na                  ! Size of the bundle na >= 2.
+               ! INTEGER(KIND=c_int), INTENT(IN) ::  in_mcu                 ! Upper limit for maximum number of stored corrections, mcu >= 3.
+               ! INTEGER(KIND=c_int), INTENT(IN) ::  in_mcinit              ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+                                                                          ! ! If mcinit <= 0, the default value mcinit = 3 will be used. 
+                                                                          ! ! However, the value mcinit = 7 is recommented.
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_tolf                ! Tolerance for change of function values (default = 1.0E-5).
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_tolf2               ! Second tolerance for change of function values.
+                                                                          ! !   - If tolf2 < 0 the the parameter and the corresponding termination 
+                                                                          ! !   criterion will be ignored. 
+                                                                          ! !   - If tolf2 = 0 the default value 1.0E+4 will be used. 
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_tolg                ! Tolerance for the first termination criterion (default = 1.0E-5).
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_tolg2               ! Tolerance for the second termination criterion (default = tolg). clustering code small data
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_eta                 ! Distance measure parameter, eta >= 0.
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_epsL                ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
+!**
 
             ! INPUTs
                INTEGER(KIND = c_int), INTENT(IN), VAlUE :: nrow                  ! Number of rows in x (i.e. records)
@@ -6762,8 +11942,25 @@
                REAL(KIND=c_double), INTENT(IN), VAlUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance
              
                INTEGER(KIND=c_int), INTENT(IN), VALUE :: nKitOnes                ! the number of value 1 in kit matrix
+             
+			   INTEGER(KIND=c_int), INTENT(IN), VALUE :: solver_id               ! the used solver (1=DBDC and 2=LMBM)
 
- 
+  !**
+               INTEGER(KIND=c_int), INTENT(IN), VALUE ::  in_na           ! Size of the bundle na >= 2.
+               INTEGER(KIND=c_int), INTENT(IN), VALUE ::  in_mcu          ! Upper limit for maximum number of stored corrections, mcu >= 3.
+               INTEGER(KIND=c_int), INTENT(IN), VALUE ::  in_mcinit       ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+                                                                          ! If mcinit <= 0, the default value mcinit = 3 will be used. 
+                                                                          ! However, the value mcinit = 7 is recommented.
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolf         ! Tolerance for change of function values (default = 1.0E-5).
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolf2        ! Second tolerance for change of function values.
+                                                                          !   - If tolf2 < 0 the the parameter and the corresponding termination 
+                                                                          !   criterion will be ignored. 
+                                                                          !   - If tolf2 = 0 the default value 1.0E+4 will be used. 
+               REAL(KIND=c_double, INTENT(IN), VALUE) ::  in_tolg         ! Tolerance for the first termination criterion (default = 1.0E-5).
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolg2        ! Tolerance for the second termination criterion (default = tolg). clustering code small data
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_eta          ! Distance measure parameter, eta >= 0.
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_epsL         ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
+!**
             !--------------------------------------------------------------------------
             ! ^^^^ START: If Fortran code is used with R-C-interface ^^^^
             !--------------------------------------------------------------------------
@@ -6797,6 +11994,8 @@
                TYPE(set_info) :: info                         ! The set of information                     
  
                REAL(KIND=c_double) :: CPUtime                 ! the CPU time (in seconds)
+			   
+               INTEGER(KIND=c_int) :: solver                  ! defines the solver used (1=DBDC, 2=LMBM)			   
 
                INTEGER(KIND=c_int) :: nft                     ! the dimension of the problem = the number of features in a predictor
                INTEGER(KIND=c_int) :: nrecord                 ! the number of records (data points)
@@ -6969,18 +12168,64 @@
 
                REAL(KIND=c_double) :: elapsed_time                  ! elapsed 'clock' time in seconds
                INTEGER(KIND=c_int) :: clock_start, clock_end, clock_rate  ! start and finish 'clock' time 
-                
+			   
+!**			   
+               ! Scalars in LMBM
+               INTEGER(KIND=c_int) ::  mc        ! Number of corrections.
+               REAL(KIND=c_double) :: LMBMstart  ! The starting time
+               INTEGER, DIMENSION(4) :: iout     ! Output integer parameters.
+                                                 !   iout(1)   Number of used iterations.
+                                                 !   iout(2)   Number of used function evaluations.
+                                                 !   iout(3)   Number of used subgradient evaluations (LMBM)
+                                                 !               or number of outer iterations (LDGBM).
+                                                 !   iout(4)   Cause of termination:
+                                                 !               1  - The problem has been solved
+                                                 !                    with desired accuracy.
+                                                 !               2  - Changes in function values < tolf in mtesf
+                                                 !                    subsequent iterations.
+                                                 !               3  - Changes in function value < 
+                                                 !                    tolf*small*MAX(|f_k|,|f_(k-1)|,1),
+                                                 !                    where small is the smallest positive number
+                                                 !                    such that 1.0 + small > 1.0.
+                                                 !               4  - Number of function calls > mfe.
+                                                 !               5  - Number of iterations > mit.
+                                                 !               6  - Time limit exceeded. 
+                                                 !               7  - f < tolb.
+                                                 !              -1  - Two consecutive restarts.
+                                                 !              -2  - Number of restarts > maximum number
+                                                 !                    of restarts.
+                                                 !              -3  - Failure in function or subgradient
+                                                 !                    calculations (assigned by the user).
+                                                 !              -4  - Failure in attaining the demanded
+                                                 !                    accuracy.
+                                                 !              -5  - Invalid input parameters.
+                                                 !              -6  - Unspecified error.               
+ !**
+ 
                CALL cpu_time(s_time)   ! Start CPU timing
                CALL SYSTEM_CLOCK(COUNT_RATE=clock_rate) ! Find the rate
                CALL SYSTEM_CLOCK(COUNT=clock_start)     ! Start timing 'clock' time     
 
-
+!**
+              ! The solver is defined/selected
+               IF (solver_id == 1) THEN
+                   solver = 1 !DBDC
+               ELSE IF (solver_id == 2) THEN
+                   solver = 2 !LMBM
+               ELSE 
+                   solver = 1 !DBDC              
+               END IF
+!**
               ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
                
                ! Maximum number of possible treads in parallellization
                max_threads = omp_get_max_threads()
                
-               !max_threads = 1
+!**
+			   IF (solver == 2) THEN  !No parallellization with LMBM can be used
+                   max_threads = 1
+			   END If	   
+!**
                
                CALL omp_set_num_threads(max_threads)
                tread_num = max_threads
@@ -6991,6 +12236,12 @@
                ! The initialization of parametrs used in DBDC methods
                CALL allocate_parameters(info, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
                                            & in_b, in_m_clarke, in_eps, in_crit_tol)
+
+!**                                          
+                 ! The initialization of parameters used in LMBM method
+                 CALL init_par(in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, in_tolg, &
+                                & in_tolg2, in_eta, in_epsL)
+!**
                
                ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
@@ -7031,6 +12282,13 @@
                !      & 2.0_c_double, 5.0_c_double, 10.0_c_double, 20.0_c_double /) 
                mrho = (/0.2_c_double, 0.5_c_double, 1.0_c_double, 2.0_c_double, &
                      & 5.0_c_double, 10.0_c_double, 20.0_c_double, 50.0_c_double /) 
+
+!**
+               IF (solver==2) THEN		!LMBM		
+			      mrho = (/0.5_c_double, 1.0_c_double, 2.0_c_double, &
+                         & 5.0_c_double, 10.0_c_double, 20.0_c_double, 50.0_c_double, 100.0_c_double /) 
+               END IF
+!**
 
                 ! Problem 
                 problem1 = 3_c_int
@@ -7238,11 +12496,25 @@
               ! The best beta_solution for Cox's proportional hazard model without regularization/penalization                    
                       
               CALL set_k(info, nkits)           ! All kits can be used
-                      
-              CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
+
+!**                      
+			  IF (solver == 1) THEN	  
+                  CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
                             & agg_used, stepsize_used, iprint_DBDC, 3_c_int, 3_c_int, user_n, &
                             & info)            
+			  ELSE IF (solver == 2) THEN 
+			  
+                  CALL allocate_xn(user_n) 
+                  CALL init_LMBMinfo(problem1, info) 
+                  CALL init_x(x_0)          
+                  CALL set_rho_LMBM(0.0_c_double)                 
+                  CALL set_lambda_LMBM(0.0_c_double)                  
+                  CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
+                  CALL copy_x(x_koe)
+                  			  
+              END IF			  
+!**
                             
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
               !         * x_koe is utilized in formation of starting points 
@@ -7334,7 +12606,7 @@
                                                & agg_used, stepsize_used, user_n, problem1, problem2, &
                                                & mXt, mYt, mK, in_mC, nrecord,  & 
                                                & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum)
+                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, solver)
                     
                     ! Storing of the obtained solutions and the corresponding objective values
                      !$OMP CRITICAL 
@@ -7566,7 +12838,9 @@
        & in_print, in_start, in_k_max, &
        & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
        & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &
-       & nKitOnes, betakits ) &     
+       & nKitOnes, betakits, &
+       & solver_id, in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
+       & in_tolg, in_tolg2, in_eta, in_epsL ) &      
         & BIND(C, name = "oscar_mse_f_")               
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -7581,7 +12855,9 @@
           !                     & beta, fperk, in_print, in_start, in_k_max, &
           !                     & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
           !                     & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &
-          !                     & nKitOnes, betakits )    
+          !                     & nKitOnes, betakits, solver_id, & 
+          !                     & in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
+          !                     & in_tolg, in_tolg2, in_eta, in_epsL)     
           !--------------------------------------------------------------------------            
           ! ^^^^ END: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------   
@@ -7612,6 +12888,8 @@
             !         * 'in_k_max'    : specifies how many kits are used in the last problem of the loop  (NEEDS to be 1 <= 'in_k_max' <= nkits !)
             !
             !         * 'nKitOnes'    : the number of value 1 in kit matrix
+			!
+            !         * 'solver_id'   : the used solver (1=DBDC and 2=LMBM) INTEGER
             !
             !         PARAMETERS in DBDC method:
             !
@@ -7631,6 +12909,23 @@
             !         * in_eps1        : the enlargement parameter
             !         * in_eps         : the stopping tolerance: proximity measure  
             !         * in_crit_tol    : the stopping tolerance: criticality tolerance          
+            !
+            !         PARAMETERS in LMBM method:
+            !
+            !         * in_na        : Size of the bundle na >= 2.
+            !         * in_mcu       : Upper limit for maximum number of stored corrections, mcu >= 3.
+            !         * in_mcinit    : Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+            !                          If mcinit <= 0, the default value mcinit = 3 will be used. 
+            !                          However, the value mcinit = 7 is recommented.             
+            !         * in_tolf      : Tolerance for change of function values (default = 1.0E-5).
+            !         * in_tolf2     : Second tolerance for change of function values.
+            !                          - If tolf2 < 0 the the parameter and the corresponding termination 
+            !                            criterion will be ignored. 
+            !                          - If tolf2 = 0 the default value 1.0E+4 will be used
+            !         * in_tolg      : Tolerance for the first termination criterion (default = 1.0E-5).   
+            !         * in_tolg2     : Tolerance for the second termination criterion (default = tolg). clustering code small data  
+            !         * in_eta       : Distance measure parameter, eta >= 0.   
+            !         * in_epsL      : Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.)                
             !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
             !
@@ -7694,6 +12989,23 @@
                ! REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
 
                ! INTEGER(KIND=c_int), INTENT(IN) :: nKitOnes                ! the number of value 1 in kit matrix
+			   ! INTEGER(KIND=c_int), INTENT(IN) :: solver_id               ! the used solver (1=DBDC and 2=LMBM)
+!**
+               ! INTEGER(KIND=c_int), INTENT(IN) ::  in_na                  ! Size of the bundle na >= 2.
+               ! INTEGER(KIND=c_int), INTENT(IN) ::  in_mcu                 ! Upper limit for maximum number of stored corrections, mcu >= 3.
+               ! INTEGER(KIND=c_int), INTENT(IN) ::  in_mcinit              ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+                                                                          ! ! If mcinit <= 0, the default value mcinit = 3 will be used. 
+                                                                          ! ! However, the value mcinit = 7 is recommented.
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_tolf                ! Tolerance for change of function values (default = 1.0E-5).
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_tolf2               ! Second tolerance for change of function values.
+                                                                          ! !   - If tolf2 < 0 the the parameter and the corresponding termination 
+                                                                          ! !   criterion will be ignored. 
+                                                                          ! !   - If tolf2 = 0 the default value 1.0E+4 will be used. 
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_tolg                ! Tolerance for the first termination criterion (default = 1.0E-5).
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_tolg2               ! Tolerance for the second termination criterion (default = tolg). clustering code small data
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_eta                 ! Distance measure parameter, eta >= 0.
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_epsL                ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
+!**		
 
               ! INPUTs
                INTEGER(KIND = c_int), INTENT(IN), VALUE :: nrow                  ! Number of rows in x (i.e. records)
@@ -7723,6 +13035,24 @@
 
                INTEGER(KIND=c_int), INTENT(IN), VALUE :: nKitOnes                ! the number of value 1 in kit matrix
 
+			   INTEGER(KIND=c_int), INTENT(IN), VALUE :: solver_id               ! the used solver (1=DBDC and 2=LMBM)
+
+ !**
+               INTEGER(KIND=c_int), INTENT(IN), VALUE ::  in_na           ! Size of the bundle na >= 2.
+               INTEGER(KIND=c_int), INTENT(IN), VALUE ::  in_mcu          ! Upper limit for maximum number of stored corrections, mcu >= 3.
+               INTEGER(KIND=c_int), INTENT(IN), VALUE ::  in_mcinit       ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+                                                                          ! If mcinit <= 0, the default value mcinit = 3 will be used. 
+                                                                          ! However, the value mcinit = 7 is recommented.
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolf         ! Tolerance for change of function values (default = 1.0E-5).
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolf2        ! Second tolerance for change of function values.
+                                                                          !   - If tolf2 < 0 the the parameter and the corresponding termination 
+                                                                          !   criterion will be ignored. 
+                                                                          !   - If tolf2 = 0 the default value 1.0E+4 will be used. 
+               REAL(KIND=c_double, INTENT(IN), VALUE) ::  in_tolg         ! Tolerance for the first termination criterion (default = 1.0E-5).
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolg2        ! Tolerance for the second termination criterion (default = tolg). clustering code small data
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_eta          ! Distance measure parameter, eta >= 0.
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_epsL         ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
+!**
 
             !--------------------------------------------------------------------------
             ! ^^^^ START: If Fortran code is used with R-C-interface ^^^^
@@ -7758,6 +13088,8 @@
                TYPE(set_info) :: info                         ! The set of information                     
 
                REAL(KIND=c_double) :: CPUtime                 ! the CPU time (in seconds)
+
+               INTEGER(KIND=c_int) :: solver                  ! defines the solver used (1=DBDC, 2=LMBM)			   
 
                INTEGER(KIND=c_int) :: nft                     ! the dimension of the problem = the number of features in a predictor
                INTEGER(KIND=c_int) :: nrecord                 ! the number of records (data points)
@@ -7926,18 +13258,65 @@
                REAL(KIND=c_double) :: elapsed_time                  ! elapsed 'clock' time in seconds
                INTEGER(KIND=c_int) :: clock_start, clock_end, clock_rate  ! start and finish 'clock' time 
                
-               CALL cpu_time(s_time)   ! Start CPU timing    
+!**			   
+               ! Scalars in LMBM
+               INTEGER(KIND=c_int) ::  mc        ! Number of corrections.
+               REAL(KIND=c_double) :: LMBMstart  ! The starting time
+               INTEGER, DIMENSION(4) :: iout     ! Output integer parameters.
+                                                 !   iout(1)   Number of used iterations.
+                                                 !   iout(2)   Number of used function evaluations.
+                                                 !   iout(3)   Number of used subgradient evaluations (LMBM)
+                                                 !               or number of outer iterations (LDGBM).
+                                                 !   iout(4)   Cause of termination:
+                                                 !               1  - The problem has been solved
+                                                 !                    with desired accuracy.
+                                                 !               2  - Changes in function values < tolf in mtesf
+                                                 !                    subsequent iterations.
+                                                 !               3  - Changes in function value < 
+                                                 !                    tolf*small*MAX(|f_k|,|f_(k-1)|,1),
+                                                 !                    where small is the smallest positive number
+                                                 !                    such that 1.0 + small > 1.0.
+                                                 !               4  - Number of function calls > mfe.
+                                                 !               5  - Number of iterations > mit.
+                                                 !               6  - Time limit exceeded. 
+                                                 !               7  - f < tolb.
+                                                 !              -1  - Two consecutive restarts.
+                                                 !              -2  - Number of restarts > maximum number
+                                                 !                    of restarts.
+                                                 !              -3  - Failure in function or subgradient
+                                                 !                    calculations (assigned by the user).
+                                                 !              -4  - Failure in attaining the demanded
+                                                 !                    accuracy.
+                                                 !              -5  - Invalid input parameters.
+                                                 !              -6  - Unspecified error.               
+ !**
+ 
+               CALL cpu_time(s_time)   ! Start CPU timing
                CALL SYSTEM_CLOCK(COUNT_RATE=clock_rate) ! Find the rate
                CALL SYSTEM_CLOCK(COUNT=clock_start)     ! Start timing 'clock' time     
- 
- 
+
+!**
+              ! The solver is defined/selected
+               IF (solver_id == 1) THEN
+                   solver = 1 !DBDC
+               ELSE IF (solver_id == 2) THEN
+                   solver = 2 !LMBM
+               ELSE 
+                   solver = 1 !DBDC              
+               END IF
+!**
+  
              ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
                
                ! Maximum number of possible treads in parallellization
                max_threads = omp_get_max_threads()
+			   !max_threads = 1
                
-               !max_threads = 1
-        
+!**
+			   IF (solver == 2) THEN  !No parallellization with LMBM can be used
+                   max_threads = 1
+			   END If	   
+!**        
                CALL omp_set_num_threads(max_threads)
                
                
@@ -7949,6 +13328,12 @@
                ! The initialization of parametrs used in DBDC methods
                CALL allocate_parameters(info, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
                                            & in_b, in_m_clarke, in_eps, in_crit_tol)
+
+!**                                          
+                 ! The initialization of parameters used in LMBM method
+                 CALL init_par(in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, in_tolg, &
+                                & in_tolg2, in_eta, in_epsL)
+!**
                
                ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
@@ -8180,13 +13565,28 @@
               
               ! The best beta_solution for Cox's proportional hazard model without regularization/penalization    
               
-              CALL set_k(info, nkits)           ! All kits can be used
-              
-              
-              CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
+              CALL set_k(info, nkits)           ! All kits can be used        
+
+!**                      
+			  IF (solver == 1) THEN	  
+                  CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
                             & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
                             & info)            
+			  ELSE IF (solver == 2) THEN 
+			  
+                  CALL allocate_xn(user_n) 
+                  CALL init_LMBMinfo(problem1, info) 
+                  CALL init_x(x_0)          
+                  CALL set_rho_LMBM(0.0_c_double)                 
+                  CALL set_lambda_LMBM(0.0_c_double)                  
+                  CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
+                  CALL copy_x(x_koe)
+                  			  
+              END IF			  
+!**
+
+
                             
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
               !         * x_koe is utilized in formation of starting points   
@@ -8276,7 +13676,7 @@
                                                & agg_used, stepsize_used, nft, problem1, problem2, &
                                                & mXt, mYt, mK, in_mC, nrecord,  & 
                                                & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum)
+                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, solver)
                     
                     ! Storing of the obtained solution and the corresponding objective value
                     !$OMP CRITICAL 
@@ -8531,7 +13931,9 @@
        & in_print, in_start, in_k_max, &
        & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
        & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, & 
-       & nKitOnes, betakits ) &     
+       & nKitOnes, betakits, &
+       & solver_id, in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
+       & in_tolg, in_tolg2, in_eta, in_epsL ) &     
         & BIND(C, name = "oscar_logistic_f_")              
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
@@ -8546,7 +13948,9 @@
           !                     & beta, fperk, in_print, in_start, in_k_max, &
           !                     & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
           !                     & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &                                
-           !                    & nKitOnes, betakits )    
+          !                     & nKitOnes, betakits, solver_id, & 
+          !                     & in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
+          !                     & in_tolg, in_tolg2, in_eta, in_epsL)    
           !--------------------------------------------------------------------------            
           ! ^^^^ END: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------   
@@ -8578,6 +13982,8 @@
             !
             !         * 'nKitOnes'    : the number of value 1 in kit matrix
             !
+            !         * 'solver_id'   : the used solver (1=DBDC and 2=LMBM) INTEGER
+			!
             !         PARAMETERS in DBDC method:
             !
             !         * in_mrounds     : the maximum number of rounds in one main iteratioin
@@ -8596,6 +14002,23 @@
             !         * in_eps1        : the enlargement parameter
             !         * in_eps         : the stopping tolerance: proximity measure  
             !         * in_crit_tol    : the stopping tolerance: criticality tolerance          
+            !
+            !         PARAMETERS in LMBM method:
+            !
+            !         * in_na        : Size of the bundle na >= 2.
+            !         * in_mcu       : Upper limit for maximum number of stored corrections, mcu >= 3.
+            !         * in_mcinit    : Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+            !                          If mcinit <= 0, the default value mcinit = 3 will be used. 
+            !                          However, the value mcinit = 7 is recommented.             
+            !         * in_tolf      : Tolerance for change of function values (default = 1.0E-5).
+            !         * in_tolf2     : Second tolerance for change of function values.
+            !                          - If tolf2 < 0 the the parameter and the corresponding termination 
+            !                            criterion will be ignored. 
+            !                          - If tolf2 = 0 the default value 1.0E+4 will be used
+            !         * in_tolg      : Tolerance for the first termination criterion (default = 1.0E-5).   
+            !         * in_tolg2     : Tolerance for the second termination criterion (default = tolg). clustering code small data  
+            !         * in_eta       : Distance measure parameter, eta >= 0.   
+            !         * in_epsL      : Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.)    			
             !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
             !
@@ -8659,6 +14082,24 @@
                ! REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance    
 
                ! INTEGER(KIND=c_int), INTENT(IN) :: nKitOnes                ! the number of value 1 in kit matrix
+			   ! INTEGER(KIND=c_int), INTENT(IN) :: solver_id               ! the used solver (1=DBDC and 2=LMBM)
+
+!**
+               ! INTEGER(KIND=c_int), INTENT(IN) ::  in_na                  ! Size of the bundle na >= 2.
+               ! INTEGER(KIND=c_int), INTENT(IN) ::  in_mcu                 ! Upper limit for maximum number of stored corrections, mcu >= 3.
+               ! INTEGER(KIND=c_int), INTENT(IN) ::  in_mcinit              ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+                                                                          ! ! If mcinit <= 0, the default value mcinit = 3 will be used. 
+                                                                          ! ! However, the value mcinit = 7 is recommented.
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_tolf                ! Tolerance for change of function values (default = 1.0E-5).
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_tolf2               ! Second tolerance for change of function values.
+                                                                          ! !   - If tolf2 < 0 the the parameter and the corresponding termination 
+                                                                          ! !   criterion will be ignored. 
+                                                                          ! !   - If tolf2 = 0 the default value 1.0E+4 will be used. 
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_tolg                ! Tolerance for the first termination criterion (default = 1.0E-5).
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_tolg2               ! Tolerance for the second termination criterion (default = tolg). clustering code small data
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_eta                 ! Distance measure parameter, eta >= 0.
+               ! REAL(KIND=c_double), INTENT(IN) ::  in_epsL                ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
+!**		
 
               ! INPUTs
                INTEGER(KIND = c_int), INTENT(IN), VALUE :: nrow                  ! Number of rows in x (i.e. records)
@@ -8687,7 +14128,26 @@
                REAL(KIND=c_double), INTENT(IN), VALUE :: in_crit_tol             ! the stopping tolerance: criticality tolerance
 
                INTEGER(KIND=c_int), INTENT(IN), VALUE :: nKitOnes                ! the number of value 1 in kit matrix
-        
+
+			   INTEGER(KIND=c_int), INTENT(IN), VALUE :: solver_id               ! the used solver (1=DBDC and 2=LMBM)
+ 
+ !**
+               INTEGER(KIND=c_int), INTENT(IN), VALUE ::  in_na           ! Size of the bundle na >= 2.
+               INTEGER(KIND=c_int), INTENT(IN), VALUE ::  in_mcu          ! Upper limit for maximum number of stored corrections, mcu >= 3.
+               INTEGER(KIND=c_int), INTENT(IN), VALUE ::  in_mcinit       ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+                                                                          ! If mcinit <= 0, the default value mcinit = 3 will be used. 
+                                                                          ! However, the value mcinit = 7 is recommented.
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolf         ! Tolerance for change of function values (default = 1.0E-5).
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolf2        ! Second tolerance for change of function values.
+                                                                          !   - If tolf2 < 0 the the parameter and the corresponding termination 
+                                                                          !   criterion will be ignored. 
+                                                                          !   - If tolf2 = 0 the default value 1.0E+4 will be used. 
+               REAL(KIND=c_double, INTENT(IN), VALUE) ::  in_tolg         ! Tolerance for the first termination criterion (default = 1.0E-5).
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolg2        ! Tolerance for the second termination criterion (default = tolg). clustering code small data
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_eta          ! Distance measure parameter, eta >= 0.
+               REAL(KIND=c_double), INTENT(IN), VALUE ::  in_epsL         ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
+!**
+ 
             !--------------------------------------------------------------------------
             ! ^^^^ START: If Fortran code is used with R-C-interface ^^^^
             !--------------------------------------------------------------------------
@@ -8722,6 +14182,8 @@
                TYPE(set_info) :: info           ! The set of information                     
  
                REAL(KIND=c_double) :: CPUtime                 ! the CPU time (in seconds)
+
+               INTEGER(KIND=c_int) :: solver                  ! defines the solver used (1=DBDC, 2=LMBM)			   
 
                INTEGER(KIND=c_int) :: nft                     ! the dimension of the problem = the number of features in a predictor
                INTEGER(KIND=c_int) :: nrecord                 ! the number of records (data points)
@@ -8890,16 +14352,65 @@
                REAL(KIND=c_double) :: elapsed_time                  ! elapsed 'clock' time in seconds
                INTEGER(KIND=c_int) :: clock_start, clock_end, clock_rate  ! start and finish 'clock' time 
                 
-               CALL cpu_time(s_time)   ! Start CPU timing    
+!**			   
+               ! Scalars in LMBM
+               INTEGER(KIND=c_int) ::  mc        ! Number of corrections.
+               REAL(KIND=c_double) :: LMBMstart  ! The starting time
+               INTEGER, DIMENSION(4) :: iout     ! Output integer parameters.
+                                                 !   iout(1)   Number of used iterations.
+                                                 !   iout(2)   Number of used function evaluations.
+                                                 !   iout(3)   Number of used subgradient evaluations (LMBM)
+                                                 !               or number of outer iterations (LDGBM).
+                                                 !   iout(4)   Cause of termination:
+                                                 !               1  - The problem has been solved
+                                                 !                    with desired accuracy.
+                                                 !               2  - Changes in function values < tolf in mtesf
+                                                 !                    subsequent iterations.
+                                                 !               3  - Changes in function value < 
+                                                 !                    tolf*small*MAX(|f_k|,|f_(k-1)|,1),
+                                                 !                    where small is the smallest positive number
+                                                 !                    such that 1.0 + small > 1.0.
+                                                 !               4  - Number of function calls > mfe.
+                                                 !               5  - Number of iterations > mit.
+                                                 !               6  - Time limit exceeded. 
+                                                 !               7  - f < tolb.
+                                                 !              -1  - Two consecutive restarts.
+                                                 !              -2  - Number of restarts > maximum number
+                                                 !                    of restarts.
+                                                 !              -3  - Failure in function or subgradient
+                                                 !                    calculations (assigned by the user).
+                                                 !              -4  - Failure in attaining the demanded
+                                                 !                    accuracy.
+                                                 !              -5  - Invalid input parameters.
+                                                 !              -6  - Unspecified error.               
+ !**
+ 
+               CALL cpu_time(s_time)   ! Start CPU timing
                CALL SYSTEM_CLOCK(COUNT_RATE=clock_rate) ! Find the rate
                CALL SYSTEM_CLOCK(COUNT=clock_start)     ! Start timing 'clock' time     
+
+!**
+              ! The solver is defined/selected
+               IF (solver_id == 1) THEN
+                   solver = 1 !DBDC
+               ELSE IF (solver_id == 2) THEN
+                   solver = 2 !LMBM
+               ELSE 
+                   solver = 1 !DBDC              
+               END IF
+!**  
                
              ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
                
-               ! Maximum number of possible treads in parallellization
-               max_threads = omp_get_max_threads()
-                   
-               !max_threads = 1
+             ! Maximum number of possible treads in parallellization
+               max_threads = omp_get_max_threads()                
+              !max_threads = 1
+			   
+!**
+			   IF (solver == 2) THEN  !No parallellization with LMBM can be used
+                   max_threads = 1
+			   END If	   
+!**			   
                
                CALL omp_set_num_threads(max_threads)
                tread_num = max_threads
@@ -8911,6 +14422,12 @@
                CALL allocate_parameters(info, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
                                            & in_b, in_m_clarke, in_eps, in_crit_tol)
                
+!**                                          
+                 ! The initialization of parameters used in LMBM method
+                 CALL init_par(in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, in_tolg, &
+                                & in_tolg2, in_eta, in_epsL)
+!**
+			   
                ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
                nft = nKitOnes
@@ -9142,10 +14659,24 @@
 
                iprint_DBDC = 0_c_int           ! basic print of intermediate results and extended print of final results
                             
-              CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
+!**                      
+			  IF (solver == 1) THEN	  
+                  CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
                             & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n,&
+                            & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
                             & info)            
+			  ELSE IF (solver == 2) THEN 
+			  
+                  CALL allocate_xn(user_n) 
+                  CALL init_LMBMinfo(problem1, info) 
+                  CALL init_x(x_0)          
+                  CALL set_rho_LMBM(0.0_c_double)                 
+                  CALL set_lambda_LMBM(0.0_c_double)                  
+                  CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
+                  CALL copy_x(x_koe)
+                  			  
+              END IF			  
+!**           
  
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
               !         * x_koe is utilized in formation of starting points   
@@ -9235,7 +14766,7 @@
                                                & agg_used, stepsize_used, nft, problem1, problem2, &
                                                & mXt, mYt, mK, in_mC, nrecord,  & 
                                                & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum)
+                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, solver)
                     
                     ! Storing of the obtained solution and the corresponding objective value
                     !$OMP CRITICAL 
@@ -9465,7 +14996,7 @@
                                     & agg_used, stepsize_used, nft, problem1, problem2,  &      
                                     & in_mX, in_mY, in_mK, in_mC, nrecord, & 
                                     & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum) 
+                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, solver) 
             !_____________________________________________________________________________________
             ! 
             !           
@@ -9497,6 +15028,8 @@
             !
             !         * 'in_mX', 'in_mY', 'in_mK', 'in_mC'    : Are the data matrices 
             !         * 'mPrNum'        : the information about starting points for the thread
+            !         
+            !         * 'solver'   : defines the solver used (1=DBDC, 2=LMBM)
             !         
             !         PARAMETERS in DBDC method:
             !
@@ -9555,6 +15088,8 @@
                
                INTEGER(KIND = c_int), INTENT(IN) :: start                 ! Starting point procedure used
                INTEGER(KIND = c_int), INTENT(IN) :: iprint                ! Print used
+
+               INTEGER(KIND = c_int), INTENT(IN) :: solver                ! the solver used
                
                INTEGER(KIND = c_int), INTENT(IN) :: k                     ! The number of kits in the problem 
                INTEGER(KIND = c_int), INTENT(IN) :: i                     ! The number of the thread
@@ -9672,7 +15207,38 @@
 
                INTEGER(KIND=c_int) :: startind, j3, kk      ! the start index for starting point    
  
- 
+!**
+               ! Scalars in LMBM
+               INTEGER(KIND=c_int) ::  mc        ! Number of corrections.
+               REAL(KIND=c_double) :: LMBMstart  ! The starting time
+               INTEGER, DIMENSION(4) :: iout     ! Output integer parameters.
+                                                 !   iout(1)   Number of used iterations.
+                                                 !   iout(2)   Number of used function evaluations.
+                                                 !   iout(3)   Number of used subgradient evaluations (LMBM)
+                                                 !               or number of outer iterations (LDGBM).
+                                                 !   iout(4)   Cause of termination:
+                                                 !               1  - The problem has been solved
+                                                 !                    with desired accuracy.
+                                                 !               2  - Changes in function values < tolf in mtesf
+                                                 !                    subsequent iterations.
+                                                 !               3  - Changes in function value < 
+                                                 !                    tolf*small*MAX(|f_k|,|f_(k-1)|,1),
+                                                 !                    where small is the smallest positive number
+                                                 !                    such that 1.0 + small > 1.0.
+                                                 !               4  - Number of function calls > mfe.
+                                                 !               5  - Number of iterations > mit.
+                                                 !               6  - Time limit exceeded. 
+                                                 !               7  - f < tolb.
+                                                 !              -1  - Two consecutive restarts.
+                                                 !              -2  - Number of restarts > maximum number
+                                                 !                    of restarts.
+                                                 !              -3  - Failure in function or subgradient
+                                                 !                    calculations (assigned by the user).
+                                                 !              -4  - Failure in attaining the demanded
+                                                 !                    accuracy.
+                                                 !              -5  - Invalid input parameters.
+                                                 !              -6  - Unspecified error.
+ !** 
                     !--------------------------------------------        
                     !                INITIALIZATION
                     !--------------------------------------------
@@ -9683,7 +15249,7 @@
                     ed_sol_in_pen = .FALSE.
                    !ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem  
 
-                   tol_zero = (10.0_c_double)**(-6)
+                    tol_zero = (10.0_c_double)**(-6)
  
 
                    ! The initialization of parametrs used in DBDC methods
@@ -9802,11 +15368,25 @@
                         END IF
                     
                         ! The optimization problem is solved fot the current rho and x_0
+!**						
+						IF (solver==1) THEN 
          
-                        CALL DBDC_algorithm( f_solution_DBDC, beta_solution, x_0, rho, 0.0_c_double, &
+                            CALL DBDC_algorithm( f_solution_DBDC, beta_solution, x_0, rho, 0.0_c_double, &
                                 & mit, mrounds, mrounds_esc, termination, counter, CPUtime,  &
                                 & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, nft, &
                                 & set) 
+								
+						ELSE IF (solver == 2) THEN
+						
+                           CALL init_LMBMinfo(problem1, set)   
+                           CALL init_x(x_0)
+                           CALL set_rho_LMBM(rho)                 
+                           CALL set_lambda_LMBM(0.0_c_double)              
+                           CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
+                           CALL copy_x(beta_solution)   
+						   
+                        END IF
+!**						
                 
                         IF (ed_sol_in_pen) THEN 
                           x_0 = beta_solution   ! Starting point for the next round
@@ -9917,7 +15497,7 @@
                                     & agg_used, stepsize_used, nft, problem1, problem2,  &      
                                     & in_mX, in_mY, in_mK, in_mC, nrecord, & 
                                     & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                    & in_b, in_m_clarke, in_eps, in_crit_tol ,mPrNum) 
+                                    & in_b, in_m_clarke, in_eps, in_crit_tol ,mPrNum, solver) 
             !_____________________________________________________________________________________
             ! 
             !           
@@ -9949,6 +15529,8 @@
             !
             !         * 'in_mX', 'in_mY', 'in_mK', 'in_mC'    : Are the data matrices 
             !         * 'mPrNum'        : the information about starting points for the thread
+            !         
+            !         * 'solver'   : defines the solver used (1=DBDC, 2=LMBM)
             !         
             !         PARAMETERS in DBDC method:
             !
@@ -10007,6 +15589,8 @@
                
                INTEGER(KIND = c_int), INTENT(IN) :: start                 ! Starting point procedure used
                INTEGER(KIND = c_int), INTENT(IN) :: iprint                ! Print used
+
+               INTEGER(KIND = c_int), INTENT(IN) :: solver                ! the solver used
                
                INTEGER(KIND = c_int), INTENT(IN) :: k                     ! The number of kits in the problem 
                INTEGER(KIND = c_int), INTENT(IN) :: i                     ! The number of the thread
@@ -10123,7 +15707,39 @@
 
                
                INTEGER(KIND=c_int) :: startind, j3, kk      ! the start index for starting point    
- 
+			   
+ !**
+               ! Scalars in LMBM
+               INTEGER(KIND=c_int) ::  mc        ! Number of corrections.
+               REAL(KIND=c_double) :: LMBMstart  ! The starting time
+               INTEGER, DIMENSION(4) :: iout     ! Output integer parameters.
+                                                 !   iout(1)   Number of used iterations.
+                                                 !   iout(2)   Number of used function evaluations.
+                                                 !   iout(3)   Number of used subgradient evaluations (LMBM)
+                                                 !               or number of outer iterations (LDGBM).
+                                                 !   iout(4)   Cause of termination:
+                                                 !               1  - The problem has been solved
+                                                 !                    with desired accuracy.
+                                                 !               2  - Changes in function values < tolf in mtesf
+                                                 !                    subsequent iterations.
+                                                 !               3  - Changes in function value < 
+                                                 !                    tolf*small*MAX(|f_k|,|f_(k-1)|,1),
+                                                 !                    where small is the smallest positive number
+                                                 !                    such that 1.0 + small > 1.0.
+                                                 !               4  - Number of function calls > mfe.
+                                                 !               5  - Number of iterations > mit.
+                                                 !               6  - Time limit exceeded. 
+                                                 !               7  - f < tolb.
+                                                 !              -1  - Two consecutive restarts.
+                                                 !              -2  - Number of restarts > maximum number
+                                                 !                    of restarts.
+                                                 !              -3  - Failure in function or subgradient
+                                                 !                    calculations (assigned by the user).
+                                                 !              -4  - Failure in attaining the demanded
+                                                 !                    accuracy.
+                                                 !              -5  - Invalid input parameters.
+                                                 !              -6  - Unspecified error.
+ !** 
  
                     !--------------------------------------------        
                     !                INITIALIZATION
@@ -10255,11 +15871,26 @@
                      
             
                         ! The optimization problem is solved fot the current rho and x_0
+!**						
+						IF (solver==1) THEN 
          
-                        CALL DBDC_algorithm( f_solution_DBDC, beta_solution, x_0, rho, 0.0_c_double, &
+                            CALL DBDC_algorithm( f_solution_DBDC, beta_solution, x_0, rho, 0.0_c_double, &
                                 & mit, mrounds, mrounds_esc, termination, counter, CPUtime,  &
                                 & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
                                 & set) 
+								
+						ELSE IF (solver == 2) THEN
+						
+                           CALL init_LMBMinfo(problem1, set)   
+                           CALL init_x(x_0)
+                           CALL set_rho_LMBM(rho)                 
+                           CALL set_lambda_LMBM(0.0_c_double)              
+                           CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
+                           CALL copy_x(beta_solution)   
+						   
+                        END IF
+!**										
+								
                 
                         IF (ed_sol_in_pen) THEN 
                           x_0 = beta_solution   ! Starting point for the next round
@@ -10371,7 +16002,7 @@
                                     & agg_used, stepsize_used, nft, problem1, problem2,  &      
                                     & in_mX, in_mY, in_mK, in_mC, nrecord, & 
                                     & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum) 
+                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, solver) 
             !_____________________________________________________________________________________
             ! 
             !           
@@ -10403,7 +16034,9 @@
             !
             !         * 'in_mX', 'in_mY', 'in_mK', 'in_mC'    : Are the data matrices 
             !         * 'mPrNum'        : the information about starting points for the thread i
-           !         
+            !         
+            !         * 'solver'   : defines the solver used (1=DBDC, 2=LMBM)
+            !         
             !         PARAMETERS in DBDC method:
             !
             !         * mrounds     : the maximum number of rounds in one main iteratioin
@@ -10461,6 +16094,8 @@
                
                INTEGER(KIND = c_int), INTENT(IN) :: start                 ! Starting point procedure used
                INTEGER(KIND = c_int), INTENT(IN) :: iprint                ! Print used
+
+               INTEGER(KIND = c_int), INTENT(IN) :: solver                ! the solver used
                
                INTEGER(KIND = c_int), INTENT(IN) :: k                     ! The number of kits in the problem 
                INTEGER(KIND = c_int), INTENT(IN) :: i                     ! The number of the thread
@@ -10577,6 +16212,38 @@
                INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization         
                INTEGER(KIND=c_int) :: startind, j3, kk      ! the start index for starting point    
 
+ !**
+               ! Scalars in LMBM
+               INTEGER(KIND=c_int) ::  mc        ! Number of corrections.
+               REAL(KIND=c_double) :: LMBMstart  ! The starting time
+               INTEGER, DIMENSION(4) :: iout     ! Output integer parameters.
+                                                 !   iout(1)   Number of used iterations.
+                                                 !   iout(2)   Number of used function evaluations.
+                                                 !   iout(3)   Number of used subgradient evaluations (LMBM)
+                                                 !               or number of outer iterations (LDGBM).
+                                                 !   iout(4)   Cause of termination:
+                                                 !               1  - The problem has been solved
+                                                 !                    with desired accuracy.
+                                                 !               2  - Changes in function values < tolf in mtesf
+                                                 !                    subsequent iterations.
+                                                 !               3  - Changes in function value < 
+                                                 !                    tolf*small*MAX(|f_k|,|f_(k-1)|,1),
+                                                 !                    where small is the smallest positive number
+                                                 !                    such that 1.0 + small > 1.0.
+                                                 !               4  - Number of function calls > mfe.
+                                                 !               5  - Number of iterations > mit.
+                                                 !               6  - Time limit exceeded. 
+                                                 !               7  - f < tolb.
+                                                 !              -1  - Two consecutive restarts.
+                                                 !              -2  - Number of restarts > maximum number
+                                                 !                    of restarts.
+                                                 !              -3  - Failure in function or subgradient
+                                                 !                    calculations (assigned by the user).
+                                                 !              -4  - Failure in attaining the demanded
+                                                 !                    accuracy.
+                                                 !              -5  - Invalid input parameters.
+                                                 !              -6  - Unspecified error.
+ !** 
  
                     !--------------------------------------------        
                     !                INITIALIZATION
@@ -10708,11 +16375,26 @@
                     
                         ! The optimization problem is solved fot the current rho and x_0
          
-                        CALL DBDC_algorithm( f_solution_DBDC, beta_solution, x_0, rho, 0.0_c_double, &
+!**						
+						IF (solver==1) THEN 
+         
+                            CALL DBDC_algorithm( f_solution_DBDC, beta_solution, x_0, rho, 0.0_c_double, &
                                 & mit, mrounds, mrounds_esc, termination, counter, CPUtime,  &
                                 & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, user_n, &
                                 & set) 
-                
+								
+						ELSE IF (solver == 2) THEN
+						
+                           CALL init_LMBMinfo(problem1, set)   
+                           CALL init_x(x_0)
+                           CALL set_rho_LMBM(rho)                 
+                           CALL set_lambda_LMBM(0.0_c_double)              
+                           CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
+                           CALL copy_x(beta_solution)   
+						   
+                        END IF
+!**		 
+ 
                         IF (ed_sol_in_pen) THEN 
                           x_0 = beta_solution   ! Starting point for the next round
                         END IF    
