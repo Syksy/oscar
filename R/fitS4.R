@@ -32,7 +32,8 @@ setClass("oscar", # abbreviation
 		fits = "list",		# Pre-fitted model objects, where each model fit only allows the optimal subset of features to be incorporated into the model; length should be equal to k sequence
 		info = "character",	# Additional error messages, warnings or such reported e.g. during model fitting
 		kmax = "integer",	# Number of maximum k tested
-		metric = "character"	# Name of the goodness-of-fit metric used
+		metric = "character",	# Name of the goodness-of-fit metric used
+		solver = "character"  # Name of the solver used in the optimization (DBDC = 1 or LMBM = 2)
 		
 	),	
 	prototype(
@@ -55,7 +56,8 @@ setClass("oscar", # abbreviation
 		fits = list(),
 		info = NA_character_,
 		kmax = NA_integer_,
-		metric = NA_character_
+		metric = NA_character_,
+		solver = NA_character_
 	),
 	# Function for testing whether all S4-slots are legitimate for the S4 object 
 	# TODO
@@ -76,6 +78,7 @@ setClass("oscar", # abbreviation
 #' @param k Integer (0/1) kit indicator matrix; number of columns equal to ncol(x)
 #' @param w Kit cost weight vector w of length nrow(k)
 #' @param family Model family, should be one of: 'cox', 'mse'/'gaussian', or 'logistic, Default: 'gaussian'
+#' @param solver Solver used in the optimization, should be  1/'DBDC' or 2/'LMBM', Default: 1.
 #' @param print Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}, Default: 3
 #' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2
 #' @param verb Integer with additional integer values giving verbal feedback, Default: 1
@@ -108,6 +111,8 @@ oscar <- function(
 	family = "cox",
 	# Goodness metric used in model goodness-of-fit 
 	metric,
+	# Solver used in the optimization (default = DBDC)
+	solver = 1,
 	## Tuning parameters
 	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
 	start=2,# Strategy for choosing starting points at each n_k iteration
@@ -127,7 +132,20 @@ oscar <- function(
 	in_r_inc = 10^5, # Increase parameter
 	in_eps1 = 5*10^(-5), # Enlargement parameter
 	in_eps, # Stopping tolerance: Proximity measure, default depends on the problem -> defined later
-	in_crit_tol =10^(-5) # Stopping tolerance: Criticality tolerance
+	in_crit_tol =10^(-5), # Stopping tolerance: Criticality tolerance
+	# Tuning parameters for LMBM
+	na =4, # Size of the bundle in LMBM, na >= 2
+	mcu = 7, # Upper limit for maximum number of stored corrections in LMBM, mcu >= 3
+	mcinit = 7, # Initial maximum number of stored corrections in LMBM, mcu >= mcinit >= 3 
+	tolf = 1.0^(-5), # Tolerance for change of function values in LMBM
+	tolf2 = 1.0^4, # Second tolerance for change of function values.
+           #                          - If tolf2 < 0 the the parameter and the corresponding termination 
+           #                           criterion will be ignored. 
+           #                          - If tolf2 = 0 the default value 1.0E+4 will be used
+	tolg = 1.0^(-5), # Tolerance for the first termination criterion in LMBM
+	tolg2 = tolg, # Tolerance for the second termination criterion in LMBM (default = tolg)
+	eta = 0.5, # Distance measure parameter in LMBM, eta > 0
+	epsL = 0.125 # Line search parameter in LMBM, 0 < epsL < 0.25 (default = 1.0E-4.)
 ){
 	# TODO: Sanity checks for input here
 	
@@ -273,6 +291,21 @@ oscar <- function(
 	}
 	if(verb>=2) print("Preprocessing w ready")
 	
+	#########################
+	#### CHECKING solver ####
+	# Check if solver is one of the four options 1/'DBDC' or 2/'LMBM'
+	if(!(solver %in% c("DBDC","LMBM", 1, 2))){
+		stop(paste("Solver should be either 1 (or 'DBDC') or 2 (or 'LMBM')."))
+	}
+	# If character given, change into numerical to be used when calling C.
+	if(solver=="DBDC"){
+		solver <- 1
+	}
+	if(solver=="LMBM"){
+		solver <- 2
+	}
+	
+	
 	#########################################################
 	#### CHECKING tuning parameters and setting defaults ####
 	if(in_mrounds <=0){ # The number of rounds in one main iteration 
@@ -280,18 +313,21 @@ oscar <- function(
 		warnings("Input in_mrounds should be >0. Default value 5000 is used instead.")
 	}
 	if(!is.integer(in_mrounds)){ warnings("Input in_mrounds should be an integer. The value is rounded to the nearest integer.")
+		in_mrounds <- round(in_mrounds)
 	}
 	if(in_mit<=0){ # The number of main iteration
 		in_mit <- 5000
 		warnings("Input in_mit should be >0. Default value 5000 is used instead.")
 	}
 	if(!is.integer(in_mit)){ warnings("Input in_mit should be an integer. The value is rounded to the nearest integer.")
+		in_mit <- round(in_mit)
 	}
 	if(in_mrounds_esc <=0){ # The number of rounds in escape procedure
 		in_mrounds_esc <- 5000
 		warnings("Input in_mrounds_esc should be >0. Default value 5000 is used instead.")
 	}
 	if(!is.integer(in_mrounds_esc)){ warnings("Input in_mrounds_esc should be an integer. The value is rounded to the nearest integer.")
+		in_mrounds_esc <- round(in_mrounds_esc)
 	}
 	if(missing(in_b1)){ # Bundle B1
 		user_n <- ncol(x)
@@ -307,12 +343,14 @@ oscar <- function(
 		warnings(paste("Input in_b1 should be >0. Default value ", in_b1, " is used instead",sep=""))
 	}
 	if(!is.integer(in_b1)){warnings("Input in_b1 should be an integer. The value is rounded to the nearest integer.")
+		in_b1 <- round(in_b1)
 	} 
 	if(in_b2 <=0){ # Bundle B2
 		in_b2 <- 3
 		warnings("Input in_b2 should be >0. Default value 3 is used instead.")
 	}
 	if(!is.integer(in_b2)){ warnings("Input in_b2 should be an integer. The value is rounded to the nearest integer.")
+		in_b2 <- round(in_b2)
 	}
 	if(missing(in_b)){ # Bundle B in escape procedure
 		user_n <- ncol(x)
@@ -328,6 +366,7 @@ oscar <- function(
 		warnings(paste("Input in_b should be >1. Default value ", in_b," is used instead.",sep=""))
 	}
 	if(!is.integer(in_b)){ warnings("Input in_b should be an integer. The value is rounded to the nearest integer.")
+		in_b <- round(in_b)
 	}
 	if(in_m <=0 | in_m>=1){ # Descent parameter
 		in_m <-0.2
@@ -402,6 +441,44 @@ oscar <- function(
 		warnings(paste("Input in_crit_tol should be >0. Default value ", in_crit_tol," is used instead.",sep=""))
 	}	
 	
+	##############################################
+	#### CHECKING tuning parameters for LMBM  ####
+	if(na <2){ # Size of the bundle
+		na <- 4
+		warnings("Input na should be >=2. Default value 4 is used instead.")
+	}
+	if(!is.integer(na)){ warnings("Input na should be an integer. The value is rounded to the nearest integer >=2.")
+		na <- round(na)
+	}
+	if(mcu <3){ # Upper limit for maximum number of stored correctionse
+		mcu <- 7
+		warnings("Input mcu should be >=3. Default value 7 is used instead.")
+	}
+	if(!is.integer(mcu)){ warnings("Input mcu should be an integer. The value is rounded to the nearest integer >=2.")
+		mcu <- round(mcu)
+	}
+	if(mcinit <3 || mcinit >mcu){ # Initial maximum number of stored corrections
+		if(mcu <7){
+			mcinit <- mcu
+		}else{
+			mcinit <- 7
+		}
+		
+		warnings("Input mcinit should be <=mcu and >=3. Default value 7 is used if mcu >=7, otherwise mcinit=mcu.")
+	}
+	if(!is.integer(mcinit)){ warnings("Input mcinit should be an integer. The value is rounded to the nearest integer >=2.")
+		mcinit <- round(mcinit)
+	}
+	if(eta <=0){ # Distance measure parameter
+		eta <- 0.5
+		warnings("Input eta should be >0. Default value 0.5 is used instead.")
+	}
+	if(epsL <=0 || epsL>=0.25){ # Line search parameter
+		eta <- 0.125
+		warnings("Input epsl should be >0 and <0.25. Default value 0.125 is used instead.")
+	}
+	
+	
 	## Sanitize column names, replacing '+' with 'plus', '-' with 'minus', and ' ', '(' and ')' with '_'
 	if(sanitize){
 		colnames(x) <- gsub("\\ |\\(|)", "_", gsub("\\+", "plus", gsub("\\-", "minus", colnames(x))))
@@ -437,7 +514,17 @@ oscar <- function(
 			as.double(in_eps1), # Enlargement parameter
 			as.double(in_eps), # Stopping tolerance: Proximity measure
 			as.double(in_crit_tol), # Stopping tolerance: Criticality tolerance
-			as.integer(sum(k)) #Number of ones in the kit matrix
+			as.integer(sum(k)), #Number of ones in the kit matrix
+			as.integer(solver), # The solver used in optimization
+			as.integer(na), # Size of the bundle
+			as.integer(mcu), # Upper limit for maximum number of stored corrections
+			as.integer(mcinit), # Initial maximum number of stored corrections
+			as.double(tolf), # Tolerance for change of function values
+			as.double(tolf2), # Second tolerance for change of function values.
+			as.double(tolg), # Tolerance for the first termination criterion
+			as.double(tolg2), # Tolerance for the second termination criterion
+			as.double(eta), # Distance measure parameter
+			as.double(epsL) # Line search parameter
 		)
 		if(verb>=2){
 			print(res)
@@ -475,7 +562,17 @@ oscar <- function(
 			as.double(in_eps1), # Enlargement parameter
 			as.double(in_eps), # Stopping tolerance: Proximity measure
 			as.double(in_crit_tol), # Stopping tolerance: Criticality tolerance
-			as.integer(sum(k)) #Number of ones in the kit matrix
+			as.integer(sum(k)), #Number of ones in the kit matrix
+			as.integer(solver), # The solver used in optimization
+			as.integer(na), # Size of the bundle
+			as.integer(mcu), # Upper limit for maximum number of stored corrections
+			as.integer(mcinit), # Initial maximum number of stored corrections
+			as.double(tolf), # Tolerance for change of function values
+			as.double(tolf2), # Second tolerance for change of function values.
+			as.double(tolg), # Tolerance for the first termination criterion
+			as.double(tolg2), # Tolerance for the second termination criterion
+			as.double(eta), # Distance measure parameter
+			as.double(epsL) # Line search parameter
 		)
 		# Beta per k steps
 		# Add row for intercept
@@ -511,7 +608,17 @@ oscar <- function(
 			as.double(in_eps1), # Enlargement parameter
 			as.double(in_eps), # Stopping tolerance: Proximity measure
 			as.double(in_crit_tol), # Stopping tolerance: Criticality tolerance
-			as.integer(sum(k)) #Number of ones in the kit matrix
+			as.integer(sum(k)), #Number of ones in the kit matrix
+			as.integer(solver), # The solver used in optimization
+			as.integer(na), # Size of the bundle
+			as.integer(mcu), # Upper limit for maximum number of stored corrections
+			as.integer(mcinit), # Initial maximum number of stored corrections
+			as.double(tolf), # Tolerance for change of function values
+			as.double(tolf2), # Second tolerance for change of function values.
+			as.double(tolg), # Tolerance for the first termination criterion
+			as.double(tolg2), # Tolerance for the second termination criterion
+			as.double(eta), # Distance measure parameter
+			as.double(epsL) # Line search parameter
 		)
 		# Beta per k steps
 		# Add row for intercept
@@ -600,6 +707,10 @@ oscar <- function(
 		print(cperk)
 	}
 
+	# Set solver as character into oscar object
+	if(solver == 1){solver = "DBDC"}
+	if(solver == 2){solver = "LMBM"}
+	
 	# Return the freshly built S4 model object
 	obj <- new("oscar", 
 		## Model fit results
@@ -616,7 +727,8 @@ oscar <- function(
 		family=as.character(family),	# Model family as a character string
 		metric=as.character(metric),	# Model goodness metric
 		start=start,	# Method for generating starting points
-		kmax=kmax	# Max run k-step
+		kmax=kmax,	# Max run k-step
+		solver = solver # Solver used in optimization (DBDC or LMBM)
 		
 	)
 
