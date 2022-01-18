@@ -194,3 +194,61 @@ setMethod("kits", "oscar",
 		kits
 	}
 )
+
+#' Return total cost of model fit based on provided kit/variable costs vector
+#'
+#' @rdname generics
+#'
+#' @export
+setGeneric("cost",
+	function(object, k){
+		standardGeneric("cost")
+	}
+)
+setMethod("cost", "oscar",
+	function(object, k){
+		# Sanity checking for k-values
+		if(missing(k)){
+			stop("You need to provide parameter 'k' for obtaining total cost at a certain k-step")
+		}else if(k<1 | k>object@kmax | !is.numeric(k)){
+			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
+		}
+		# Returning the correct kit indices while naming them
+		kits <- object@kperk[[k]]
+		# Sum the cost of the kits at k cardinality
+		sum(object@w[kits])
+	}
+)
+
+		
+## Calculate the cost of the model fits if the cost is not included in the oscar object
+## If at least one measurement from a kit is included in the model, the kit cost is added.
+cost.after <- function(object, kit.matrix, cost.vector){
+  # Assume that the features are in the same order in x-matrix of oscar object and kit matrix
+  # Assume that the kits are in the same order in kit.matrix and cost.vector
+  
+  #Sanity checks
+  if(nrow(kit.matrix)!=length(cost.vector)){
+    stop("Number of kits in the kit matrix is different from the length of cost vector.")
+  }
+  if(ncol(kit.matrix)!=ncol(object@x)){
+    stop("Number of predictors in the kit.matrix differs from the number of predictors in x-matrix of oscar object.")
+  }
+  
+  costs <- c()
+  for(i in 1:object@kmax){ # Go through each cardinality
+    cost.tmp <-0
+    nzero <- which(object@bperk[i,]!=0)
+
+    for(j in 1:ncol(kit.matrix)){ #Go through kits
+      if(any(kit.matrix[j,nzero]!=0)){
+        cost.tmp <- cost.tmp+cost.vector[j] # Add kit price if any feature is incl.
+      }
+    }
+    costs<-c(costs,as.numeric(cost.tmp))
+  }
+  return(costs)
+}
+
+
+		

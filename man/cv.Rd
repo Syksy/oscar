@@ -5,7 +5,13 @@
 \alias{cv.visu}
 \title{Cross-validation for oscar-fitted model objects over k-range}
 \usage{
-cv.oscar(fit, fold = 10, seed = NULL, verb = 0)
+cv.oscar(
+  fit,
+  fold = 10,
+  seed = NULL,
+  strata = rep(1, times = nrow(fit@x)),
+  verb = 0
+)
 
 cv.visu(
   cvs,

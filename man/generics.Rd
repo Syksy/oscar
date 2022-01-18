@@ -7,6 +7,7 @@
 \alias{plot,oscar-method}
 \alias{feat}
 \alias{kits}
+\alias{cost}
 \title{Showing oscar-objects}
 \usage{
 \S4method{show}{oscar}(object)
@@ -25,6 +26,8 @@
 feat(object, k)
 
 kits(object, k)
+
+cost(object, k)
 }
 \description{
 Showing oscar-objects
@@ -38,4 +41,6 @@ Plot oscar-coefficients as a function of k and override default plot generic
 Return named vector of feature indices with a given k that are non-zero
 
 Return named vector of kits indices with a given k that are non-zero
+
+Return total cost of model fit based on provided kit/variable costs vector
 }
