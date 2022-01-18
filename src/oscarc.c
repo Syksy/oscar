@@ -7,20 +7,24 @@
 // family Cox
 void F77_NAME(oscar_cox_f)(double *x, double *y, int *kits, double *cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax,
 							int inmrounds, int inmit, int inmroundsesc, int inb1, int inb2, int inb, double inm, double inmclarke, double inc,
-							double inrdec, double inrinc, double ineps1, double ineps, double incrittol, int nKitOnes, int *betakits);
+							double inrdec, double inrinc, double ineps1, double ineps, double incrittol, int nKitOnes, int *betakits,
+							int solver_id, int in_na, int in_mcu, int in_mcinit, double in_tolf, double in_tolf2, double in_tolg, double in_tolg2, double in_eta, double in_epsL );
 // family Gaussian (MSE)
 void F77_NAME(oscar_mse_f)(double *x, double *y, int *kits, double *cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax,
 							int inmrounds, int inmit, int inmroundsesc, int inb1, int inb2, int inb, double inm, double inmclarke, double inc,
-							double inrdec, double inrinc, double ineps1, double ineps, double incrittol, int nKitOnes, int *betakits);
+							double inrdec, double inrinc, double ineps1, double ineps, double incrittol, int nKitOnes, int *betakits,
+							int solver_id, int in_na, int in_mcu, int in_mcinit, double in_tolf, double in_tolf2, double in_tolg, double in_tolg2, double in_eta, double in_epsL );
 // family Logistic
 void F77_NAME(oscar_logistic_f)(double *x, int *y, int *kits, double *cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax,
 							int inmrounds, int inmit, int inmroundsesc, int inb1, int inb2, int inb, double inm, double inmclarke, double inc,
-							double inrdec, double inrinc, double ineps1, double ineps, double incrittol, int nKitOnes, int *betakits);
+							double inrdec, double inrinc, double ineps1, double ineps, double incrittol, int nKitOnes, int *betakits,
+							int solver_id, int in_na, int in_mcu, int in_mcinit, double in_tolf, double in_tolf2, double in_tolg, double in_tolg2, double in_eta, double in_epsL );
 
 // Define the C wrapper function for Cox regression
 extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start, SEXP kmax,
 						SEXP mrounds, SEXP mit, SEXP mroundsesc, SEXP b1, SEXP b2, SEXP b, SEXP m, SEXP mclarke,
-						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol, SEXP nKitOnes){
+						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol, SEXP nKitOnes,
+						SEXP in_solver_id, SEXP na, SEXP mcu, SEXP mcinit, SEXP tolf, SEXP tolf2, SEXP tolg, SEXP tolg2, SEXP eta, SEXP epsL ){
 	// Define constants (dimensions in data / features)
 	const int nr = asInteger(nrow);
 	const int nc = asInteger(ncol);
@@ -43,6 +47,16 @@ extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	const double ineps = asReal(eps);
 	const double incrittol = asReal(crittol);
 	const int innKitOnes= asInteger(nKitOnes);
+	const int solver_id = asInteger(in_solver_id);
+	const int in_na = asInteger(na);
+	const int in_mcu = asInteger(mcu);
+	const int in_mcinit = asInteger(mcinit),
+	const double in_tolf = asInteger(tolf);
+	const double in_tolf2 = asInteger(tolf2);
+	const double in_tolg = asInteger(tolg);
+	const double in_tolg2 = asInteger(tolg2);
+	const double in_eta = asInteger(eta);
+	const double in_epsL = asInteger(epsL);
 	
 	SEXP beta;
 	SEXP fperk;
@@ -56,7 +70,8 @@ extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	// Call Fortran subroutine
 	F77_CALL(oscar_cox_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart, inkmax,
 						inmrounds, inmit, inmroundsesc, inb1, inb2, inb, inm,
-						inmclarke,inc, inrdec, inrinc, ineps1, ineps, incrittol, innKitOnes,INTEGER(betakits));
+						inmclarke,inc, inrdec, inrinc, ineps1, ineps, incrittol, innKitOnes,INTEGER(betakits),
+						solver_id, in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, in_tolg, in_tolg2, in_eta, in_epsL);
 
 	// Create result structure
 	SEXP res = PROTECT(allocVector(VECSXP,3));
@@ -77,7 +92,8 @@ extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 // Define the C wrapper function for Gaussian family
 extern SEXP c_oscar_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start, SEXP kmax,
 						SEXP mrounds, SEXP mit, SEXP mroundsesc, SEXP b1, SEXP b2, SEXP b, SEXP m, SEXP mclarke,
-						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol, SEXP nKitOnes){
+						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol, SEXP nKitOnes,
+						SEXP in_solver_id, SEXP na, SEXP mcu, SEXP mcinit, SEXP tolf, SEXP tolf2, SEXP tolg, SEXP tolg2, SEXP eta, SEXP epsL){
 	// Define constants (dimensions in data / features)
 	const int nr = asInteger(nrow);
 	const int nc = asInteger(ncol);
@@ -100,6 +116,16 @@ extern SEXP c_oscar_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	const double ineps = asReal(eps);
 	const double incrittol = asReal(crittol);
 	const int innKitOnes= asInteger(nKitOnes);
+	const int solver_id = asInteger(in_solver_id);
+	const int in_na = asInteger(na);
+	const int in_mcu = asInteger(mcu);
+	const int in_mcinit = asInteger(mcinit),
+	const double in_tolf = asInteger(tolf);
+	const double in_tolf2 = asInteger(tolf2);
+	const double in_tolg = asInteger(tolg);
+	const double in_tolg2 = asInteger(tolg2);
+	const double in_eta = asInteger(eta);
+	const double in_epsL = asInteger(epsL);
 
 	SEXP beta;
 	SEXP fperk;
@@ -113,7 +139,8 @@ extern SEXP c_oscar_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	// Call Fortran subroutine
 	F77_CALL(oscar_mse_f)(REAL(x), REAL(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart, inkmax,
 						inmrounds, inmit, inmroundsesc, inb1, inb2, inb, inm,
-						inmclarke,inc, inrdec, inrinc, ineps1, ineps, incrittol, innKitOnes, INTEGER(betakits));
+						inmclarke,inc, inrdec, inrinc, ineps1, ineps, incrittol, innKitOnes, INTEGER(betakits),
+						solver_id, in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, in_tolg, in_tolg2, in_eta, in_epsL);
 
 	// Create result structure
 	SEXP res = PROTECT(allocVector(VECSXP,3));
@@ -133,7 +160,8 @@ extern SEXP c_oscar_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 // Define the C wrapper function for logistic family
 extern SEXP c_oscar_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start, SEXP kmax,
 						SEXP mrounds, SEXP mit, SEXP mroundsesc, SEXP b1, SEXP b2, SEXP b, SEXP m, SEXP mclarke,
-						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol, SEXP nKitOnes){
+						SEXP c, SEXP rdec, SEXP rinc, SEXP eps1, SEXP eps, SEXP crittol, SEXP nKitOnes,
+						SEXP in_solver_id, SEXP na, SEXP mcu, SEXP mcinit, SEXP tolf, SEXP tolf2, SEXP tolg, SEXP tolg2, SEXP eta, SEXP epsL){
 	// Define constants (dimensions in data / features)
 	const int nr = asInteger(nrow);
 	const int nc = asInteger(ncol);
@@ -156,6 +184,16 @@ extern SEXP c_oscar_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, 
 	const double ineps = asReal(eps);
 	const double incrittol = asReal(crittol);
 	const int innKitOnes= asInteger(nKitOnes);
+	const int solver_id = asInteger(in_solver_id);
+	const int in_na = asInteger(na);
+	const int in_mcu = asInteger(mcu);
+	const int in_mcinit = asInteger(mcinit),
+	const double in_tolf = asInteger(tolf);
+	const double in_tolf2 = asInteger(tolf2);
+	const double in_tolg = asInteger(tolg);
+	const double in_tolg2 = asInteger(tolg2);
+	const double in_eta = asInteger(eta);
+	const double in_epsL = asInteger(epsL);
 
 	SEXP beta;
 	SEXP fperk;
@@ -171,7 +209,8 @@ extern SEXP c_oscar_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, 
 	// Here y in {0,1}, thus INTEGER
 	F77_CALL(oscar_logistic_f)(REAL(x), INTEGER(y), INTEGER(kits), REAL(cvec), nr, nc, nk, REAL(beta), REAL(fperk),inprint, instart, inkmax,
 						inmrounds, inmit, inmroundsesc, inb1, inb2, inb, inm,
-						inmclarke,inc, inrdec, inrinc, ineps1, ineps, incrittol, innKitOnes, INTEGER(betakits));
+						inmclarke,inc, inrdec, inrinc, ineps1, ineps, incrittol, innKitOnes, INTEGER(betakits),
+						solver_id, in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, in_tolg, in_tolg2, in_eta, in_epsL);
 
 	// Create result structure
 	SEXP res = PROTECT(allocVector(VECSXP,3));
@@ -191,9 +230,9 @@ extern SEXP c_oscar_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, 
 
 // Tell R of our available Fortran functions
 static const R_CallMethodDef CallEntries[] = {
-  {"c_oscar_cox_f",	(DL_FUNC) &c_oscar_cox_f,		25},
-  {"c_oscar_mse_f",	(DL_FUNC) &c_oscar_mse_f,		25},
-  {"c_oscar_logistic_f",	(DL_FUNC) &c_oscar_logistic_f,		25},
+  {"c_oscar_cox_f",	(DL_FUNC) &c_oscar_cox_f,		35},
+  {"c_oscar_mse_f",	(DL_FUNC) &c_oscar_mse_f,		35},
+  {"c_oscar_logistic_f",	(DL_FUNC) &c_oscar_logistic_f,		35},
   {NULL,				NULL,						0}
 };
 
