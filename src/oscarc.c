@@ -230,7 +230,7 @@ extern SEXP c_oscar_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, 
 
 // Tell R of our available Fortran functions
 static const R_CallMethodDef CallEntries[] = {
-  {"c_oscar_cox_f",	(DL_FUNC) &c_oscar_cox_f,		33},
+  {"c_oscar_cox_f",	(DL_FUNC) &c_oscar_cox_f,		35},
   {"c_oscar_mse_f",	(DL_FUNC) &c_oscar_mse_f,		35},
   {"c_oscar_logistic_f",	(DL_FUNC) &c_oscar_logistic_f,		35},
   {NULL,				NULL,						0}
