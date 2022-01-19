@@ -11699,8 +11699,8 @@ END MODULE lmbm_mod
      USE bundle1                   ! Bundle 1
      USE bundle2                   ! Bundle 2
      USE dbdc                      ! DBDC method
-     USE initializat		   ! Initialization of parameters for LMBM
-     USE lmbm_mod		   ! LMBM method implementation
+	 USE initializat		   	   ! Initialization of parameters for LMBM
+     USE lmbm_mod		   		   ! LMBM method implementation
          
      IMPLICIT NONE   
         
