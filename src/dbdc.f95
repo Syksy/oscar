@@ -12810,7 +12810,7 @@ END MODULE lmbm_mod
              END IF
        
              CALL deallocate_data_cox(info) 
-                
+             CALL deallocate_x()
 
          END SUBROUTINE oscar_cox       
         !--------------------------------------------------------------------------------------  
@@ -13905,7 +13905,7 @@ END MODULE lmbm_mod
              END IF
        
              CALL deallocate_data_mse(info) 
-                
+             CALL deallocate_x()     
 
          END SUBROUTINE oscar_mse
 
@@ -14974,7 +14974,8 @@ END MODULE lmbm_mod
                  WRITE(*,*) 'Used CPU:', cpu   , 'Elapsed time:', elapsed_time             
              END IF
        
-             CALL deallocate_data_log(info) 
+             CALL deallocate_data_log(info)
+	     CALL deallocate_x() 
              
          END SUBROUTINE oscar_logistic           
         !---------------------------------------------------------------------------------------
