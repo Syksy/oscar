@@ -12810,7 +12810,9 @@ END MODULE lmbm_mod
              END IF
        
              CALL deallocate_data_cox(info) 
-             CALL deallocate_x()
+	     IF (solver==2) THEN
+		 CALL deallocate_x() 
+	     END IF 
 
          END SUBROUTINE oscar_cox       
         !--------------------------------------------------------------------------------------  
@@ -13905,7 +13907,9 @@ END MODULE lmbm_mod
              END IF
        
              CALL deallocate_data_mse(info) 
-             CALL deallocate_x()     
+             IF (solver==2) THEN
+		 CALL deallocate_x() 
+	     END IF      
 
          END SUBROUTINE oscar_mse
 
@@ -14975,7 +14979,9 @@ END MODULE lmbm_mod
              END IF
        
              CALL deallocate_data_log(info)
-	     CALL deallocate_x() 
+	     IF (solver==2) THEN
+		 CALL deallocate_x() 
+	     END IF  
              
          END SUBROUTINE oscar_logistic           
         !---------------------------------------------------------------------------------------
