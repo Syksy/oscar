@@ -137,12 +137,12 @@ oscar <- function(
 	na =4, # Size of the bundle in LMBM, na >= 2
 	mcu = 7, # Upper limit for maximum number of stored corrections in LMBM, mcu >= 3
 	mcinit = 7, # Initial maximum number of stored corrections in LMBM, mcu >= mcinit >= 3 
-	tolf = 1.0^(-5), # Tolerance for change of function values in LMBM
-	tolf2 = 1.0^4, # Second tolerance for change of function values.
+	tolf = 10^(-5), # Tolerance for change of function values in LMBM
+	tolf2 = 10^4, # Second tolerance for change of function values.
            #                          - If tolf2 < 0 the the parameter and the corresponding termination 
            #                           criterion will be ignored. 
            #                          - If tolf2 = 0 the default value 1.0E+4 will be used
-	tolg = 1.0^(-5), # Tolerance for the first termination criterion in LMBM
+	tolg = 10^(-5), # Tolerance for the first termination criterion in LMBM
 	tolg2 = tolg, # Tolerance for the second termination criterion in LMBM (default = tolg)
 	eta = 0.5, # Distance measure parameter in LMBM, eta > 0
 	epsL = 0.125 # Line search parameter in LMBM, 0 < epsL < 0.25 (default = 1.0E-4.)
