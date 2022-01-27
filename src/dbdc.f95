@@ -9872,7 +9872,7 @@ END SUBROUTINE nmlls
 
     FUNCTION sclpar(mcc,iscale,method,sts,stu,utu) RESULT(spar) ! Calculation of the scaling parameter.
       
-!      USE param, ONLY : small,one,half ! given in host
+      USE param, ONLY : small,one,half ! given in host
       IMPLICIT NONE
 
 ! Scalar Arguments
