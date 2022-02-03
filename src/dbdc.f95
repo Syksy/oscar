@@ -5004,7 +5004,12 @@
                    set%user_rho = rho 
                END IF
                
-                                     
+        WRITE(*,*)
+		DO i =1, set%nk0
+		WRITE(*,*) set%mK(1,i)
+		END DO
+		WRITE(*,*)
+		
                ! ***** descent parameter 'm' *****
                IF ( (set%user_m<=0.0_c_double) .OR. (set%user_m>=1.0_c_double) ) THEN
                    m = 0.2_c_double
@@ -7377,7 +7382,7 @@ CONTAINS
 END MODULE lmbm_sub
 
 
-MODULE initializat  ! Initialization of parameters and x for LDGBM and LMBM
+MODULE initializat  ! Initialization of parameters and x_var for LDGBM and LMBM
 
   USE, INTRINSIC :: iso_c_binding
   USE functions                  ! Contains INFORMATION from the USER
@@ -7385,14 +7390,14 @@ MODULE initializat  ! Initialization of parameters and x for LDGBM and LMBM
   IMPLICIT NONE
 
     ! Parameters 
-    INTEGER(KIND=c_int), SAVE :: &
+    INTEGER(KIND=c_int), PARAMETER :: &
     
-        na, &                         ! Size of the bundle na >= 2.
-        !na     =    5_c_int, &       ! Size of the bundle na >= 2.
-        mcu, &                        ! Upper limit for maximum number of stored corrections, mcu >= 3.
-        !mcu    =    7_c_int, &       ! Upper limit for maximum number of stored corrections, mcu >= 3.
-        mcinit, &                     ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
-        !mcinit =    7_c_int, &       ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+        !na, &                         ! Size of the bundle na >= 2.
+        na     =    5_c_int, &       ! Size of the bundle na >= 2.
+        !mcu, &                        ! Upper limit for maximum number of stored corrections, mcu >= 3.
+        mcu    =    7_c_int, &       ! Upper limit for maximum number of stored corrections, mcu >= 3.
+        !mcinit, &                     ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+        mcinit =    7_c_int, &       ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
                                       ! If mcinit <= 0, the default value mcinit = 3 will be used. 
                                       ! However, the value mcinit = 7 is recommented.
         inma    = 3_c_int, &          ! Selection of line search method:
@@ -7482,7 +7487,7 @@ MODULE initializat  ! Initialization of parameters and x for LDGBM and LMBM
                                   !     6  - No scaling.      
 
 
-    REAL(KIND=c_double), DIMENSION(:), ALLOCATABLE, SAVE :: x   ! Vector of variables (initialize x in subroutine init_x)
+    REAL(KIND=c_double), DIMENSION(:), ALLOCATABLE, SAVE :: x_var   ! Vector of variables (initialize x in subroutine init_x)
     
     TYPE(set_info), SAVE :: LMBM_set          ! The set of information               
     
@@ -7501,7 +7506,7 @@ CONTAINS
         !************************************************************************************
         n=user_N
    
-        ALLOCATE(x(n))
+        ALLOCATE(x_var(n))
   
     END SUBROUTINE allocate_xn
 !-------------------------------------------------------------------------------------------
@@ -7510,23 +7515,23 @@ CONTAINS
 
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/    
 !-------------------------------------------------------------------------------------------  
-    SUBROUTINE deallocate_x() 
+    SUBROUTINE deallocate_x_var() 
         !
         ! 
         IMPLICIT NONE
         !**************************** NEEDED FROM USER *************************************
         !***********************************************************************************
   
-        DEALLOCATE(x)
+        DEALLOCATE(x_var)
   
-    END SUBROUTINE deallocate_x  
+    END SUBROUTINE deallocate_x_var  
 !-------------------------------------------------------------------------------------------
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
   
   
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/    
 !-------------------------------------------------------------------------------------------  
-    SUBROUTINE init_x(x_apu)  ! User supplied subroutine for initialization of vector x(n) and the solved problem
+    SUBROUTINE init_x_var(x_apu)  ! User supplied subroutine for initialization of vector x(n) and the solved problem
 
         IMPLICIT NONE
         !**************************** NEEDED FROM USER *************************************
@@ -7536,10 +7541,10 @@ CONTAINS
         INTEGER(KIND=c_int) :: i
     
         DO i = 1, n
-            x(i) = x_apu(i)
+            x_var(i) = x_apu(i)
         END DO   
     
-    END SUBROUTINE init_x
+    END SUBROUTINE init_x_var
 !-------------------------------------------------------------------------------------------
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/    
   
@@ -7562,10 +7567,23 @@ CONTAINS
 !-------------------------------------------------------------------------------------------
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
 
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/   
+!------------------------------------------------------------------------------------------- 
+    SUBROUTINE deallocate_LMBMinfo()  ! User supplied subroutine to deallocate data from LMBM_set
+
+        IMPLICIT NONE
+           
+        !***********************************************************************************
+   
+        CALL deallocate_data_cox(LMBM_set)
+   
+    END SUBROUTINE deallocate_LMBMinfo
+!-------------------------------------------------------------------------------------------
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
 
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
 !------------------------------------------------------------------------------------------- 
-    SUBROUTINE copy_x(x_apu)  ! User supplied subroutine to copy the vector x(n).
+    SUBROUTINE copy_x_var(x_apu)  ! User supplied subroutine to copy the vector x(n).
 
         IMPLICIT NONE
         !**************************** NEEDED FROM USER *************************************
@@ -7574,10 +7592,10 @@ CONTAINS
         INTEGER :: i
     
         DO i = 1, n
-            x_apu(i) = x(i)
+            x_apu(i) = x_var(i)
         END DO   
     
-    END SUBROUTINE copy_x  
+    END SUBROUTINE copy_x_var  
 !-------------------------------------------------------------------------------------------    
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 
@@ -7654,23 +7672,23 @@ CONTAINS
         !eta   =    0.5_c_double, &     s  ! Distance measure parameter, eta >= 0. 
         !epsL  =    0.24E+00_c_double, &   ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.
 
-        IF ( in_na >= 2) THEN 
-            na = in_na
-        ELSE
-            na = 3
-        END IF      
+        ! IF ( in_na >= 2) THEN 
+            ! na = in_na
+        ! ELSE
+            ! na = 3
+        ! END IF      
         
-        IF ( in_mcu >= 3) THEN 
-            mcu = in_mcu
-        ELSE
-            mcu = 3
-        END IF    
+        ! IF ( in_mcu >= 3) THEN 
+            ! mcu = in_mcu
+        ! ELSE
+            ! mcu = 3
+        ! END IF    
         
-        IF ( (in_mcinit >= 3) .AND. (in_mcinit <= mcu)) THEN 
-            mcinit = in_mcinit
-        ELSE
-            mcinit = mcu
-        END IF  
+        ! IF ( (in_mcinit >= 3) .AND. (in_mcinit <= mcu)) THEN 
+            ! mcinit = in_mcinit
+        ! ELSE
+            ! mcinit = mcu
+        ! END IF  
         
         IF ( in_tolf > 0.0_c_double) THEN 
             tolf = in_tolf
@@ -7950,7 +7968,7 @@ CONTAINS
     USE exe_time, ONLY : getime  ! Execution time.
     USE initializat, ONLY : &
          n, &         ! Number of variables.
-         x, &         ! Vector of variables
+         x_var, &         ! Vector of variables
          nproblem, &  ! The solved problem
          na, &        ! Maximum bundle dimension, na >= 2.
          mcu, &       ! Upper limit for maximum number of stored corrections, mcu >= 3.
@@ -7971,7 +7989,8 @@ CONTAINS
                       ! function values smaller than tolf.
          mittt, &     ! Maximun number of iterations.
          mfe, &       ! Maximun number of function evaluations.
-         time         ! Maximum time
+         time, &         ! Maximum time
+		 LMBM_set     !debug
     USE obj_fun, ONLY : &
          myf, &       ! Computation of the value of the objective function. 
          myg          ! Computation of the subgradient of the objective function. 
@@ -8081,7 +8100,7 @@ CONTAINS
          nres, &      ! Number of consecutive restarts.
          nress, &     ! Number of consecutive restarts in case of tmax < tmin.
          nout         ! Auxilary printout specification.
-
+	INTEGER(KIND=c_int) :: ww !debug
 ! Intrinsic Functions
     INTRINSIC ABS,MAX,SQRT
 
@@ -8139,11 +8158,16 @@ CONTAINS
        END IF
     END IF
         
+		
 ! Computation of the value and the subgradient of the objective
 ! function and the search direction for the first iteration
 
-    CALL myf(n,x,f,iterm,nproblem)
-    CALL myg(n,x,g,iterm,nproblem)
+    CALL myf(n,x_var,f,iterm,nproblem)
+    CALL myg(n,x_var,g,iterm,nproblem)
+	
+	!WRITE(*,*)
+	!WRITE(*,*) 'here we are'
+	!WRITE(*,*)
 
        !WRITE(*,*)
        !WRITE(*,*) 'x:'
@@ -8166,7 +8190,7 @@ CONTAINS
     CALL restar(n,mc,mcc,mcinit,inew,ibun,ibfgs,iters,gp,g,nnk, &
          alfv,alfn,gamma,d,ic,icn,mal,ncres,iflag)
       
-    CALL dobun(n,na,mal,x,g,f,ax,ag,af,iters,ibun)
+    CALL dobun(n,na,mal,x_var,g,f,ax,ag,af,iters,ibun)
 
      
 ! Start of the iteration
@@ -8218,7 +8242,7 @@ CONTAINS
                 EXIT iteration
              END IF
              
-             CALL dobun(n,na,mal,x,g,f,ax,ag,af,iters,ibun)
+             CALL dobun(n,na,mal,x_var,g,f,ax,ag,af,iters,ibun)
              
              CYCLE iteration
           END IF
@@ -8323,7 +8347,7 @@ CONTAINS
        END IF
       
 
-       CALL rprint(n,nit,nfe,nge,x,f,xnorm,half*gnorm+alfv,iterm,iiprint)
+       CALL rprint(n,nit,nfe,nge,x_var,f,xnorm,half*gnorm+alfv,iterm,iiprint)
       
      
 !     Preparation of line search
@@ -8331,7 +8355,7 @@ CONTAINS
        fo = f
        
        IF (iters > 0) THEN
-          CALL copy2(n,x,xo,g,gp)
+          CALL copy2(n,x_var,xo,g,gp)
        END IF
 
        IF (dnorm > zero) tmax = xmax/dnorm
@@ -8353,7 +8377,7 @@ CONTAINS
                 EXIT iteration
              END IF
              
-             CALL dobun(n,na,mal,x,g,f,ax,ag,af,iters,ibun)
+             CALL dobun(n,na,mal,x_var,g,f,ax,ag,af,iters,ibun)
              CYCLE iteration
           END IF
           iterm = -1
@@ -8363,7 +8387,7 @@ CONTAINS
 
 ! Initial step size
 
-       CALL tinit(n,na,mal,x,af,ag,ax,ibun,d,f,p,t,tmax,tmin, &
+       CALL tinit(n,na,mal,x_var,af,ag,ax,ibun,d,f,p,t,tmax,tmin, &
             eta,iters,iterm)
 
        IF (iterm /= 0) EXIT iteration
@@ -8379,12 +8403,12 @@ CONTAINS
        IF (inma == 2) THEN! Line search with directional derivatives which allows null steps
                  ! With this the global convergence can be guaranteed.
       
-                CALL lls(n,x,g,d,xo,t,fo,f,p,alfn,tmin,dnorm,xnorm, &
+                CALL lls(n,x_var,g,d,xo,t,fo,f,p,alfn,tmin,dnorm,xnorm, &
                     theta,epsl,epsr,eta,iters,nfe,nge,nnk,iterm)
             ELSE ! Nonmonotone line search with directional derivatives which allows null steps
                  ! With this the global convergence can be guaranteed.
 
-                CALL nmlls(n,x,g,d,xo,t,fo,f,fold,p,alfn,tmin,dnorm,xnorm, &
+                CALL nmlls(n,x_var,g,d,xo,t,fo,f,fold,p,alfn,tmin,dnorm,xnorm, &
                     theta,epsl,epsr,eta,iters,inewnma,nfe,nge,nnk,iterm)
 
             END IF
@@ -8415,12 +8439,12 @@ CONTAINS
 
 ! Bundle updating
 
-       CALL dobun(n,na,mal,x,g,f,ax,ag,af,iters,ibun)
+       CALL dobun(n,na,mal,x_var,g,f,ax,ag,af,iters,ibun)
   
 
 ! Computation of variables difference 
 
-       CALL xdiffy(n,x,xo,s)
+       CALL xdiffy(n,x_var,xo,s)
   
 
 ! Computation of aggregate values and gradients difference
@@ -8451,7 +8475,7 @@ CONTAINS
              END IF
           END IF
           
-          CALL copy(n,xo,x)
+          CALL copy(n,xo,x_var)
           f = fo
           
        ELSE
@@ -8516,15 +8540,15 @@ CONTAINS
        IF (method == 1) WRITE (6,FMT='(1X,''Exit from LBB:'')')
     END IF
     CALL wprint(iterm,iiprint,nout)
-    CALL rprint(n,nit,nfe,nge,x,f,xnorm,half*gnorm+alfv,iterm,iiprint)
+    CALL rprint(n,nit,nfe,nge,x_var,f,xnorm,half*gnorm+alfv,iterm,iiprint)
 
   CONTAINS
 
     SUBROUTINE restar(n,mc,mcc,mcinit,inew,ibun,ibfgs,iters,gp,g,nnk, &
          alfv,alfn,gamma,d,ic,icn,mal,ncres,iflag)  ! Initialization
       
-!      USE param, ONLY : zero,one  ! given in host
-!      USE lmbm_sub, ONLY : vneg,copy  ! given in host
+      USE param, ONLY : zero,one  ! given in host
+      USE lmbm_sub, ONLY : vneg,copy  ! given in host
       IMPLICIT NONE
 
 ! Array Arguments
@@ -8589,7 +8613,7 @@ CONTAINS
       
     SUBROUTINE dobun(n,ma,mal,x,g,f,ay,ag,af,iters,ibun)  ! Bundle construction
 
-!      USE lmbm_sub, ONLY : copy2 ! given in host
+      USE lmbm_sub, ONLY : copy2 ! given in host
       IMPLICIT NONE
 
 ! Array Arguments
@@ -8731,7 +8755,7 @@ CONTAINS
 
     SUBROUTINE destep(n,ma,mal,x,af,ag,ay,ibun,d,f,df,t,eta,iterm)  ! Stepsize selection
 
-!      USE param, ONLY : zero,half,one,large  ! given in host
+      USE param, ONLY : zero,half,one,large  ! given in host
       IMPLICIT NONE
 
 ! Scalar Arguments
@@ -8897,7 +8921,7 @@ CONTAINS
      
     SUBROUTINE nulstep(n,ma,mal,x,af,ag,ay,ibun,d,f,df,t,eta,iterm)  ! Stepsize selection
 
-!      USE param, ONLY : zero,half,one,large  ! given in host
+      USE param, ONLY : zero,half,one,large  ! given in host
       IMPLICIT NONE
 
 ! Scalar Arguments
@@ -9470,7 +9494,7 @@ CONTAINS
 
     FUNCTION qint(tu,fl,fu,wk,kappa) RESULT(t) ! Quadratic interpolation
 
-        !      USE param, ONLY : half,one  ! given in host
+        USE param, ONLY : half,one  ! given in host
         IMPLICIT NONE
 
         ! Scalar Arguments
@@ -9871,7 +9895,7 @@ END SUBROUTINE nmlls
   CONTAINS
 
     FUNCTION sclpar(mcc,iscale,method,sts,stu,utu) RESULT(spar) ! Calculation of the scaling parameter.
-      
+ !!!! ALLA KOMMENTOITU TAKAISIN  DEBUG testi   
       USE param, ONLY : small,one,half ! given in host
       IMPLICIT NONE
 
@@ -11693,7 +11717,7 @@ END MODULE lmbm_mod
   MODULE oscar
     
      USE, INTRINSIC :: iso_c_binding
-     USE omp_lib
+     !USE omp_lib
 
      USE functions                 ! INFORMATION from the USER
      USE bundle1                   ! Bundle 1
@@ -12221,18 +12245,19 @@ END MODULE lmbm_mod
               ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
                
                ! Maximum number of possible treads in parallellization
-               max_threads = omp_get_max_threads()
+               ! max_threads = omp_get_max_threads()
                
-!**
-			   IF (solver == 2) THEN  !No parallellization with LMBM can be used
-                   max_threads = 1
-			   END If	   
-!**
-               
-               CALL omp_set_num_threads(max_threads)
-               tread_num = max_threads
+! !**
+			   ! IF (solver == 2) THEN  !No parallellization with LMBM can be used
+                  ! max_threads = 1
+			   ! END If	   
+! !**
+              
+               ! CALL omp_set_num_threads(max_threads)
+               ! tread_num = max_threads
+			   tread_num = 1
 
-               WRITE(*,*) 'The number of threads', max_threads             
+               ! WRITE(*,*) 'The number of threads', max_threads             
                ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
 
                ! The initialization of parametrs used in DBDC methods
@@ -12509,11 +12534,12 @@ END MODULE lmbm_mod
 			  
                   CALL allocate_xn(user_n) 
                   CALL init_LMBMinfo(problem1, info) 
-                  CALL init_x(x_0)          
+                  CALL init_x_var(x_0)          
                   CALL set_rho_LMBM(0.0_c_double)                 
                   CALL set_lambda_LMBM(0.0_c_double)                  
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
-                  CALL copy_x(x_koe)
+                  CALL copy_x_var(x_koe)
+				  CALL deallocate_LMBMinfo()
                   			  
               END IF			  
 !**
@@ -12811,7 +12837,7 @@ END MODULE lmbm_mod
        
              CALL deallocate_data_cox(info) 
 	     IF (solver==2) THEN
-		 CALL deallocate_x() 
+		 CALL deallocate_x_var() 
 	     END IF 
 
          END SUBROUTINE oscar_cox       
@@ -13313,20 +13339,20 @@ END MODULE lmbm_mod
              ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
                
                ! Maximum number of possible treads in parallellization
-               max_threads = omp_get_max_threads()
-			   !max_threads = 1
+               ! max_threads = omp_get_max_threads()
+			   ! !max_threads = 1
                
-!**
-			   IF (solver == 2) THEN  !No parallellization with LMBM can be used
-                   max_threads = 1
-			   END If	   
-!**        
-               CALL omp_set_num_threads(max_threads)
+! !**
+			   ! IF (solver == 2) THEN  !No parallellization with LMBM can be used
+                   ! max_threads = 1
+			   ! END If	   
+! !**        
+               ! CALL omp_set_num_threads(max_threads)
+               tread_num=1
                
-               
-               tread_num = max_threads
+               ! tread_num = max_threads
 
-               WRITE(*,*) 'The number of threads', max_threads             
+               ! WRITE(*,*) 'The number of threads', max_threads             
                ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
 
                ! The initialization of parametrs used in DBDC methods
@@ -13581,11 +13607,11 @@ END MODULE lmbm_mod
 			  
                   CALL allocate_xn(user_n) 
                   CALL init_LMBMinfo(problem1, info) 
-                  CALL init_x(x_0)          
+                  CALL init_x_var(x_0)          
                   CALL set_rho_LMBM(0.0_c_double)                 
                   CALL set_lambda_LMBM(0.0_c_double)                  
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
-                  CALL copy_x(x_koe)
+                  CALL copy_x_var(x_koe)
                   			  
               END IF			  
 !**
@@ -13908,7 +13934,7 @@ END MODULE lmbm_mod
        
              CALL deallocate_data_mse(info) 
              IF (solver==2) THEN
-		 CALL deallocate_x() 
+		 CALL deallocate_x_var() 
 	     END IF      
 
          END SUBROUTINE oscar_mse
@@ -14409,19 +14435,19 @@ END MODULE lmbm_mod
              ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
                
              ! Maximum number of possible treads in parallellization
-               max_threads = omp_get_max_threads()                
-              !max_threads = 1
+               ! max_threads = omp_get_max_threads()                
+              ! !max_threads = 1
 			   
-!**
-			   IF (solver == 2) THEN  !No parallellization with LMBM can be used
-                   max_threads = 1
-			   END If	   
-!**			   
-               
-               CALL omp_set_num_threads(max_threads)
-               tread_num = max_threads
+! !**
+			   ! IF (solver == 2) THEN  !No parallellization with LMBM can be used
+                   ! max_threads = 1
+			   ! END If	   
+! !**			   
+               tread_num=1
+               ! CALL omp_set_num_threads(max_threads)
+               ! tread_num = max_threads
 
-               WRITE(*,*) 'The number of threads', max_threads             
+               ! WRITE(*,*) 'The number of threads', max_threads             
                ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
 
                ! The initialization of parametrs used in DBDC methods
@@ -14675,11 +14701,11 @@ END MODULE lmbm_mod
 			  
                   CALL allocate_xn(user_n) 
                   CALL init_LMBMinfo(problem1, info) 
-                  CALL init_x(x_0)          
+                  CALL init_x_var(x_0)          
                   CALL set_rho_LMBM(0.0_c_double)                 
                   CALL set_lambda_LMBM(0.0_c_double)                  
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
-                  CALL copy_x(x_koe)
+                  CALL copy_x_var(x_koe)
                   			  
               END IF			  
 !**           
@@ -14980,7 +15006,7 @@ END MODULE lmbm_mod
        
              CALL deallocate_data_log(info)
 	     IF (solver==2) THEN
-		 CALL deallocate_x() 
+		 CALL deallocate_x_var() 
 	     END IF  
              
          END SUBROUTINE oscar_logistic           
@@ -15388,11 +15414,15 @@ END MODULE lmbm_mod
 						ELSE IF (solver == 2) THEN
 						
                            CALL init_LMBMinfo(problem1, set)   
-                           CALL init_x(x_0)
+                           CALL init_x_var(x_0)
                            CALL set_rho_LMBM(rho)                 
-                           CALL set_lambda_LMBM(0.0_c_double)              
+                           CALL set_lambda_LMBM(0.0_c_double) 
+	!WRITE(*,*)
+	!WRITE(*,*) 'before lmbm'
+	!WRITE(*,*)						   
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
-                           CALL copy_x(beta_solution)   
+                           CALL copy_x_var(beta_solution)
+						   CALL deallocate_LMBMinfo()						   
 						   
                         END IF
 !**						
@@ -15891,11 +15921,11 @@ END MODULE lmbm_mod
 						ELSE IF (solver == 2) THEN
 						
                            CALL init_LMBMinfo(problem1, set)   
-                           CALL init_x(x_0)
+                           CALL init_x_var(x_0)
                            CALL set_rho_LMBM(rho)                 
                            CALL set_lambda_LMBM(0.0_c_double)              
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
-                           CALL copy_x(beta_solution)   
+                           CALL copy_x_var(beta_solution)   
 						   
                         END IF
 !**										
@@ -16395,11 +16425,11 @@ END MODULE lmbm_mod
 						ELSE IF (solver == 2) THEN
 						
                            CALL init_LMBMinfo(problem1, set)   
-                           CALL init_x(x_0)
+                           CALL init_x_var(x_0)
                            CALL set_rho_LMBM(rho)                 
                            CALL set_lambda_LMBM(0.0_c_double)              
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
-                           CALL copy_x(beta_solution)   
+                           CALL copy_x_var(beta_solution)   
 						   
                         END IF
 !**		 
