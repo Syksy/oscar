@@ -12265,7 +12265,8 @@ END MODULE lmbm_mod
                  CALL init_par(in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, in_tolg, &
                                 & in_tolg2, in_eta, in_epsL)
 !**
-               
+               info%user_rho = 0.0_c_double
+			   
                ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
                nft = nKitOnes
