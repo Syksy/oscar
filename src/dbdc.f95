@@ -5004,11 +5004,7 @@
                    set%user_rho = rho 
                END IF
                
-        WRITE(*,*)
-		DO i =1, set%nk0
-		WRITE(*,*) set%mK(1,i)
-		END DO
-		WRITE(*,*)
+   
 		
                ! ***** descent parameter 'm' *****
                IF ( (set%user_m<=0.0_c_double) .OR. (set%user_m>=1.0_c_double) ) THEN
@@ -8165,9 +8161,9 @@ CONTAINS
     CALL myf(n,x_var,f,iterm,nproblem)
     CALL myg(n,x_var,g,iterm,nproblem)
 	
-	!WRITE(*,*)
-	!WRITE(*,*) 'here we are'
-	!WRITE(*,*)
+	! WRITE(*,*)
+	! WRITE(*,*) LMBM_set%nrecord0 
+	! WRITE(*,*)
 
        !WRITE(*,*)
        !WRITE(*,*) 'x:'
@@ -12543,7 +12539,9 @@ END MODULE lmbm_mod
                   			  
               END IF			  
 !**
-                            
+	WRITE(*,*)
+	WRITE(*,*) x_koe
+	WRITE(*,*)
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
               !         * x_koe is utilized in formation of starting points 
 
@@ -15171,7 +15169,8 @@ END MODULE lmbm_mod
            
            !***************************** LOCAL VARIABLES ************************************      
  
-               TYPE(set_info) :: set                                    ! The set of information                     
+               TYPE(set_info) :: set1                                    ! The set of information                     
+			   TYPE(set_info) :: set                                    ! The set of information                     
 
                REAL(KIND=c_double) :: CPUtime                           ! the CPU time (in seconds)
                REAL(KIND=c_double) :: f_solution_DBDC                   ! the f_solution obtained from DBDC method
@@ -15297,9 +15296,25 @@ END MODULE lmbm_mod
                    ! Allocation of data matrices    
                     CALL allocate_matrices_cox(set, in_mX, in_mY, in_mK, in_mC,  & 
                                       & nrecord, nft, nk)
+									  
+					set%user_rho = 0.0_c_double
+
                     
                     CALL  set_k(set, k)                        ! The number of nonzero kits is fixed
                     
+					! The initialization of parametrs used in DBDC methods
+                     CALL allocate_parameters(set1, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, &
+                                           & in_eps1, in_b, in_m_clarke, in_eps, in_crit_tol)
+  
+                   ! Allocation of sizes od data matrices in function.f95
+                    CALL allocate_data_cox(set1, nft, nrecord, nk, k)   
+                    
+                   ! Allocation of data matrices    
+                    CALL allocate_matrices_cox(set1, in_mX, in_mY, in_mK, in_mC,  & 
+                                      & nrecord, nft, nk)
+                    
+                    CALL  set_k(set1, k)                        ! The number of nonzero kits is fixed
+
                      ! Determination of the first starting point for the thread i                    
                     startind = 1
                     IF (i > 1) THEN 
@@ -15413,7 +15428,7 @@ END MODULE lmbm_mod
 								
 						ELSE IF (solver == 2) THEN
 						
-                           CALL init_LMBMinfo(problem1, set)   
+                           CALL init_LMBMinfo(problem1, set1)   
                            CALL init_x_var(x_0)
                            CALL set_rho_LMBM(rho)                 
                            CALL set_lambda_LMBM(0.0_c_double) 
@@ -15505,7 +15520,8 @@ END MODULE lmbm_mod
                    
                    END DO
                    
-                   CALL deallocate_data_cox(set)             
+                   CALL deallocate_data_cox(set) 
+				   CALL deallocate_data_cox(set1)             
              
          
          END SUBROUTINE  solution_with_k_kits_cox
@@ -15804,6 +15820,9 @@ END MODULE lmbm_mod
                     CALL allocate_matrices_mse(set, in_mX, in_mY, in_mK, in_mC,  & 
                                       & nrecord, nft, nk)
                     
+					set%user_rho = 0.0_c_double
+
+
                     CALL  set_k(set, k)                        ! The number of nonzero kits is fixe                 
                     
                     ! Determination of the first starting point for the thread i                   
@@ -16308,6 +16327,9 @@ END MODULE lmbm_mod
                     CALL allocate_matrices_log(set, in_mX, in_mY, in_mK, in_mC,  & 
                                       & nrecord, nft, nk)
                     
+					set%user_rho = 0.0_c_double
+
+
                     CALL  set_k(set, k)                        ! The number of nonzero kits is fixed
 
                     ! Determination of the first starting point for the thread i                   
