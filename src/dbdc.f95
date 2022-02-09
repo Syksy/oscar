@@ -11713,7 +11713,7 @@ END MODULE lmbm_mod
   MODULE oscar
     
      USE, INTRINSIC :: iso_c_binding
-     !USE omp_lib
+     USE omp_lib
 
      USE functions                 ! INFORMATION from the USER
      USE bundle1                   ! Bundle 1
@@ -12241,19 +12241,20 @@ END MODULE lmbm_mod
               ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
                
                ! Maximum number of possible treads in parallellization
-               ! max_threads = omp_get_max_threads()
+			   IF(solver==1) THEN
+				 max_threads = omp_get_max_threads()
+				 CALL omp_set_num_threads(max_threads)
+			   END IF
                
-! !**
-			   ! IF (solver == 2) THEN  !No parallellization with LMBM can be used
-                  ! max_threads = 1
-			   ! END If	   
-! !**
-              
-               ! CALL omp_set_num_threads(max_threads)
-               ! tread_num = max_threads
-			   tread_num = 1
+!**
+			   IF (solver == 2) THEN  !No parallellization with LMBM can be used
+                  max_threads = 1
+			   END If	   
+               
+               tread_num = max_threads
+			   
 
-               ! WRITE(*,*) 'The number of threads', max_threads             
+               WRITE(*,*) 'The number of threads', max_threads             
                ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
 
                ! The initialization of parametrs used in DBDC methods
@@ -12540,9 +12541,9 @@ END MODULE lmbm_mod
                   			  
               END IF			  
 !**
-	WRITE(*,*)
-	WRITE(*,*) x_koe
-	WRITE(*,*)
+	!WRITE(*,*)
+	!WRITE(*,*) x_koe
+	!WRITE(*,*)
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
               !         * x_koe is utilized in formation of starting points 
 
@@ -13338,20 +13339,20 @@ END MODULE lmbm_mod
              ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
                
                ! Maximum number of possible treads in parallellization
-               ! max_threads = omp_get_max_threads()
-			   ! !max_threads = 1
+			   IF(solver==1) THEN
+				 max_threads = omp_get_max_threads()
+				 CALL omp_set_num_threads(max_threads)
+			   END IF
                
-! !**
-			   ! IF (solver == 2) THEN  !No parallellization with LMBM can be used
-                   ! max_threads = 1
-			   ! END If	   
-! !**        
-               ! CALL omp_set_num_threads(max_threads)
-               tread_num=1
+!**
+			   IF (solver == 2) THEN  !No parallellization with LMBM can be used
+                  max_threads = 1
+			   END If	   
                
-               ! tread_num = max_threads
+               tread_num = max_threads
+			   
 
-               ! WRITE(*,*) 'The number of threads', max_threads             
+               WRITE(*,*) 'The number of threads', max_threads               
                ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
 
                ! The initialization of parametrs used in DBDC methods
@@ -14434,19 +14435,20 @@ END MODULE lmbm_mod
              ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
                
              ! Maximum number of possible treads in parallellization
-               ! max_threads = omp_get_max_threads()                
-              ! !max_threads = 1
+			   IF(solver==1) THEN
+				 max_threads = omp_get_max_threads()
+				 CALL omp_set_num_threads(max_threads)
+			   END IF
+               
+!**
+			   IF (solver == 2) THEN  !No parallellization with LMBM can be used
+                  max_threads = 1
+			   END If	   
+               
+               tread_num = max_threads
 			   
-! !**
-			   ! IF (solver == 2) THEN  !No parallellization with LMBM can be used
-                   ! max_threads = 1
-			   ! END If	   
-! !**			   
-               tread_num=1
-               ! CALL omp_set_num_threads(max_threads)
-               ! tread_num = max_threads
 
-               ! WRITE(*,*) 'The number of threads', max_threads             
+               WRITE(*,*) 'The number of threads', max_threads              
                ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
 
                ! The initialization of parametrs used in DBDC methods
@@ -14774,7 +14776,9 @@ END MODULE lmbm_mod
 
                   !----------------------------------------------------------
                   ! Starting points for problem with fixed number of k kits 
-                  !----------------------------------------------------------         
+                  !----------------------------------------------------------   
+
+				  IF (solver==1) THEN  ! With DBDC parallelization is used
  
                   !$OMP PARALLEL DO PRIVATE(x_solution, f_solution, i) & 
                   !$OMP FIRSTPRIVATE(x_ed, x_koe, kits_beta_ed, kit_num_ed)  &             
@@ -14817,8 +14821,36 @@ END MODULE lmbm_mod
                     !$OMP END CRITICAL                    
                         
                    END DO          
-                  !$OMP END PARALLEL DO   
-                   
+                  !$OMP END PARALLEL DO  
+
+				ELSE IF (solver==2) THEN  ! With LMBM parallelization is not used
+				
+                      CALL solution_with_k_kits_log(x_solution, f_solution, k, i, small, &
+                                               & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
+                                               & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
+                                               & agg_used, stepsize_used, nft, problem1, problem2, &
+                                               & mXt, mYt, mK, in_mC, nrecord,  & 
+                                               & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, solver)
+                    
+                    ! Storing of the obtained solution and the corresponding objective value
+                     startind = 1
+                     IF (i > 1) THEN    
+                       DO j3 = 1, i-1
+                          startind = startind + mPrNum(j3)
+                       END DO   
+                     END IF                        
+                        
+                     DO j3 = 1, mPrNum(i)   
+                        DO j = 1, user_n
+                            points(j,startind+(j3-1)) = x_solution(j,startind+(j3-1))
+                        END DO     
+                      f_points(startind+j3-1) = f_solution(startind+j3-1)
+                     END DO  
+       
+				 END IF
+  
+!**  
                    IF (start == 1) THEN 
                       small = f_points(1)
                       min_ind = 1
