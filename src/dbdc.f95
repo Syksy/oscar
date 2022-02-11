@@ -12268,6 +12268,10 @@ END MODULE lmbm_mod
 !**
                info%user_rho = 0.0_c_double
 			   
+!** 
+				mc = 7
+!**
+			   
                ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
                nft = nKitOnes
@@ -15269,7 +15273,7 @@ END MODULE lmbm_mod
                INTEGER(KIND=c_int) :: help_counter
                INTEGER(KIND=c_int) :: num_rho
                INTEGER(KIND=c_int) :: kit_num               ! The number of kits in the current solution
-               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2
+               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2, ui
                INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization         
 
                INTEGER(KIND=c_int) :: startind, j3, kk      ! the start index for starting point    
@@ -15318,6 +15322,9 @@ END MODULE lmbm_mod
 
                     tol_zero = (10.0_c_double)**(-6)
  
+!** 
+					mc = 7
+!**
 
                    ! The initialization of parametrs used in DBDC methods
                    CALL allocate_parameters(set, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
@@ -15470,11 +15477,14 @@ END MODULE lmbm_mod
 	!WRITE(*,*)						   
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
                            CALL copy_x_var(beta_solution)
-						   CALL deallocate_LMBMinfo()						   
+						   CALL deallocate_LMBMinfo()
+						   set%user_rho = rho
 						   
                         END IF
 !**						
                 
+						
+						
                         IF (ed_sol_in_pen) THEN 
                           x_0 = beta_solution   ! Starting point for the next round
                         END IF    
@@ -15487,6 +15497,12 @@ END MODULE lmbm_mod
                           END IF
                         END DO
                   
+						WRITE(*,*) 'beta'
+						DO ui = 1, user_n
+						 WRITE(*,*) beta_solution(ui)
+						END DO
+						WRITE(*,*)
+						
                         cost = 0.0_c_double      ! The initialization of the cost of 'beta_solution'
                         kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
                         kits_beta = 0            ! The initialization of kits in 'beta_solution'
@@ -15527,7 +15543,8 @@ END MODULE lmbm_mod
                         f2_current = f2(set,beta_solution,problem2,user_n)
         
                         IF (iprint > 2) THEN
-                           WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+!**                         ! WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+						  WRITE(*,*) 'rho', rho, 'f1',f1_current, 'f2',f2_current, 'kits', kit_num
                         END IF
                         
                         IF (run_stop) THEN

@@ -147,8 +147,12 @@ oscar <- function(
 	eta = 0.5, # Distance measure parameter in LMBM, eta > 0
 	epsL = 0.125 # Line search parameter in LMBM, 0 < epsL < 0.25 (default = 1.0E-4.)
 ){
-	# TODO: Sanity checks for input here
-	
+	####
+	#
+	# R-side sanity checks for parameters and input
+	#
+	####
+
 	# Sanity checks: Are input matrices x and y available
 	if(missing(x)){
 		stop(paste("Input matrix x missing."))
@@ -156,16 +160,10 @@ oscar <- function(
 	if(missing(y)){
 		stop(paste("Input matrix y missing."))
 	}
-	
 	# Sanity checks: Are input x is a matrix. If not, try to convert into a matrix.
 	if(!is.matrix(x)){
 		try(x <- as.matrix(x))
 	}
-
-	
-	# ...
-	if(verb>=2) print("Sanity checks ready")
-
 	# If no custom metric defined, using default goodness metrics:
 	# mse/gaussian: mean-squared error
 	# cox: c-index
@@ -183,25 +181,25 @@ oscar <- function(
 	}else{
 		# TODO; User provided custom metrics; 
 		# check if legitimate (for logistic e.g. 'accuracy' and 'auc' ought to work)
+		stop("User provided custom goodness metrics not yet supported.")
 	}
 
 	# TODO: Currently Cox assumes that event and time come in certain order in the 2-column y
 	# Flip them depending on which way is expected
-	if(any(class(y) %in% c("matrix", "array", "Surv"))){
+	if(family == "cox" & any(class(y) %in% c("matrix", "array", "Surv"))){
+		# For Cox, we expect events to be second column
 		if(all(y[,1] %in% c(0,1))){
-
-		}else if(all(y[,2] %in% c(0,1))){
-
+			tmp <- y[,1]
+			y[,1] <- y[,2]
+			y[,2] <- tmp
+		}else if(!all(y[,2] %in% c(0,1))){
+			stop("Second column for y is expected to only have values '0' (no event) or '1' (observed event)")
 		}
-	}
-	
-	# Sanity checks: Check that input matrices x and y have equal number of rows
-	if(family=="cox"&&nrow(y)!=nrow(x)){
+	}	
+	# Check that input matrices x and y have equal number of rows
+	if(family=="cox" && nrow(y)!=nrow(x)){
 		stop(paste("Number of observations in the response matrix y (",nrow(y),") is not equal to number of observations in the predictor matrix x (",nrow(x),"). Please check both."))
 	}
-	
-	###############################
-	#### CHECKING kit matrix k ####
 	# If kit matrix is missing as input, assume that each variable is alone
 	if(missing(k)){
 		k <- matrix(0, nrow=ncol(x), ncol=ncol(x))
@@ -211,19 +209,12 @@ oscar <- function(
 	# Check that input k is a matrix
 	if(!is.matrix(k)){
 		try(k <- as.matrix(k))
+		if(class(k) == "try-error") stop("Error casting kit matrix 'k' into a matrix; should consist only of indicator values 0 and 1")
 	}
-	
 	# Check that kit matrix k and predictor matrix x have equal number of columns (features)
-	if(family=="cox"&& ncol(k)!=ncol(x)){
+	if(family=="cox" && ncol(k)!=ncol(x)){
 		stop(paste("Number of columns in kit matrix k (",ncol(k),") should be equal to the amount of features (number of columns in x, ",ncol(x),"). Check that correct features are included."))
 	}
-	## -> Intercept is an independent variable that is not subjected to penalization
-	# If family is not Cox, (Intercept) requires its own row/column in K
-	#if(!family == "cox" && ncol(k) == ncol(x)){
-	#	k <- rbind(0, cbind(0, k))
-	#	k[1,1] <- 1
-	#	if(!is.null(rownames(k)) & !is.null(colnames(k))) rownames(k)[1] <- colnames(k)[1] <- "(Intercept)"
-	#}
 	# Check that the kit matrix has only 0 or 1
 	if(!all(k %in% c(0,1))){
 		stop(paste("Values in the kit matrix k should be 0 or 1. Please check the kit matrix."))
@@ -232,30 +223,19 @@ oscar <- function(
 	if(any(apply(k,MARGIN=2,FUN=sum)==0)){
 		stop(paste("Zero column in the kit matrix k. Please check that each feature is in atleast one kit."))  ## For now only one kit per feature allowed.
 	}
-	# Check that each feature is only in one kit
-	# EDIT: Kits are now allowed to be in multiple kits.
-	#if(any(apply(k,MARGIN=2,FUN=sum)>1)){
-	#	stop(paste("Some feature(s) are in multiple kits. Please check that each feature is exactly in one kit."))  ## For now only one kit per feature allowed.
-	#}
-	
 	# Check that each kit has at least one feature (not sure if necessary?))
 	if(any(apply(k,MARGIN=1,FUN=sum)<1)){
 		stop(paste("Some kit(s) don't have any features. Please check that each kit has at least one feature."))
-	}
-	
-	# Check that no dublicate kits aka kits with exactly the same features
+	}	
+	# Check that no duplicate kits aka kits with exactly the same features
 	if(nrow(unique(k))!=nrow(k)){
 		stop(paste("Some kits have exactly the same features. Please check that each kit has a different combination of features."))
 	}
-	
-	# Checking k structure
+	# Print output for k structure
 	if(verb>=2){
 		print("Input k:")
 		print(k)
 	}
-
-	########################
-	#### CHECKING kmax  ####
 	# If user has defined kmax, use it to pass to the Fortran function; otherwise kmax is the maximum number of kits in the input data
 	if(missing(kmax)){
 		kmax <- nrow(k)
@@ -265,21 +245,14 @@ oscar <- function(
 	}else if(!any(class(kmax) %in% c("integer", "numeric"))){
 		stop("Provided kmax parameter ought to be of type 'integer' or 'numeric' cast to an integer")
 	}
-	if(verb>=2) print("Preprocessing k ready")
-
-
-	############################
-	#### CHECKING weights w ####
 	# If kit weights are missing, assume them to be unit cost
 	if(missing(w)){
 		w <- rep(1, times=nrow(k))
-	}
-	
+	}	
 	# Check that w length is equal to number of rows in the kit matrix k (number of kits)
 	if(family=="cox"&& length(w)!=nrow(k)){
 		stop(paste("Number of kit costs (",length(w),") is not equal to number of kits (number of rows in the kit matrix k, ",nrow(k),"). Check that correct kits are included."))
-	}
-	
+	}	
 	# If cost for intercept has not been incorporated, add that as 0
 	if(!family == "cox" & length(w) == ncol(x)){
 		w <- c(0, w)
@@ -289,24 +262,25 @@ oscar <- function(
 		print("Input w:")
 		print(w)
 	}
-	if(verb>=2) print("Preprocessing w ready")
-	
-	#########################
-	#### CHECKING solver ####
 	# Check if solver is one of the four options 1/'DBDC' or 2/'LMBM'
-	if(!(solver %in% c("DBDC","LMBM", 1, 2))){
+	if(!(solver %in% c("dbdc", "DBDC", "lmbm","LMBM", 1, 2))){
 		stop(paste("Solver should be either 1 (or 'DBDC') or 2 (or 'LMBM')."))
 	}
 	# If character given, change into numerical to be used when calling C.
-	if(solver=="DBDC"){
+	if(solver %in% c("DBDC", "dbdc")){
 		solver <- 1
 	}
-	if(solver=="LMBM"){
+	if(solver %in% c("LMBM", "lmbm")){
 		solver <- 2
 	}
 	
+	####
+	#
+	# Optimizer specific parameters; partially overlapping with Fortran checks
+	#
+	####
 	
-	#########################################################
+	
 	#### CHECKING tuning parameters and setting defaults ####
 	if(in_mrounds <=0){ # The number of rounds in one main iteration 
 		in_mrounds <- 5000
@@ -667,30 +641,12 @@ oscar <- function(
 	}
 	# Transpose so that coefficients are columns and k-steps are rows in bperk
 	bperk <- t(bperk)
-
+	# Print mid-point for beta per kit k matrix
 	if(verb>=2){
 		print("bperk")
 		print(dim(bperk))
 		print(bperk)
 	}
-	
-	# Kits picked per each k-step
-	#kperk <- t(apply(bperk, MARGIN=1, FUN=function(z) as.integer(!z==0)))
-	#
-	
-	# If dealing with non-Cox regression, omit (Intercept) from indicator matrix
-	#if(!family == "cox" & ncol(k) == ncol(x)){
-	#	kperk <- kperk[,-1]
-	#}
-	
-	# Indices as a named vector
-	#kperk <- as.list(apply(kperk %*% t(k), MARGIN=1, FUN=function(z) { which(!z==0) }))
-	#if(verb>=3){
-	#	print("kperk2")
-	#	print(dim(kperk))
-	#	print(kperk)
-	#}
-	
 	## Get kperk from Fortran
 	kperk <- t(matrix(res[[3]], nrow = nrow(k), ncol = nrow(k)))
 	if(verb>=3){
@@ -714,8 +670,14 @@ oscar <- function(
 	}
 
 	# Set solver as character into oscar object
-	if(solver == 1){solver = "DBDC"}
-	if(solver == 2){solver = "LMBM"}
+	if(solver == 1)
+	{
+		solver <- "DBDC"
+	}
+	if(solver == 2)
+	{
+		solver <- "LMBM"
+	}
 	
 	# Return the freshly built S4 model object
 	obj <- new("oscar", 
