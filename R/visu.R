@@ -370,26 +370,37 @@ bs.plot <- function(
 	hamlet::hmap.key(h)
 }
 					
+#' @title Visualize cost and C-index with paretofront without oscar object
+#' @param costs Vector including costs values
+#' @param cindexes Vector including C-index values
+#' @param nzeros Vector including the number of non-zeros of the model in each point
+#' @param col Vector including desired colors for each number of non-zeros, Default : 'black'
+#' @param ncolors Number of required colors, Default: max(nzeros)-min(nzeros)+1
+#' @param mar.1st Marginals for the main plot, Default: c(4,4,2,0)
+#' @param mar.2nd Marginals for the legend, Default: c(2.5,0,2,2)
+#' @param monochrome If the plot should be with colors (F) or monochrome (T), Default: F
+
+#' @importFrom rPref psel
 					
-## Plot cost and C-indexes with pareto-front
-plot.pareto.costCI <- function(
-	costs,  # Cost vector
-	cindexes, # C-index vector
-	nzeros, # Number of non-zeros at corresponding points
-	col, # Colors for points, if missing -> determined by the number of non-zeros
-	ylab="cindexes", # Title of y-axis
-	xlab="cost", # Title of x-axis
-	pch=19, # Point style
-	cex=0.2, # Point size
-        las=1,  # Direction of tick labels
-	title="",  # Plot title
-	width.of.layout =  c(2.2,0.8), # Widths of the two plot regions
-	height.of.layout= c(1,1), # Heights of the plot regions
-        mar.1st=c(4,4,2,0), # Margins for the left (scatter) plot
-	mar.2nd =c(2.5,0,2,2)){ # Margins for the right (legend) plot
-  layout(matrix(1:2,ncol=2), width = width.of.layout,height = height.of.layout)
-  par(mar=mar.1st)
-  ncolors <- max(nzeros)-min(nzeros)+1
+#' @rdname plot.smoothing.spline
+#' @export
+plot.pareto.costCI <- function(costs, cindexes, nzeros, col,ncolors,ylab="cindex",xlab="cost",pch=19,bg=col,cex=0.2,
+                               ylim = c(min(cindexes),max(cindexes)), xlim=c(min(costs),max(costs)),
+                               las=1, title="", width.of.layout =  c(2.2,0.8),height.of.layout= c(1,1),
+                               mar.1st=c(4,4,2,0),mar.2nd =c(2.5,0,2,2),monochrome=F, cex.pareto=0.5, col.paretoline="grey"){
+  if(monochrome==T){
+     # If plotting with only one color, plot without legend
+    if(missing(col)){  #Default color to black
+      col <- "black"
+    }
+  }else{ # If plotting with colors, leaving area for legend
+     # Also deal with color variables if missing
+    layout(matrix(1:2,ncol=2), width = width.of.layout,height = height.of.layout)
+  
+  
+  if(missing(ncolors)){
+    ncolors <- max(nzeros)-min(nzeros)+1
+  }
   if(missing(col)){
     col <- c()
     if(min(nzeros)==0){
@@ -403,24 +414,49 @@ plot.pareto.costCI <- function(
     }
   }
   
-  plot(costs,cindexes,col=col,ylab=ylab,xlab=xlab,cex=cex,pch=pch,las=las)
+  }
+  
+  par(mar=mar.1st)
+  
+  if(monochrome==T){
+    plot(costs,cindexes,ylab=ylab,xlab=xlab,col=col,cex=cex,pch=pch,bg=bg,las=las,ylim=ylim, xlim=xlim)
+  }else{
+    plot(costs,cindexes,col=col,ylab=ylab,xlab=xlab,cex=cex,pch=pch,las=las,ylim=ylim, xlim=xlim)
+  }
   library(rPref) ## !!!
   pareto.points <- psel(data.frame("cost"=costs,"CI"=cindexes),pref=low(cost)*high(CI))
-  points(pareto.points[,1],pareto.points[,2],type='l',col="grey")
-  points(costs,cindexes,pch=pch,cex=cex,col=col)
-  title(title)
+  points(pareto.points[,1],pareto.points[,2],type='l',col=col.paretoline,lwd=1.5)
   
-  par(mar=mar.2nd)
-  plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = 'Cardinality')
-
-  rect(rep(0.2,ncolors),seq(0,1-1/ncolors,by=1/ncolors),rep(1.2,ncolors),seq(1/ncolors,1,by=1/ncolors),col=rainbow(ncolors)
-       )
-  text(x=1.5, y = seq(1/(2*ncolors),1-1/(2*ncolors),1/ncolors), labels = rev(seq(max(nzeros),min(nzeros),-1)))
-  
+  if(monochrome==T){
+    points(pareto.points[,1],pareto.points[,2],pch=pch,bg=bg,cex=cex.pareto,col=col)
+    title(title)
+  }else{ #Plot with colors and color legend
+    points(pareto.points[,1],pareto.points[,2],pch=pch,cex=cex.pareto,col=col[as.numeric(rownames(pareto.points))])
+    title(title)
+    par(mar=mar.2nd)
+    plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = 'Cardinality',cex.main=1)
+    rect(rep(0.2,ncolors),seq(0,1-1/ncolors,by=1/ncolors),rep(1.2,ncolors),seq(1/ncolors,1,by=1/ncolors),col=rainbow(ncolors))
+    # Plot only every second tick label to avoid crowded look 
+    tick.y <-seq(1/(2*ncolors),1-1/(2*ncolors),2/(ncolors))
+    #browser()
+    text(x=1.5, y =tick.y, labels = seq(min(nzeros),max(nzeros),1)[ceiling(tick.y*(ncolors))])
+  }
   
 }
 
-# Plot smoothing spline with the first and second derivatives
+#' @title Visualize smoothing spline with the first and second derivativests
+#' @description FUNCTION_DESCRIPTION
+#' @param x Values for x-axis
+#' @param y Values for y-axis
+#' @param ylab Title for y-axis
+#' @param xlab Title for x-axis
+#' @param a.title Main title for the scatter plot with spline
+#' @param df Degrees of freedom, Default: 'ceiling(length(unique(x)))/2)'
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#'
+#' @rdname plot.smoothing.spline
+#' @export
 plot.smoothing.spline <- function(
 	x, # X-values
 	y, # Y-values
