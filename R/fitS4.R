@@ -302,7 +302,7 @@ oscar <- function(
 			as.double(control$in_eps), # Stopping tolerance: Proximity measure
 			as.double(control$in_crit_tol), # Stopping tolerance: Criticality tolerance
 			as.integer(sum(k)), #Number of ones in the kit matrix
-			as.integer(control$solver), # The solver used in optimization
+			as.integer(solver), # The solver used in optimization
 			# LMBM tuning parameters
 			as.integer(control$na), # Size of the bundle
 			as.integer(control$mcu), # Upper limit for maximum number of stored corrections
@@ -352,7 +352,7 @@ oscar <- function(
 			as.double(control$in_eps), # Stopping tolerance: Proximity measure
 			as.double(control$in_crit_tol), # Stopping tolerance: Criticality tolerance
 			as.integer(sum(k)), #Number of ones in the kit matrix
-			as.integer(control$solver), # The solver used in optimization
+			as.integer(solver), # The solver used in optimization
 			# LMBM tuning parameters
 			as.integer(control$na), # Size of the bundle
 			as.integer(control$mcu), # Upper limit for maximum number of stored corrections
@@ -400,7 +400,7 @@ oscar <- function(
 			as.double(control$in_eps), # Stopping tolerance: Proximity measure
 			as.double(control$in_crit_tol), # Stopping tolerance: Criticality tolerance
 			as.integer(sum(k)), #Number of ones in the kit matrix
-			as.integer(control$solver), # The solver used in optimization
+			as.integer(solver), # The solver used in optimization
 			# LMBM tuning parameters
 			as.integer(control$na), # Size of the bundle
 			as.integer(control$mcu), # Upper limit for maximum number of stored corrections
@@ -581,7 +581,7 @@ oscar <- function(
 #' @rdname oscar.control
 #' @export 
 oscar.control <- function(
-	# Required input from user
+	# Required input from main function to define control parameters
 	x,
 	family,
 	# Default parameter construction part
@@ -772,31 +772,31 @@ oscar.control <- function(
 	}
 	# Return all tuning parameters
 	list(
-		start,	# Strategy for choosing starting points at each n_k iteration
+		start = start,	# Strategy for choosing starting points at each n_k iteration
 		# Tuning parameters for DBDC
-		in_mrounds,	# The number of rounds in one main iteration 
-		in_mit,	# The number of main iteration 
-		in_mrounds_esc,	# The number of rounds in escape procedure
-		in_b1,	# Bundle B1, default min(n+5,1000) depends on the problem -> defined later
-		in_b2,	# Bundle B2
-		in_b,	# Bundle B in escape procedure, default 2n depends on the problem -> defined later
-		in_m,	# Descent parameter
-		in_m_clarke,	# Descent parameter in escape procedure
-		in_c,	# Extra decrease parameter
-		in_r_dec,	# Decrease parameter, default depends on the problem -> defined later
-		in_r_inc,	# Increase parameter
-		in_eps1,	# Enlargement parameter
-		in_eps,	# Stopping tolerance: Proximity measure, default depends on the problem -> defined later
-		in_crit_tol,	# Stopping tolerance: Criticality tolerance
+		in_mrounds = in_mrounds,	# The number of rounds in one main iteration 
+		in_mit = in_mit,	# The number of main iteration 
+		in_mrounds_esc = in_mrounds_esc,	# The number of rounds in escape procedure
+		in_b1 = in_b1,	# Bundle B1, default min(n+5,1000) depends on the problem -> defined later
+		in_b2 = in_b2,	# Bundle B2
+		in_b = in_b,	# Bundle B in escape procedure, default 2n depends on the problem -> defined later
+		in_m = in_m,	# Descent parameter
+		in_m_clarke = in_m_clarke,	# Descent parameter in escape procedure
+		in_c = in_c,	# Extra decrease parameter
+		in_r_dec = in_r_dec,	# Decrease parameter, default depends on the problem -> defined later
+		in_r_inc = in_r_inc,	# Increase parameter
+		in_eps1 = in_eps1,	# Enlargement parameter
+		in_eps = in_eps,	# Stopping tolerance: Proximity measure, default depends on the problem -> defined later
+		in_crit_tol = in_crit_tol,	# Stopping tolerance: Criticality tolerance
 		# Tuning parameters for LMBM
-		na,	# Size of the bundle in LMBM, na >= 2
-		mcu,	# Upper limit for maximum number of stored corrections in LMBM, mcu >= 3
-		mcinit,	# Initial maximum number of stored corrections in LMBM, mcu >= mcinit >= 3 
-		tolf,	# Tolerance for change of function values in LMBM
-		tolf2,	# Second tolerance for change of function values.
-		tolg,	# Tolerance for the first termination criterion in LMBM
-		tolg2,	# Tolerance for the second termination criterion in LMBM (default = tolg)
-		eta,	# Distance measure parameter in LMBM, eta > 0
-		epsL	# Line search parameter in LMBM, 0 < epsL < 0.25 (default = 1.0E-4.),
+		na = na,	# Size of the bundle in LMBM, na >= 2
+		mcu = mcu,	# Upper limit for maximum number of stored corrections in LMBM, mcu >= 3
+		mcinit = mcinit,	# Initial maximum number of stored corrections in LMBM, mcu >= mcinit >= 3 
+		tolf = tolf,	# Tolerance for change of function values in LMBM
+		tolf2 = tolf2,	# Second tolerance for change of function values.
+		tolg = tolg,	# Tolerance for the first termination criterion in LMBM
+		tolg2 = tolg2,	# Tolerance for the second termination criterion in LMBM (default = tolg)
+		eta = eta,	# Distance measure parameter in LMBM, eta > 0
+		epsL = epsL	# Line search parameter in LMBM, 0 < epsL < 0.25 (default = 1.0E-4.),
 	)
 }
