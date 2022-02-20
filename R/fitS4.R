@@ -33,8 +33,8 @@ setClass("oscar", # abbreviation
 		info = "character",	# Additional error messages, warnings or such reported e.g. during model fitting
 		kmax = "integer",	# Number of maximum k tested
 		metric = "character",	# Name of the goodness-of-fit metric used
-		solver = "character"  # Name of the solver used in the optimization (DBDC = 1 or LMBM = 2)
-		
+		solver = "character",  # Name of the solver used in the optimization (DBDC = 1 or LMBM = 2)
+		call = "call"	# Function call
 	),	
 	prototype(
 		# Prototype base model object
@@ -57,7 +57,8 @@ setClass("oscar", # abbreviation
 		info = NA_character_,
 		kmax = NA_integer_,
 		metric = NA_character_,
-		solver = NA_character_
+		solver = NA_character_,
+		call = call("oscar")
 	),
 	# Function for testing whether all S4-slots are legitimate for the S4 object 
 	# TODO
@@ -79,12 +80,15 @@ setClass("oscar", # abbreviation
 #' @param w Kit cost weight vector w of length nrow(k)
 #' @param family Model family, should be one of: 'cox', 'mse'/'gaussian', or 'logistic, Default: 'gaussian'
 #' @param solver Solver used in the optimization, should be  1/'DBDC' or 2/'LMBM', Default: 1.
+#' @param verb Level of verbosity in R, Default: 1
 #' @param print Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}, Default: 3
-#' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2
-#' @param verb Integer with additional integer values giving verbal feedback, Default: 1
 #' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality
 #' @param sanitize Whether input column names should be cleaned of potentially problematic symbols
+#' @param oscar.control Tuning parameters for the optimizers, see function oscar.control()
+#' @param ... Additional parameters
+#'
 #' @return Fitted oscar-object
+#'
 #' @details DETAILS
 #' @examples 
 #' \dontrun{
@@ -96,8 +100,6 @@ setClass("oscar", # abbreviation
 #' }
 #' @rdname oscar
 #' @export 
-#' @importFrom survival coxph
-#' @importFrom stats glm
 oscar <- function(
 	# Data matrix x
 	x, 
@@ -113,40 +115,19 @@ oscar <- function(
 	metric,
 	# Solver used in the optimization (default = DBDC)
 	solver = 1,
-	## Tuning parameters
-	print=3,# Level of verbosity (-1 for tidy output, 3 for debugging level verbosity)
-	start=2,# Strategy for choosing starting points at each n_k iteration
+	# Tuning parameters in R
 	verb=1, # Level of R verbosity (1 = standard, 2 = debug level, 3 = excessive debugging, 0<= none)
+	print=3,# Level of Fortran verbosity (-1 for tidy output, 3 for debugging level verbosity)
 	kmax,    # Maximum tested k-values
 	sanitize = TRUE,	# Whether column (i.e. variable) names are cleaned of potentially hazardous symbols
-	in_mrounds = 5000, # The number of rounds in one main iteration 
-	in_mit = 5000, # The number of main iteration 
-	in_mrounds_esc = 5000, # The number of rounds in escape procedure
-	in_b1, # Bundle B1, default min(n+5,1000) depends on the problem -> defined later
-	in_b2 = 3, # Bundle B2
-	in_b, # Bundle B in escape procedure, default 2n depends on the problem -> defined later
-	in_m = 0.01, # Descent parameter
-	in_m_clarke = 0.01, # Descent parameter in escape procedure
-	in_c = 0.1, # Extra decrease parameter
-	in_r_dec, # Decrease parameter, default depends on the problem -> defined later
-	in_r_inc = 10^5, # Increase parameter
-	in_eps1 = 5*10^(-5), # Enlargement parameter
-	in_eps, # Stopping tolerance: Proximity measure, default depends on the problem -> defined later
-	in_crit_tol =10^(-5), # Stopping tolerance: Criticality tolerance
-	# Tuning parameters for LMBM
-	na =4, # Size of the bundle in LMBM, na >= 2
-	mcu = 7, # Upper limit for maximum number of stored corrections in LMBM, mcu >= 3
-	mcinit = 7, # Initial maximum number of stored corrections in LMBM, mcu >= mcinit >= 3 
-	tolf = 10^(-5), # Tolerance for change of function values in LMBM
-	tolf2 = 10^4, # Second tolerance for change of function values.
-           #                          - If tolf2 < 0 the the parameter and the corresponding termination 
-           #                           criterion will be ignored. 
-           #                          - If tolf2 = 0 the default value 1.0E+4 will be used
-	tolg = 10^(-5), # Tolerance for the first termination criterion in LMBM
-	tolg2 = tolg, # Tolerance for the second termination criterion in LMBM (default = tolg)
-	eta = 0.5, # Distance measure parameter in LMBM, eta > 0
-	epsL = 0.125 # Line search parameter in LMBM, 0 < epsL < 0.25 (default = 1.0E-4.)
+	# Tuning parameter generation for the optimizers DBDC and LMBM; default values are generated with oscar.control-function, and can be replaced in the list
+	control,
+	# Additional parameters, passed on to oscar.control(...)
+	...
 ){
+	# Save function call
+	Call <- match.call()
+
 	####
 	#
 	# R-side sanity checks for parameters and input
@@ -184,8 +165,7 @@ oscar <- function(
 		stop("User provided custom goodness metrics not yet supported.")
 	}
 
-	# TODO: Currently Cox assumes that event and time come in certain order in the 2-column y
-	# Flip them depending on which way is expected
+	# Flip Cox event/time columns to correct column order
 	if(family == "cox" & any(class(y) %in% c("matrix", "array", "Surv"))){
 		# For Cox, we expect events to be second column
 		if(all(y[,1] %in% c(0,1))){
@@ -273,14 +253,367 @@ oscar <- function(
 	if(solver %in% c("LMBM", "lmbm")){
 		solver <- 2
 	}
+	## Sanitize column names, replacing '+' with 'plus', '-' with 'minus', and ' ', '(' and ')' with '_'
+	if(sanitize){
+		colnames(x) <- gsub("\\ |\\(|)", "_", gsub("\\+", "plus", gsub("\\-", "minus", colnames(x))))
+	}
+	
 	
 	####
 	#
 	# Optimizer specific parameters; partially overlapping with Fortran checks
 	#
 	####
+	# Extracted from oscar.control while passing user custom tuning parameters
+	if(missing(control)){
+		control <- oscar.control(x=x, family=family, ...)
+	}
 	
 	
+	###############################
+	#### Calling C and Fortran ####
+	# Call correct internal function based on the specified model family
+	if(family=="cox"){
+		# Call C function for Cox regression
+		res <- .Call(c_oscar_cox_f, 
+			as.double(x), # Data matrix x
+			as.double(y), # Response y
+			as.integer(k), # Kit indicator matrix k 
+			as.double(w), # Kit weights/costs
+			as.integer(nrow(x)), # Number of samples (rows in x)
+			as.integer(ncol(x)), # Number of variables (columns in x)
+			as.integer(nrow(k)), # Number of kits
+			as.integer(print), # Tuning parameter for verbosity
+			as.integer(control$start), # Tuning parameter for starting values
+			as.integer(kmax), # Tuning parameter for max k run
+			# DBDC tuning parameters
+			as.integer(control$in_mrounds), # The number of rounds in one main iteration 
+			as.integer(control$in_mit), # The number of main iteration 
+			as.integer(control$in_mrounds_esc), # The number of rounds in escape procedure
+			as.integer(control$in_b1), # Bundle B1
+			as.integer(control$in_b2), # Bundle B2
+			as.integer(control$in_b), # Bundle B in escape procedure
+			as.double(control$in_m), # Descent parameter
+			as.double(control$in_m_clarke), # Descent parameter in escape procedure
+			as.double(control$in_c), # Extra decrease parameter
+			as.double(control$in_r_dec), # Decrease parameter
+			as.double(control$in_r_inc), # Increase parameter
+			as.double(control$in_eps1), # Enlargement parameter
+			as.double(control$in_eps), # Stopping tolerance: Proximity measure
+			as.double(control$in_crit_tol), # Stopping tolerance: Criticality tolerance
+			as.integer(sum(k)), #Number of ones in the kit matrix
+			as.integer(control$solver), # The solver used in optimization
+			# LMBM tuning parameters
+			as.integer(control$na), # Size of the bundle
+			as.integer(control$mcu), # Upper limit for maximum number of stored corrections
+			as.integer(control$mcinit), # Initial maximum number of stored corrections
+			as.double(control$tolf), # Tolerance for change of function values
+			as.double(control$tolf2), # Second tolerance for change of function values.
+			as.double(control$tolg), # Tolerance for the first termination criterion
+			as.double(control$tolg2), # Tolerance for the second termination criterion
+			as.double(control$eta), # Distance measure parameter
+			as.double(control$epsL) # Line search parameter
+		)
+		if(verb>=2){
+			print(res)
+		}
+		# Beta per k steps
+		bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
+		# Naming rows/cols/vector elements
+		rownames(bperk) <- colnames(x)
+	# Gaussian / normal distribution fit using mean-squared error	
+	}else if(family %in% c("mse", "gaussian")){
+		# Call C function for Mean-Squared Error regression
+		res <- .Call(c_oscar_mse_f, 
+			as.double(x), # Data matrix x
+			as.double(y), # Response y
+			## Requires artificial addition of intercept kit?
+			as.integer(k), # Kit indicator matrix k 
+			as.double(w), # Kit weights/costs
+			as.integer(nrow(x)), # Number of samples (rows in x)
+			as.integer(ncol(x)), # Number of variables (columns in x)
+			as.integer(nrow(k)), # Number of kits
+			as.integer(print), # Tuning parameter for verbosity
+			as.integer(control$start), # Tuning parameter for starting values
+			as.integer(kmax), # Tuning parameter for max k run
+			# DBDC tuning parameters
+			as.integer(control$in_mrounds), # The number of rounds in one main iteration 
+			as.integer(control$in_mit), # The number of main iteration 
+			as.integer(control$in_mrounds_esc), # The number of rounds in escape procedure
+			as.integer(control$in_b1), # Bundle B1
+			as.integer(control$in_b2), # Bundle B2
+			as.integer(control$in_b), # Bundle B in escape procedure
+			as.double(control$in_m), # Descent parameter
+			as.double(control$in_m_clarke), # Descent parameter in escape procedure
+			as.double(control$in_c), # Extra decrease parameter
+			as.double(control$in_r_dec), # Decrease parameter
+			as.double(control$in_r_inc), # Increase parameter
+			as.double(control$in_eps1), # Enlargement parameter
+			as.double(control$in_eps), # Stopping tolerance: Proximity measure
+			as.double(control$in_crit_tol), # Stopping tolerance: Criticality tolerance
+			as.integer(sum(k)), #Number of ones in the kit matrix
+			as.integer(control$solver), # The solver used in optimization
+			# LMBM tuning parameters
+			as.integer(control$na), # Size of the bundle
+			as.integer(control$mcu), # Upper limit for maximum number of stored corrections
+			as.integer(control$mcinit), # Initial maximum number of stored corrections
+			as.double(control$tolf), # Tolerance for change of function values
+			as.double(control$tolf2), # Second tolerance for change of function values.
+			as.double(control$tolg), # Tolerance for the first termination criterion
+			as.double(control$tolg2), # Tolerance for the second termination criterion
+			as.double(control$eta), # Distance measure parameter
+			as.double(control$epsL) # Line search parameter
+		)
+		# Beta per k steps
+		# Add row for intercept
+		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
+		# Naming rows/cols/vector elements
+		rownames(bperk) <- c(colnames(x),"intercept")
+		
+	}else if(family == "logistic"){
+		# Call C function for logistic regression
+		res <- .Call(c_oscar_logistic_f, 
+			as.double(x), # Data matrix x
+			as.integer(y), # Response y
+			## Requires artificial addition of intercept kit?
+			as.integer(k), # Kit indicator matrix k 
+			as.double(w), # Kit weights/costs
+			as.integer(nrow(x)), # Number of samples (rows in x)
+			as.integer(ncol(x)), # Number of variables (columns in x)
+			as.integer(nrow(k)), # Number of kits
+			as.integer(print), # Tuning parameter for verbosity
+			as.integer(control$start), # Tuning parameter for starting values
+			as.integer(kmax), # Tuning parameter for max k run
+			# DBDC tuning parameters
+			as.integer(control$in_mrounds), # The number of rounds in one main iteration 
+			as.integer(control$in_mit), # The number of main iteration 
+			as.integer(control$in_mrounds_esc), # The number of rounds in escape procedure
+			as.integer(control$in_b1), # Bundle B1
+			as.integer(control$in_b2), # Bundle B2
+			as.integer(control$in_b), # Bundle B in escape procedure
+			as.double(control$in_m), # Descent parameter
+			as.double(control$in_m_clarke), # Descent parameter in escape procedure
+			as.double(control$in_c), # Extra decrease parameter
+			as.double(control$in_r_dec), # Decrease parameter
+			as.double(control$in_r_inc), # Increase parameter
+			as.double(control$in_eps1), # Enlargement parameter
+			as.double(control$in_eps), # Stopping tolerance: Proximity measure
+			as.double(control$in_crit_tol), # Stopping tolerance: Criticality tolerance
+			as.integer(sum(k)), #Number of ones in the kit matrix
+			as.integer(control$solver), # The solver used in optimization
+			# LMBM tuning parameters
+			as.integer(control$na), # Size of the bundle
+			as.integer(control$mcu), # Upper limit for maximum number of stored corrections
+			as.integer(control$mcinit), # Initial maximum number of stored corrections
+			as.double(control$tolf), # Tolerance for change of function values
+			as.double(control$tolf2), # Second tolerance for change of function values.
+			as.double(control$tolg), # Tolerance for the first termination criterion
+			as.double(control$tolg2), # Tolerance for the second termination criterion
+			as.double(control$eta), # Distance measure parameter
+			as.double(control$epsL) # Line search parameter
+		)
+		# Beta per k steps
+		# Add row for intercept
+		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
+		# Naming rows/cols/vector elements
+		rownames(bperk) <- c(colnames(x),"intercept")
+	
+	}
+
+	# If verb is high enough, print midpoints
+	if(verb>=3){
+		print(res)
+		print(dim(x))
+		print(length(y))
+		print(dim(k))
+		print(length(w))
+	}
+
+	# Beta per k steps
+	# Cox regression doesn't have intercept
+	if(family == "cox"){
+		bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
+		rownames(bperk) <- colnames(x)
+	# All other model families have intercept
+	}else{
+		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
+		# Fortran subroutine returns intercept as the last element, swap that to front
+		rownames(bperk) <- c(colnames(x), "(Intercept)")
+		bperk <- bperk[c(nrow(bperk), 1:(nrow(bperk)-1)),]
+	}
+
+	# Target function values per k steps
+	fperk <- as.numeric(res[[2]])
+	# Naming rows/cols/vector elements
+	names(fperk) <- colnames(bperk) <- paste("k_", 1:nrow(k), sep="")
+	
+	if(verb>=2){
+		print("fperk")
+		print(fperk)
+	}
+	# Transpose so that coefficients are columns and k-steps are rows in bperk
+	bperk <- t(bperk)
+	# Print mid-point for beta per kit k matrix
+	if(verb>=2){
+		print("bperk")
+		print(dim(bperk))
+		print(bperk)
+	}
+	## Get kperk from Fortran
+	kperk <- t(matrix(res[[3]], nrow = nrow(k), ncol = nrow(k)))
+	if(verb>=3){
+		print("kperk1")
+		print(dim(kperk))
+		print(kperk)
+	}
+	
+	kperk<- as.list(apply(kperk,MARGIN=1,FUN=function(z){z[which(!z==0)]}))
+	# If dealing with non-Cox regression, omit intercept from kit names
+	for(i in 1:length(kperk)){
+		names(kperk[[i]])<-rownames(k)[kperk[[i]]]
+	}
+	
+	# Kit costs per each k-step
+	cperk <- unlist(lapply(kperk, FUN=function(z) { sum(w[z], na.rm=TRUE) }))
+
+	if(verb>=2){
+		print("cperk")
+		print(cperk)
+	}
+
+	# Set solver as character into oscar object
+	if(solver == 1)
+	{
+		solver <- "DBDC"
+	}
+	if(solver == 2)
+	{
+		solver <- "LMBM"
+	}
+	
+	# Return the freshly built S4 model object
+	obj <- new("oscar", 
+		## Model fit results
+		bperk = bperk[1:kmax,,drop=FALSE], # Beta coef per k-steps up to kmax
+		fperk = fperk[1:kmax], # Target function values per k-steps up to kmax
+		kperk = kperk[1:kmax], # Chosen kits per k-steps up to kmax
+		cperk = cperk[1:kmax], # Total kit costs per each k-step up to kmax
+		## Data slots
+		x=as.matrix(x),	# Data matrix X
+		y=as.matrix(y), # Response Y
+		k=as.matrix(k), # Kit matrix K
+		w=as.numeric(w),	# Vector of weights/costs for kits
+		## Additional parameters
+		family=as.character(family),	# Model family as a character string
+		metric=as.character(metric),	# Model goodness metric
+		start=control$start,	# Method for generating starting points
+		kmax=kmax,	# Max run k-step
+		solver = solver,# Solver used in optimization (DBDC or LMBM)
+		call = Call	# Used function call
+	)
+
+	if(verb>=2){
+		print("obj template created successfully")
+	}
+	
+	# Calculate/extract model goodness metric at each k
+	try({
+		# Cox regression
+		if(family=="cox"){
+			# Use c-index as the goodness measure
+			obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { survival::coxph(Surv(time=y[,1], event=y[,2]) ~ x %*% t(bperk[z,,drop=FALSE]))$concordance["concordance"] }))
+		}else if(family %in% c("mse", "gaussian")){
+			# Use mean squared error as the goodness measure
+			obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { mean((y - (cbind(1, x) %*% t(bperk[z,,drop=FALSE])))^2) }))
+		}else if(family=="logistic"){
+			# Use correct classification percent as the goodness measure
+			# ROC-AUC
+			if(metric=="auc"){
+			
+			# Accuracy
+			}else if(metric=="accuracy"){
+				#obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { sum(as.numeric(y == (predict.glm(z, type="response")>0.5)))/length(y) }))
+			}
+		}
+	})
+	
+	# Return the new model object
+	obj
+}
+
+#' @title Control OSCAR optimizer parameters
+#*
+#' @description Fine-tuning the parameters available for the DBDC and LMBM optimizers. See details for further information.
+#'
+#' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2
+#' @param in_mrounds DESCRIPTION
+#' @param in_mit DESCRIPTION
+#' @param in_mrounds_esc DESCRIPTION
+#' @param in_b1 DESCRIPTION
+#' @param in_b2 DESCRIPTION
+#' @param in_m DESCRIPTION
+#' @param in_m_clarke DESCRIPTION
+#' @param in_c DESCRIPTION
+#' @param in_r_dec DESCRIPTION
+#' @param in_r_inc DESCRIPTION
+#' @param in_eps1 DESCRIPTION
+#' @param in_eps DESCRIPTION
+#' @param in_crit_tol DESCRIPTION
+#' @param na DESCRIPTION
+#' @param mcu DESCRIPTION
+#' @param mcinit DESCRIPTION
+#' @param tolf DESCRIPTION
+#' @param tolf2 DESCRIPTION
+#' @param tolg DESCRIPTION
+#' @param tolg2 DESCRIPTION
+#' @param eta DESCRIPTION
+#' @param epsL DESCRIPTION
+#'
+#' @return A list of parameters for the OSCAR optimizers.
+#'
+#' @details 
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'   oscar.control() # Return a list of default parameters
+#'  }
+#' }
+#' @rdname oscar.control
+#' @export 
+oscar.control <- function(
+	# Required input from user
+	x,
+	family,
+	# Default parameter construction part
+	start=2,# Strategy for choosing starting points at each n_k iteration
+	# Tuning parameters for DBDC
+	in_mrounds = 5000, # The number of rounds in one main iteration 
+	in_mit = 5000, # The number of main iteration 
+	in_mrounds_esc = 5000, # The number of rounds in escape procedure
+	in_b1, # Bundle B1, default min(n+5,1000) depends on the problem -> defined later
+	in_b2 = 3, # Bundle B2
+	in_b, # Bundle B in escape procedure, default 2n depends on the problem -> defined later
+	in_m = 0.01, # Descent parameter
+	in_m_clarke = 0.01, # Descent parameter in escape procedure
+	in_c = 0.1, # Extra decrease parameter
+	in_r_dec, # Decrease parameter, default depends on the problem -> defined later
+	in_r_inc = 10^5, # Increase parameter
+	in_eps1 = 5*10^(-5), # Enlargement parameter
+	in_eps, # Stopping tolerance: Proximity measure, default depends on the problem -> defined later
+	in_crit_tol =10^(-5), # Stopping tolerance: Criticality tolerance
+	# Tuning parameters for LMBM
+	na =4, # Size of the bundle in LMBM, na >= 2
+	mcu = 7, # Upper limit for maximum number of stored corrections in LMBM, mcu >= 3
+	mcinit = 7, # Initial maximum number of stored corrections in LMBM, mcu >= mcinit >= 3 
+	tolf = 10^(-5), # Tolerance for change of function values in LMBM
+	tolf2 = 10^4, # Second tolerance for change of function values.
+           #                          - If tolf2 < 0 the the parameter and the corresponding termination criterion will be ignored. 
+           #                          - If tolf2 = 0 the default value 1.0E+4 will be used
+	tolg = 10^(-5), # Tolerance for the first termination criterion in LMBM
+	tolg2 = tolg, # Tolerance for the second termination criterion in LMBM (default = tolg)
+	eta = 0.5, # Distance measure parameter in LMBM, eta > 0
+	epsL = 0.125 # Line search parameter in LMBM, 0 < epsL < 0.25 (default = 1.0E-4.),
+){
 	#### CHECKING tuning parameters and setting defaults ####
 	if(in_mrounds <=0){ # The number of rounds in one main iteration 
 		in_mrounds <- 5000
@@ -396,22 +729,8 @@ oscar <- function(
 		}
 		warnings(paste("Input in_eps should be >0. Default value ", in_eps," is used instead.",sep=""))
 	}
-	#if(missing(in_crit_tol)){# Stopping tolerance: Criticality tolerance
-	#	user_n <- ncol(x)
-	#	if(family %in% c("mse","logistic","gaussian","normal")){
-	#	user_n <- user_n +1}
-	#	if(user_n <=200){in_crit_tol <- 10^(-5)
-	#	}else{in_crit_tol <- 10^(-4)
-	#	}
-	#}
 	if(in_crit_tol<=0){
 		in_crit_tol <- 10^(-5)
-		#user_n <- ncol(x)
-		#if(family %in% c("mse","logistic","gaussian","normal")){
-		#user_n <- user_n +1}
-		#if(user_n <=200){in_crit_tol<- 10^(-5)
-		#}else{in_crit_tol <- 10^(-4)
-		#}
 		warnings(paste("Input in_crit_tol should be >0. Default value ", in_crit_tol," is used instead.",sep=""))
 	}	
 	
@@ -451,280 +770,33 @@ oscar <- function(
 		eta <- 0.125
 		warnings("Input epsl should be >0 and <0.25. Default value 0.125 is used instead.")
 	}
-	
-	
-	## Sanitize column names, replacing '+' with 'plus', '-' with 'minus', and ' ', '(' and ')' with '_'
-	if(sanitize){
-		colnames(x) <- gsub("\\ |\\(|)", "_", gsub("\\+", "plus", gsub("\\-", "minus", colnames(x))))
-	}
-	
-	###############################
-	#### Calling C and Fortran ####
-	# Call correct internal function based on the specified model family
-	if(family=="cox"){
-		# Call C function for Cox regression
-		res <- .Call(c_oscar_cox_f, 
-			as.double(x), # Data matrix x
-			as.double(y), # Response y
-			as.integer(k), # Kit indicator matrix k 
-			as.double(w), # Kit weights/costs
-			as.integer(nrow(x)), # Number of samples (rows in x)
-			as.integer(ncol(x)), # Number of variables (columns in x)
-			as.integer(nrow(k)), # Number of kits
-			as.integer(print), # Tuning parameter for verbosity
-			as.integer(start), # Tuning parameter for starting values
-			as.integer(kmax), # Tuning parameter for max k run
-			# DBDC tuning parameters
-			as.integer(in_mrounds), # The number of rounds in one main iteration 
-			as.integer(in_mit), # The number of main iteration 
-			as.integer(in_mrounds_esc), # The number of rounds in escape procedure
-			as.integer(in_b1), # Bundle B1
-			as.integer(in_b2), # Bundle B2
-			as.integer(in_b), # Bundle B in escape procedure
-			as.double(in_m), # Descent parameter
-			as.double(in_m_clarke), # Descent parameter in escape procedure
-			as.double(in_c), # Extra decrease parameter
-			as.double(in_r_dec), # Decrease parameter
-			as.double(in_r_inc), # Increase parameter
-			as.double(in_eps1), # Enlargement parameter
-			as.double(in_eps), # Stopping tolerance: Proximity measure
-			as.double(in_crit_tol), # Stopping tolerance: Criticality tolerance
-			as.integer(sum(k)), #Number of ones in the kit matrix
-			as.integer(solver), # The solver used in optimization
-			# LMBM tuning parameters
-			as.integer(na), # Size of the bundle
-			as.integer(mcu), # Upper limit for maximum number of stored corrections
-			as.integer(mcinit), # Initial maximum number of stored corrections
-			as.double(tolf), # Tolerance for change of function values
-			as.double(tolf2), # Second tolerance for change of function values.
-			as.double(tolg), # Tolerance for the first termination criterion
-			as.double(tolg2), # Tolerance for the second termination criterion
-			as.double(eta), # Distance measure parameter
-			as.double(epsL) # Line search parameter
-		)
-		if(verb>=2){
-			print(res)
-		}
-		# Beta per k steps
-		bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
-		# Naming rows/cols/vector elements
-		rownames(bperk) <- colnames(x)
-	# Gaussian / normal distribution fit using mean-squared error	
-	}else if(family %in% c("mse", "gaussian")){
-		# Call C function for Mean-Squared Error regression
-		res <- .Call(c_oscar_mse_f, 
-			as.double(x), # Data matrix x
-			as.double(y), # Response y
-			## Requires artificial addition of intercept kit?
-			as.integer(k), # Kit indicator matrix k 
-			as.double(w), # Kit weights/costs
-			as.integer(nrow(x)), # Number of samples (rows in x)
-			as.integer(ncol(x)), # Number of variables (columns in x)
-			as.integer(nrow(k)), # Number of kits
-			as.integer(print), # Tuning parameter for verbosity
-			as.integer(start), # Tuning parameter for starting values
-			as.integer(kmax), # Tuning parameter for max k run
-			# DBDC tuning parameters
-			as.integer(in_mrounds), # The number of rounds in one main iteration 
-			as.integer(in_mit), # The number of main iteration 
-			as.integer(in_mrounds_esc), # The number of rounds in escape procedure
-			as.integer(in_b1), # Bundle B1
-			as.integer(in_b2), # Bundle B2
-			as.integer(in_b), # Bundle B in escape procedure
-			as.double(in_m), # Descent parameter
-			as.double(in_m_clarke), # Descent parameter in escape procedure
-			as.double(in_c), # Extra decrease parameter
-			as.double(in_r_dec), # Decrease parameter
-			as.double(in_r_inc), # Increase parameter
-			as.double(in_eps1), # Enlargement parameter
-			as.double(in_eps), # Stopping tolerance: Proximity measure
-			as.double(in_crit_tol), # Stopping tolerance: Criticality tolerance
-			as.integer(sum(k)), #Number of ones in the kit matrix
-			as.integer(solver), # The solver used in optimization
-			# LMBM tuning parameters
-			as.integer(na), # Size of the bundle
-			as.integer(mcu), # Upper limit for maximum number of stored corrections
-			as.integer(mcinit), # Initial maximum number of stored corrections
-			as.double(tolf), # Tolerance for change of function values
-			as.double(tolf2), # Second tolerance for change of function values.
-			as.double(tolg), # Tolerance for the first termination criterion
-			as.double(tolg2), # Tolerance for the second termination criterion
-			as.double(eta), # Distance measure parameter
-			as.double(epsL) # Line search parameter
-		)
-		# Beta per k steps
-		# Add row for intercept
-		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
-		# Naming rows/cols/vector elements
-		rownames(bperk) <- c(colnames(x),"intercept")
-		
-	}else if(family == "logistic"){
-		# Call C function for logistic regression
-		res <- .Call(c_oscar_logistic_f, 
-			as.double(x), # Data matrix x
-			as.integer(y), # Response y
-			## Requires artificial addition of intercept kit?
-			as.integer(k), # Kit indicator matrix k 
-			as.double(w), # Kit weights/costs
-			as.integer(nrow(x)), # Number of samples (rows in x)
-			as.integer(ncol(x)), # Number of variables (columns in x)
-			as.integer(nrow(k)), # Number of kits
-			as.integer(print), # Tuning parameter for verbosity
-			as.integer(start), # Tuning parameter for starting values
-			as.integer(kmax), # Tuning parameter for max k run
-			# DBDC tuning parameters
-			as.integer(in_mrounds), # The number of rounds in one main iteration 
-			as.integer(in_mit), # The number of main iteration 
-			as.integer(in_mrounds_esc), # The number of rounds in escape procedure
-			as.integer(in_b1), # Bundle B1
-			as.integer(in_b2), # Bundle B2
-			as.integer(in_b), # Bundle B in escape procedure
-			as.double(in_m), # Descent parameter
-			as.double(in_m_clarke), # Descent parameter in escape procedure
-			as.double(in_c), # Extra decrease parameter
-			as.double(in_r_dec), # Decrease parameter
-			as.double(in_r_inc), # Increase parameter
-			as.double(in_eps1), # Enlargement parameter
-			as.double(in_eps), # Stopping tolerance: Proximity measure
-			as.double(in_crit_tol), # Stopping tolerance: Criticality tolerance
-			as.integer(sum(k)), #Number of ones in the kit matrix
-			as.integer(solver), # The solver used in optimization
-			# LMBM tuning parameters
-			as.integer(na), # Size of the bundle
-			as.integer(mcu), # Upper limit for maximum number of stored corrections
-			as.integer(mcinit), # Initial maximum number of stored corrections
-			as.double(tolf), # Tolerance for change of function values
-			as.double(tolf2), # Second tolerance for change of function values.
-			as.double(tolg), # Tolerance for the first termination criterion
-			as.double(tolg2), # Tolerance for the second termination criterion
-			as.double(eta), # Distance measure parameter
-			as.double(epsL) # Line search parameter
-		)
-		# Beta per k steps
-		# Add row for intercept
-		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
-		# Naming rows/cols/vector elements
-		rownames(bperk) <- c(colnames(x),"intercept")
-	
-	}
-
-	# If verb is high enough, print midpoints
-	if(verb>=3){
-		print(res)
-		print(dim(x))
-		print(length(y))
-		print(dim(k))
-		print(length(w))
-	}
-
-	# Beta per k steps
-	# Cox regression doesn't have intercept
-	if(family == "cox"){
-		bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
-		rownames(bperk) <- colnames(x)
-	# All other model families have intercept
-	}else{
-		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
-		# Fortran subroutine returns intercept as the last element, swap that to front
-		rownames(bperk) <- c(colnames(x), "(Intercept)")
-		bperk <- bperk[c(nrow(bperk), 1:(nrow(bperk)-1)),]
-	}
-
-	# Target function values per k steps
-	fperk <- as.numeric(res[[2]])
-	# Naming rows/cols/vector elements
-	names(fperk) <- colnames(bperk) <- paste("k_", 1:nrow(k), sep="")
-	
-	if(verb>=2){
-		print("fperk")
-		print(fperk)
-	}
-	# Transpose so that coefficients are columns and k-steps are rows in bperk
-	bperk <- t(bperk)
-	# Print mid-point for beta per kit k matrix
-	if(verb>=2){
-		print("bperk")
-		print(dim(bperk))
-		print(bperk)
-	}
-	## Get kperk from Fortran
-	kperk <- t(matrix(res[[3]], nrow = nrow(k), ncol = nrow(k)))
-	if(verb>=3){
-		print("kperk1")
-		print(dim(kperk))
-		print(kperk)
-	}
-	
-	kperk<- as.list(apply(kperk,MARGIN=1,FUN=function(z){z[which(!z==0)]}))
-	# If dealing with non-Cox regression, omit intercept from kit names
-	for(i in 1:length(kperk)){
-		names(kperk[[i]])<-rownames(k)[kperk[[i]]]
-	}
-	
-	# Kit costs per each k-step
-	cperk <- unlist(lapply(kperk, FUN=function(z) { sum(w[z], na.rm=TRUE) }))
-
-	if(verb>=2){
-		print("cperk")
-		print(cperk)
-	}
-
-	# Set solver as character into oscar object
-	if(solver == 1)
-	{
-		solver <- "DBDC"
-	}
-	if(solver == 2)
-	{
-		solver <- "LMBM"
-	}
-	
-	# Return the freshly built S4 model object
-	obj <- new("oscar", 
-		## Model fit results
-		bperk = bperk[1:kmax,,drop=FALSE], # Beta coef per k-steps up to kmax
-		fperk = fperk[1:kmax], # Target function values per k-steps up to kmax
-		kperk = kperk[1:kmax], # Chosen kits per k-steps up to kmax
-		cperk = cperk[1:kmax], # Total kit costs per each k-step up to kmax
-		## Data slots
-		x=as.matrix(x),	# Data matrix X
-		y=as.matrix(y), # Response Y
-		k=as.matrix(k), # Kit matrix K
-		w=as.numeric(w),	# Vector of weights/costs for kits
-		## Additional parameters
-		family=as.character(family),	# Model family as a character string
-		metric=as.character(metric),	# Model goodness metric
-		start=start,	# Method for generating starting points
-		kmax=kmax,	# Max run k-step
-		solver = solver # Solver used in optimization (DBDC or LMBM)
-		
+	# Return all tuning parameters
+	list(
+		start,	# Strategy for choosing starting points at each n_k iteration
+		# Tuning parameters for DBDC
+		in_mrounds,	# The number of rounds in one main iteration 
+		in_mit,	# The number of main iteration 
+		in_mrounds_esc,	# The number of rounds in escape procedure
+		in_b1,	# Bundle B1, default min(n+5,1000) depends on the problem -> defined later
+		in_b2,	# Bundle B2
+		in_b,	# Bundle B in escape procedure, default 2n depends on the problem -> defined later
+		in_m,	# Descent parameter
+		in_m_clarke,	# Descent parameter in escape procedure
+		in_c,	# Extra decrease parameter
+		in_r_dec,	# Decrease parameter, default depends on the problem -> defined later
+		in_r_inc,	# Increase parameter
+		in_eps1,	# Enlargement parameter
+		in_eps,	# Stopping tolerance: Proximity measure, default depends on the problem -> defined later
+		in_crit_tol,	# Stopping tolerance: Criticality tolerance
+		# Tuning parameters for LMBM
+		na,	# Size of the bundle in LMBM, na >= 2
+		mcu,	# Upper limit for maximum number of stored corrections in LMBM, mcu >= 3
+		mcinit,	# Initial maximum number of stored corrections in LMBM, mcu >= mcinit >= 3 
+		tolf,	# Tolerance for change of function values in LMBM
+		tolf2,	# Second tolerance for change of function values.
+		tolg,	# Tolerance for the first termination criterion in LMBM
+		tolg2,	# Tolerance for the second termination criterion in LMBM (default = tolg)
+		eta,	# Distance measure parameter in LMBM, eta > 0
+		epsL	# Line search parameter in LMBM, 0 < epsL < 0.25 (default = 1.0E-4.),
 	)
-
-	if(verb>=2){
-		print("obj template created successfully")
-	}
-	
-	# Calculate/extract model goodness metric at each k
-	try({
-		# Cox regression
-		if(family=="cox"){
-			# Use c-index as the goodness measure
-			obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { survival::coxph(Surv(time=y[,1], event=y[,2]) ~ x %*% t(bperk[z,,drop=FALSE]))$concordance["concordance"] }))
-		}else if(family %in% c("mse", "gaussian")){
-			# Use mean squared error as the goodness measure
-			obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { mean((y - (cbind(1, x) %*% t(bperk[z,,drop=FALSE])))^2) }))
-		}else if(family=="logistic"){
-			# Use correct classification percent as the goodness measure
-			# ROC-AUC
-			if(metric=="auc"){
-			
-			# Accuracy
-			}else if(metric=="accuracy"){
-				#obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { sum(as.numeric(y == (predict.glm(z, type="response")>0.5)))/length(y) }))
-			}
-		}
-	})
-	
-	# Return the new model object
-	obj
 }
