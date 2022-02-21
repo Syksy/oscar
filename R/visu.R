@@ -327,11 +327,10 @@ binplot <- function(
 #' @export
 bs.plot <- function(
 	fit, # Model fit object
-	#cv, # Cross-validation performance if calculated
 	bs, # Bootstrapped data estimates if calculated
 	kmax, # Maximum k to draw to; if missing, using kmax from fit@kmax
 	cex.axis = 0.6, # Axis cex, for scaling
-	palet = colorRampPalette(c("orange", "red", "black", "blue", "cyan"))(100), # color palette used in the heatmap
+	palet = colorRampPalette(c("orange", "red", "black", "blue", "cyan"))(dim(bs)[3]), # color palette used in the heatmap, by default the number of bootstrapped datasets as separate colors
 	nbins = 100, # Number of color bins
 	Colv=NA, # Sorting of columns
 	Rowv=NA, # Sorting of rows
@@ -379,9 +378,9 @@ bs.plot <- function(
 #' @param mar.1st Marginals for the main plot, Default: c(4,4,2,0)
 #' @param mar.2nd Marginals for the legend, Default: c(2.5,0,2,2)
 #' @param monochrome If the plot should be with colors (F) or monochrome (T), Default: F
-
+#'
 #' @importFrom rPref psel
-					
+#'					
 #' @rdname plot.smoothing.spline
 #' @export
 plot.pareto.costCI <- function(costs, cindexes, nzeros, col,ncolors,ylab="cindex",xlab="cost",pch=19,bg=col,cex=0.2,
@@ -423,8 +422,9 @@ plot.pareto.costCI <- function(costs, cindexes, nzeros, col,ncolors,ylab="cindex
   }else{
     plot(costs,cindexes,col=col,ylab=ylab,xlab=xlab,cex=cex,pch=pch,las=las,ylim=ylim, xlim=xlim)
   }
-  library(rPref) ## !!!
-  pareto.points <- psel(data.frame("cost"=costs,"CI"=cindexes),pref=low(cost)*high(CI))
+  ## TDL: Packages shouldn't be loaded, but instead called with ::
+  #library(rPref) ## !!!
+  pareto.points <- rPref::psel(data.frame("cost"=costs,"CI"=cindexes),pref=rPref::low(cost)*rPref::high(CI))
   points(pareto.points[,1],pareto.points[,2],type='l',col=col.paretoline,lwd=1.5)
   
   if(monochrome==T){
@@ -463,8 +463,8 @@ plot.smoothing.spline <- function(
 	ylab="y",  # Title of y-axis
 	xlab="x", # Title of x-axis
 	a.title="", # Title of the scatter plot with spline
-	df=ceiling(length(unique(x)))/2){ # Degrees of freedom
-  #browser()
+	df=ceiling(length(unique(x)))/2)
+{ # Degrees of freedom
   spline<-smooth.spline(x=x,y=y,df=df)  
   d2.spline <- predict(spline,seq(min(x),max(x),by=(max(x)-min(x))/100),deriv=2)
   d1.spline <- predict(spline,seq(min(x),max(x),by=(max(x)-min(x))/100),deriv=1)

@@ -9,7 +9,78 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
-Example use of OSCAR and fine-tuning parameters
+```{r oscar}
+library(oscar)
+```
+
+
+# Example use of OSCAR
+
+OSCAR (Optimal Subset CArdinality Regression) is an R-package delivering L0-quasinorm penalized regression models for Cox, logistic and gaussian model families. 
+It comes with two different optimizers for the computationally demanding task, and they have been implemented in Fortran.
+The R package handles all interaction with Fortran and provides many convenience and visualization functions to assist with L0-penalized regression modelling.
+
+## Cox regression (simulated TYKS real-world PCa data)
+
+A simulated real-world hospital cohort data with patient survival with prostate cancer (PCa) is provided with:
+```{r exdata}
+data(ex)
+ex_X[1:10,1:10]
+head(ex_Y)
+```
+
+For further details regarding this dataset, see reference [1].
+
+One key feature in OSCAR in addition to its L0 norm penalization is its capability to handle variables as groups, or 'kits' as we call them. 
+In many clinical applications this is often reality; for example, curating initial data for variables together can occur in cases such as:
+
+* A series of laboratory tests (such as a generic blood panel) are run together
+* A pre-made small gene panel is run, instead of transcriptome-wide analysis
+* Highly correlated values are run together
+
+In the example data from Turku University Hospital (TYKS), a series of clinical variables are run together. 
+For example a standard blood panel includes red blood cell count, hematocrite, white blood cell count, etc. 
+Additionally, single variables can be run separately; a very common single marker for PCa is Prostate-Specific Antigen (PSA).
+
+The kit structure for such variables that can be obtained together are modelled using a kit indicator matrix:
+```{r kits}
+ex_K[1:7,1:7]
+apply(ex_K, MARGIN=1, FUN=sum) # Row indicator sums
+apply(ex_K, MARGIN=2, FUN=sum) # Column indicator sums
+```
+
+If the kit matrix is a diagonal indicator matrix with dimensions equal to the number of variables, each variable is L0-penalized without any grouping structure.
+
+Further, these kits can be assigned a 'price'. This may be a price literally, or a descriptive value indicating how hard the variable is to obtain. 
+With this information, a clinically feasible pareto-front can be constructed, that simultaneously captures modelling generalization as well as clinical applicability.
+
+A cost vector can be provided for the fitting procedure, and a standardized arbitrary unit cost vector is provided in:
+
+```{r cvec}
+head(ex_c)
+```
+
+OSCAR comes with two different optimizers: 
+
+* DBDC, double bundle DC optimization, which is computationally more demanding but in general results in better optima
+* LMBM, which is faster to run, especially with higher count of variables
+
+These are provided to the fitting procedure with ```solver=1``` and ```solver=2``` or with their abbreviations. They have been implemented in Fortran for computational efficiency.
+
+A quick example run of OSCAR with LMBM together with the default kit structure for Cox regression:
+
+```{r}
+fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family="cox", solver="LMBM")
+fit
+```
+
+A pareto-optimal front provides information on potential optimal saddle points, where model generalization and clinical applicability pair nicely:
+
+```{r pareto, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Pareto front for the clinical measurements and C-index."}
+plot.pareto.costCI(costs=fit@w, cindexes=fit@goodness, nzeros=1:fit@kmax)
+```
+
+## Gaussian regression (swiss-data)
 
 ```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Model coefficients as a function of k."}
 
@@ -23,40 +94,50 @@ plot(fit)
 
 ```
 
+### Goodness of fit vs. model coefficient cost
+
 Model convergence in target function is important, while an another axis can be plotted simultaneously to provide supporting information:
 
-```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Target function value as a function of k."}
+```{r eval=TRUE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Target function value as a function of k."}
 
 visu(fit, y="target")
 
 ```
 
+### Cross-validation and bootstrapping
+
 Fit model object can be inspected based on visual diagnostics such as cross-validation and bootstrapping:
 
-```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="10-fold cross-validation for optimally generalizable cardinality 'k'"}
+```{r eval=TRUE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="10-fold cross-validation for optimally generalizable cardinality 'k'"}
 # Set seed for reproducibility
 set.seed(1)
 # Perform 10-fold cross-validation to find out optimal k
-cv <- cv.oscar(fit, fold=10, seed=0)
+cv <- cv.oscar(fit, fold=5, seed=123, solver=2)
 # Visualize model generalization performance as a function of k
 cv.visu(cv)
 
 ```
 
-Appears that k-values 3 or 4 saturate the model, with no further coefficients contributing to the model's generalization capability. Further, there is some uncertainty as to what order the coefficients should be non-zero, based on bootstrapping:
+It appears that k-values around 5 or above present a shoulder-point saturate the model, with no further coefficients contributing to the model's generalization capability. 
 
-```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Bootstrapped coefficient trajectories"}
+Further, there is some uncertainty as to what order the coefficients should be non-zero, based on bootstrapping:
 
-# Bootstrap original data 25 times (sampling with replacement and refitting)
-bs <- bs.oscar(fit, bootstrap=25, seed=0)
+```{r eval=TRUE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Bootstrapped coefficient trajectories"}
+# Bootstrap original data 20 times (sampling with replacement and refitting)
+bs <- bs.oscar(fit, bootstrap=20, seed=234, solver=2)
 # Visualize trajectories of bootstrapped coefficients
-bs.visu(bs)
+bs.plot(fit=fit, bs=bs, nbins=20)
 
 ```
 
+Based on the bootstrapping, PSA is a clear winner. Close second candidate for survival prediction is Alkaline Phosphatase (ALP). 
+After these single markers the bootstrapping was quite prone to choosing separate kits between immunomarkers and standard bloodwork, with no clear consistent winner.
+
+### Further useful commands
+
 Useful commands for understanding the model and the casso object:
 
-```{r eval=FALSE}
+```{r eval=TRUE}
 
 coef(fit, k=3) # All potential coefficients at cardinality k=3
 feat(fit, k=3) # All features chosen at cardinality k=3
@@ -64,3 +145,11 @@ cost(fit, k=3) # Kit sum costs at various k cardinalities
 
 ```
 
+# References
+
+1: Laajala TD, Murtojarvi M, Virkki A, Aittokallio T. ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to real-world patient cohorts. Bioinformatics. 2018;34(22):3957-3959. doi:10.1093/bioinformatics/bty477
+
+# Session info
+```{r sesinfo}
+sessionInfo()
+```

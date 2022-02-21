@@ -543,7 +543,7 @@ oscar <- function(
 
 #' @title Control OSCAR optimizer parameters
 #*
-#' @description Fine-tuning the parameters available for the DBDC and LMBM optimizers. See details for further information.
+#' @description Fine-tuning the parameters available for the DBDC and LMBM optimizers. See oscar documentation for the optimization algorithms for further details.
 #'
 #' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2
 #' @param in_mrounds DESCRIPTION
@@ -571,7 +571,8 @@ oscar <- function(
 #'
 #' @return A list of parameters for the OSCAR optimizers.
 #'
-#' @details 
+#' @details This function sanity checks and provides reasonable DBDC and LMBM optimization tuning parameters. User may override custom values, though sanity checks will prevent unreasonable values and replace them.
+#'
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
