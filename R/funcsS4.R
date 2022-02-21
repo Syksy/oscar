@@ -221,8 +221,12 @@ setMethod("cost", "oscar",
 )
 
 		
-## Calculate the cost of the model fits if the cost is not included in the oscar object
-## If at least one measurement from a kit is included in the model, the kit cost is added.
+#' Return total cost of model fits if the cost is not included in the oscar object
+#' If at least one measurement from a kit is included in the model, the kit cost is added.
+#'
+#' @rdname generics
+#'
+#' @export
 cost.after <- function(object, kit.matrix, cost.vector){
   # Assume that the features are in the same order in x-matrix of oscar object and kit matrix
   # Assume that the kits are in the same order in kit.matrix and cost.vector
