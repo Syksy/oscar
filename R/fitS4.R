@@ -546,28 +546,28 @@ oscar <- function(
 #' @description Fine-tuning the parameters available for the DBDC and LMBM optimizers. See oscar documentation for the optimization algorithms for further details.
 #'
 #' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2
-#' @param in_mrounds DESCRIPTION
-#' @param in_mit DESCRIPTION
-#' @param in_mrounds_esc DESCRIPTION
-#' @param in_b1 DESCRIPTION
-#' @param in_b2 DESCRIPTION
-#' @param in_m DESCRIPTION
-#' @param in_m_clarke DESCRIPTION
-#' @param in_c DESCRIPTION
-#' @param in_r_dec DESCRIPTION
-#' @param in_r_inc DESCRIPTION
-#' @param in_eps1 DESCRIPTION
-#' @param in_eps DESCRIPTION
-#' @param in_crit_tol DESCRIPTION
-#' @param na DESCRIPTION
-#' @param mcu DESCRIPTION
-#' @param mcinit DESCRIPTION
-#' @param tolf DESCRIPTION
-#' @param tolf2 DESCRIPTION
-#' @param tolg DESCRIPTION
-#' @param tolg2 DESCRIPTION
-#' @param eta DESCRIPTION
-#' @param epsL DESCRIPTION
+#' @param in_mrounds DBDC: The maximum number of rounds in one main iteration
+#' @param in_mit DBDC: The maximum number of main iterations
+#' @param in_mrounds_esc DBDC: The maximum number of rounds in escape procedure
+#' @param in_b1 DBDC: The size of bundle B1
+#' @param in_b2 DBDC: The size of bundle B2
+#' @param in_m DBDC: The descent parameter in main iteration
+#' @param in_m_clarke DBDC: The descent parameter in escape procedure
+#' @param in_c DBDC: The extra decrease parameter in main iteration
+#' @param in_r_dec DBDC: The decrease parameter in main iteration
+#' @param in_r_inc DBDC: The increase parameter in main iteration
+#' @param in_eps1 DBDC: The enlargement parameter
+#' @param in_eps DBDC: The stopping tolerance (proximity measure)
+#' @param in_crit_tol DBDC: The stopping tolerance (criticality tolerance)
+#' @param na LMBM: Size of the bundle
+#' @param mcu LMBM: Upper limit for maximum number of stored corrections
+#' @param mcinit LMBM: Initial maximum number of stored corrections
+#' @param tolf LMBM: Tolerance for change of function values
+#' @param tolf2 LMBM: Second tolerance for change of function values
+#' @param tolg LMBM: Tolerance for the first termination criterion 
+#' @param tolg2 LMBM: Tolerance for the second termination criterion
+#' @param eta LMBM: Distance measure parameter
+#' @param epsL LMBM: Line search parameter
 #'
 #' @return A list of parameters for the OSCAR optimizers.
 #'
@@ -613,7 +613,7 @@ oscar.control <- function(
 	tolg = 10^(-5), # Tolerance for the first termination criterion in LMBM
 	tolg2 = tolg, # Tolerance for the second termination criterion in LMBM (default = tolg)
 	eta = 0.5, # Distance measure parameter in LMBM, eta > 0
-	epsL = 0.125 # Line search parameter in LMBM, 0 < epsL < 0.25 (default = 1.0E-4.),
+	epsL = 0.125 # Line search parameter in LMBM, 0 < epsL < 0.25
 ){
 	#### CHECKING tuning parameters and setting defaults ####
 	if(in_mrounds <=0){ # The number of rounds in one main iteration 
