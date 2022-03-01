@@ -542,36 +542,39 @@ oscar <- function(
 }
 
 #' @title Control OSCAR optimizer parameters
-#*
+#'
 #' @description Fine-tuning the parameters available for the DBDC and LMBM optimizers. See oscar documentation for the optimization algorithms for further details.
 #'
+#' @param x Input data matrix 'x'; will be used for calculating various control parameter defaults.
+#' @param family Model family; should be one of 'cox', 'logistic', or 'gaussian'/'mse'
 #' @param start Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2
-#' @param in_mrounds DBDC: The maximum number of rounds in one main iteration
-#' @param in_mit DBDC: The maximum number of main iterations
-#' @param in_mrounds_esc DBDC: The maximum number of rounds in escape procedure
-#' @param in_b1 DBDC: The size of bundle B1
-#' @param in_b2 DBDC: The size of bundle B2
-#' @param in_m DBDC: The descent parameter in main iteration
-#' @param in_m_clarke DBDC: The descent parameter in escape procedure
-#' @param in_c DBDC: The extra decrease parameter in main iteration
-#' @param in_r_dec DBDC: The decrease parameter in main iteration
-#' @param in_r_inc DBDC: The increase parameter in main iteration
-#' @param in_eps1 DBDC: The enlargement parameter
-#' @param in_eps DBDC: The stopping tolerance (proximity measure)
-#' @param in_crit_tol DBDC: The stopping tolerance (criticality tolerance)
-#' @param na LMBM: Size of the bundle
-#' @param mcu LMBM: Upper limit for maximum number of stored corrections
-#' @param mcinit LMBM: Initial maximum number of stored corrections
-#' @param tolf LMBM: Tolerance for change of function values
-#' @param tolf2 LMBM: Second tolerance for change of function values
-#' @param tolg LMBM: Tolerance for the first termination criterion 
-#' @param tolg2 LMBM: Tolerance for the second termination criterion
-#' @param eta LMBM: Distance measure parameter
-#' @param epsL LMBM: Line search parameter
+#' @param in_mrounds DBDC: The maximum number of rounds in one main iteration, Default: 5000
+#' @param in_mit DBDC: The maximum number of main iterations, Default: 5000
+#' @param in_mrounds_esc DBDC: The maximum number of rounds in escape procedure, Default: 5000
+#' @param in_b1 DBDC: The size of bundle B1, Default: min(n_feat+5,1000)
+#' @param in_b2 DBDC: The size of bundle B2, Default: 3
+#' @param in_b DBDC: Bundle B in escape procedure, Default: 2*n_feat
+#' @param in_m DBDC: The descent parameter in main iteration, Default: 0.01
+#' @param in_m_clarke DBDC: The descent parameter in escape procedure, Default: 0.01
+#' @param in_c DBDC: The extra decrease parameter in main iteration, Default: 0.1
+#' @param in_r_dec DBDC: The decrease parameter in main iteration, Default: 0.75, 0.99, or larger depending on n_obs (thresholds 10, 300, and above)
+#' @param in_r_inc DBDC: The increase parameter in main iteration, Default: 10^5
+#' @param in_eps1 DBDC: The enlargement parameter, Default: 5*10^(-5)
+#' @param in_eps DBDC: The stopping tolerance (proximity measure), Default: 10^(-6) if number of features is <= 50, otherwise 10^(-5)
+#' @param in_crit_tol DBDC: The stopping tolerance (criticality tolerance), Default: 10^(-5)
+#' @param na LMBM: Size of the bundle, Default: 4
+#' @param mcu LMBM: Upper limit for maximum number of stored corrections, Default: 7
+#' @param mcinit LMBM: Initial maximum number of stored corrections, Default: 7
+#' @param tolf LMBM: Tolerance for change of function values, Default: 10^(-5)
+#' @param tolf2 LMBM: Second tolerance for change of function values, Default: 10^4
+#' @param tolg LMBM: Tolerance for the first termination criterion, Default: 10^(-5)
+#' @param tolg2 LMBM: Tolerance for the second termination criterion, Default: same as 'tolg'
+#' @param eta LMBM: Distance measure parameter (>0), Default: 0.5
+#' @param epsL LMBM: Line search parameter (0 < epsL < 0.25), Default: 0.125
 #'
-#' @return A list of parameters for the OSCAR optimizers.
+#' @return A list of sanity checked parameter values for the OSCAR optimizers.
 #'
-#' @details This function sanity checks and provides reasonable DBDC and LMBM optimization tuning parameters. User may override custom values, though sanity checks will prevent unreasonable values and replace them.
+#' @details This function sanity checks and provides reasonable DBDC and LMBM optimization tuning parameters. User may override custom values, though sanity checks will prevent unreasonable values and replace them. The returned list of parameters can be provided for the 'control' parameter when fitting oscar-objects.
 #'
 #' @examples 
 #' \dontrun{
@@ -601,9 +604,9 @@ oscar.control <- function(
 	in_r_inc = 10^5, # Increase parameter
 	in_eps1 = 5*10^(-5), # Enlargement parameter
 	in_eps, # Stopping tolerance: Proximity measure, default depends on the problem -> defined later
-	in_crit_tol =10^(-5), # Stopping tolerance: Criticality tolerance
+	in_crit_tol = 10^(-5), # Stopping tolerance: Criticality tolerance
 	# Tuning parameters for LMBM
-	na =4, # Size of the bundle in LMBM, na >= 2
+	na = 4, # Size of the bundle in LMBM, na >= 2
 	mcu = 7, # Upper limit for maximum number of stored corrections in LMBM, mcu >= 3
 	mcinit = 7, # Initial maximum number of stored corrections in LMBM, mcu >= mcinit >= 3 
 	tolf = 10^(-5), # Tolerance for change of function values in LMBM
@@ -615,32 +618,39 @@ oscar.control <- function(
 	eta = 0.5, # Distance measure parameter in LMBM, eta > 0
 	epsL = 0.125 # Line search parameter in LMBM, 0 < epsL < 0.25
 ){
+	# Required data input
+	if(missing(x) || missing(family)){
+		stop("In order to generate feasible default parameters, user has to provide data ('x') and the model family ('family') as parameters to this function")
+	}
 	#### CHECKING tuning parameters and setting defaults ####
-	if(in_mrounds <=0){ # The number of rounds in one main iteration 
+	if(in_mrounds <= 0){ # The number of rounds in one main iteration 
 		in_mrounds <- 5000
 		warnings("Input in_mrounds should be >0. Default value 5000 is used instead.")
 	}
 	if(!is.integer(in_mrounds)){ warnings("Input in_mrounds should be an integer. The value is rounded to the nearest integer.")
 		in_mrounds <- round(in_mrounds)
 	}
-	if(in_mit<=0){ # The number of main iteration
+	if(in_mit <= 0){ # The number of main iteration
 		in_mit <- 5000
-		warnings("Input in_mit should be >0. Default value 5000 is used instead.")
+		warnings(paste("Input in_mit should be >0. Default value", in_mit, "is used instead."))
 	}
-	if(!is.integer(in_mit)){ warnings("Input in_mit should be an integer. The value is rounded to the nearest integer.")
+	if(!is.integer(in_mit)){ 
 		in_mit <- round(in_mit)
+		warnings("Input in_mit should be an integer. The value is rounded to the nearest integer.")
 	}
-	if(in_mrounds_esc <=0){ # The number of rounds in escape procedure
+	if(in_mrounds_esc <= 0){ # The number of rounds in escape procedure
 		in_mrounds_esc <- 5000
-		warnings("Input in_mrounds_esc should be >0. Default value 5000 is used instead.")
+		warnings(paste("Input in_mrounds_esc should be >0. Default value", in_mrounds_esc, "is used instead."))
 	}
 	if(!is.integer(in_mrounds_esc)){ warnings("Input in_mrounds_esc should be an integer. The value is rounded to the nearest integer.")
 		in_mrounds_esc <- round(in_mrounds_esc)
 	}
 	if(missing(in_b1)){ # Bundle B1
 		user_n <- ncol(x)
-		if(family %in% c("mse","logistic","gaussian","normal")){
-		user_n <- user_n +1}
+		if(family %in% c("mse","logistic","gaussian","normal"))
+		{
+			user_n <- user_n +1
+		}
 		in_b1 <- min(user_n+5,1000)	
 	}
 	if(in_b1 <=0){
@@ -660,41 +670,43 @@ oscar.control <- function(
 	if(!is.integer(in_b2)){ warnings("Input in_b2 should be an integer. The value is rounded to the nearest integer.")
 		in_b2 <- round(in_b2)
 	}
-	if(missing(in_b)){ # Bundle B in escape procedure
+	if(missing(in_b) || in_b <=1){ # Bundle B in escape procedure
 		user_n <- ncol(x)
-		if(family %in% c("mse","logistic","gaussian","normal")){
-		user_n <- user_n +1}
-		in_b <- 2*user_n
-	}
-	if(in_b <=1){
-		user_n <- ncol(x)
-		if(family %in% c("mse","logistic","gaussian","normal")){
-		user_n <- user_n +1}
+		if(family %in% c("mse","logistic","gaussian","normal"))
+		{
+			user_n <- user_n +1
+		}
 		in_b <- 2*user_n
 		warnings(paste("Input in_b should be >1. Default value ", in_b," is used instead.",sep=""))
 	}
-	if(!is.integer(in_b)){ warnings("Input in_b should be an integer. The value is rounded to the nearest integer.")
+	if(!is.integer(in_b)){ 
 		in_b <- round(in_b)
+		warnings("Input in_b should be an integer. The value is rounded to the nearest integer.")
 	}
 	if(in_m <=0 | in_m>=1){ # Descent parameter
-		in_m <-0.2
-		warnings("Input in_m should be in the interval (0,1). Default value 0.2 is used instead.")
+		in_m <- 0.2
+		warnings(paste("Input in_m should be in the interval (0,1). Default value", in_m, "is used instead."))
 	}
 	if(in_m_clarke <=0 | in_m_clarke>=1){ # Descent parameter in escape procedure
-		in_m_clarke <-0.01
-		warnings("Input in_m_clarke should be in the interval (0,1). Default value 0.01 is used instead.")
+		in_m_clarke <- 0.01
+		warnings(paste("Input in_m_clarke should be in the interval (0,1). Default value", in_m_clarke, "is used instead."))
 	}
 	if(in_c <=0 | in_c>=1){ # Extra decrease parameter
-		in_c <-0.1
-		warnings("Input in_c should be in the interval (0,1). Default value 0.1 is used instead.")
+		in_c <- 0.1
+		warnings(paste("Input in_c should be in the interval (0,1). Default value", in_c, "is used instead."))
 	}
 	if(missing(in_r_dec)){ # Decrease parameter
 		user_n <- ncol(x)
-		if(family %in% c("mse","logistic","gaussian","normal")){
-		user_n <- user_n +1}
-		if(user_n <10){in_r_dec <- 0.75
-		}else if(user_n >=300){in_r_dec <- 0.99
-		}else{in_r_dec <- trunc(user_n/(user_n+5)*100)/100  # Default is two first decimal from user_n/(user_n+5)
+		if(family %in% c("mse","logistic","gaussian","normal"))
+		{
+			user_n <- user_n +1
+		}
+		if(user_n <10){
+			in_r_dec <- 0.75
+		}else if(user_n >=300){
+			in_r_dec <- 0.99
+		}else{
+			in_r_dec <- trunc(user_n/(user_n+5)*100)/100  # Default is two first decimal from user_n/(user_n+5)
 		}
 	}
 	if(in_r_dec <=0 | in_r_dec >=1){
@@ -708,25 +720,21 @@ oscar.control <- function(
 		warnings(paste("Input in_r_dec should be in the interval (0,1). Default value ", in_r_dec," is used instead.",sep=""))
 	}
 	if(in_r_inc<=1){ # Increase parameter
-		warnings("Input in_r_inc should be >1. Default value 10^7 is used instead.")
+		in_r_inc <- 10^5
+		warnings("Input in_r_inc should be >1. Default value 10^5 is used instead.")
 	}
 	if(in_eps1<=0){ # Enlargement parameter
+		in_eps1 <- 5*10^(-5)
 		warnings("Input in_eps1 should be >0. Default value 5*10^(-5) is used instead.")
 	}
-	if(missing(in_eps)){# Stopping tolerance: Proximity measure
+	if(missing(in_eps) || in_eps<=0){# Stopping tolerance: Proximity measure
 		user_n <- ncol(x)
 		if(family %in% c("mse","logistic","gaussian","normal")){
 		user_n <- user_n +1}
-		if(user_n <=50){in_eps <- 10^(-6)
-		}else{in_eps <- 10^(-5)
-		}
-	}
-	if(in_eps<=0){
-		user_n <- ncol(x)
-		if(family %in% c("mse","logistic","gaussian","normal")){
-		user_n <- user_n +1}
-		if(user_n <=50){in_eps <- 10^(-6)
-		}else{in_eps <- 10^(-5)
+		if(user_n <=50){
+			in_eps <- 10^(-6)
+		}else{
+			in_eps <- 10^(-5)
 		}
 		warnings(paste("Input in_eps should be >0. Default value ", in_eps," is used instead.",sep=""))
 	}
@@ -739,10 +747,11 @@ oscar.control <- function(
 	#### CHECKING tuning parameters for LMBM  ####
 	if(na <2){ # Size of the bundle
 		na <- as.integer(4)
-		warnings("Input na should be >=2. Default value 4 is used instead.")
+		warnings(paste("Input na should be >=2. Default value", na, "is used instead."))
 	}
-	if(!is.integer(na)){ warnings("Input na should be an integer. The value is rounded to the nearest integer >=2.")
+	if(!is.integer(na)){ 
 		na <- as.integer(round(na))
+		warnings("Input na should be an integer. The value is rounded to the nearest integer >=2.")
 	}
 	if(mcu <3){ # Upper limit for maximum number of stored correctionse
 		mcu <- as.integer(7)
@@ -758,18 +767,19 @@ oscar.control <- function(
 			mcinit <- 7
 		}
 		
-		warnings("Input mcinit should be <=mcu and >=3. Default value 7 is used if mcu >=7, otherwise mcinit=mcu.")
+		warnings(paste("Input mcinit should be <=mcu and >=3. Default value", mcinit, "used if mcu >=7, otherwise mcinit=mcu.")
 	}
-	if(!is.integer(mcinit)){ warnings("Input mcinit should be an integer. The value is rounded to the nearest integer >=2.")
+	if(!is.integer(mcinit)){ 
 		mcinit <- round(mcinit)
+		warnings("Input mcinit should be an integer. The value is rounded to the nearest integer >=2.")
 	}
 	if(eta <=0){ # Distance measure parameter
 		eta <- 0.5
-		warnings("Input eta should be >0. Default value 0.5 is used instead.")
+		warnings(paste("Input eta should be >0. Default value", eta, "is used instead."))
 	}
 	if(epsL <=0 || epsL>=0.25){ # Line search parameter
-		eta <- 0.125
-		warnings("Input epsl should be >0 and <0.25. Default value 0.125 is used instead.")
+		epsL <- 0.125
+		warnings(paste("Input epsl should be >0 and <0.25. Default value", epsL, "is used instead."))
 	}
 	# Return all tuning parameters
 	list(
