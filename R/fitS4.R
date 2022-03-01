@@ -767,7 +767,7 @@ oscar.control <- function(
 			mcinit <- 7
 		}
 		
-		warnings(paste("Input mcinit should be <=mcu and >=3. Default value", mcinit, "used if mcu >=7, otherwise mcinit=mcu.")
+		warnings(paste("Input mcinit should be <=mcu and >=3. Default value", mcinit, "used if mcu >=7, otherwise mcinit=mcu."))
 	}
 	if(!is.integer(mcinit)){ 
 		mcinit <- round(mcinit)

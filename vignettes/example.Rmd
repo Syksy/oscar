@@ -25,7 +25,7 @@ The R package handles all interaction with Fortran and provides many convenience
 A simulated real-world hospital cohort data with patient survival with prostate cancer (PCa) is provided with:
 ```{r exdata}
 data(ex)
-ex_X[1:10,1:10]
+ex_X[1:7,1:7]
 head(ex_Y)
 ```
 
@@ -69,7 +69,7 @@ These are provided to the fitting procedure with ```solver=1``` and ```solver=2`
 
 A quick example run of OSCAR with LMBM together with the default kit structure for Cox regression:
 
-```{r}
+```{r coxfit}
 fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family="cox", solver="LMBM")
 fit
 ```
@@ -77,21 +77,7 @@ fit
 A pareto-optimal front provides information on potential optimal saddle points, where model generalization and clinical applicability pair nicely:
 
 ```{r pareto, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Pareto front for the clinical measurements and C-index."}
-plot.pareto.costCI(costs=fit@w, cindexes=fit@goodness, nzeros=1:fit@kmax)
-```
-
-## Gaussian regression (swiss-data)
-
-```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Model coefficients as a function of k."}
-
-# Use example swiss-data for quickness
-library(casso)
-data(swiss)
-fit <- oscar(x=swiss[,-1], y=swiss[,1], family="mse", print=0)
-
-# Plot model coefficients as a function of cardinality k
-plot(fit) 
-
+#plot.pareto.costCI(costs=fit@w, cindexes=fit@goodness, nzeros=1:fit@kmax)
 ```
 
 ### Goodness of fit vs. model coefficient cost
@@ -109,9 +95,7 @@ visu(fit, y="target")
 Fit model object can be inspected based on visual diagnostics such as cross-validation and bootstrapping:
 
 ```{r eval=TRUE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="10-fold cross-validation for optimally generalizable cardinality 'k'"}
-# Set seed for reproducibility
-set.seed(1)
-# Perform 10-fold cross-validation to find out optimal k
+# Perform 5-fold cross-validation to find out optimal k
 cv <- cv.oscar(fit, fold=5, seed=123, solver=2)
 # Visualize model generalization performance as a function of k
 cv.visu(cv)
@@ -144,6 +128,23 @@ feat(fit, k=3) # All features chosen at cardinality k=3
 cost(fit, k=3) # Kit sum costs at various k cardinalities
 
 ```
+
+## Other model families
+
+While ```oscar```-package was built with biomedical survival data in mind, it supports modelling of non-survival data. Currently, the ```family``` parameter supports logistic regression for binary outcomes, and mse/gaussian/normal for modelling responses that are normally distributed.
+
+### Gaussian regression (swiss-data)
+
+```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Model coefficients as a function of k."}
+
+# Use example swiss-data for quickness
+data(swiss)
+fit <- oscar(x=swiss[,-1], y=swiss[,1], family="mse", print=0, solver=2)
+
+# Plot model coefficients as a function of cardinality k
+plot(fit) 
+```
+
 
 # References
 
