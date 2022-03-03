@@ -76,15 +76,16 @@ setClass("oscar", # abbreviation
 #' @description This function fits an OSCAR model object to the provided training data with the desired model family.
 #' @param x Data matrix 'x'
 #' @param y Response vector/two-column matrix 'y' (see: family); number of rows equal to nrow(x)
-#' @param k Integer (0/1) kit indicator matrix; number of columns equal to ncol(x)
-#' @param w Kit cost weight vector w of length nrow(k)
-#' @param family Model family, should be one of: 'cox', 'mse'/'gaussian', or 'logistic, Default: 'gaussian'
+#' @param k Integer (0/1) kit indicator matrix; number of columns equal to ncol(x), Default: Unit diagonal indicator matrix
+#' @param w Kit cost weight vector w of length nrow(k), Default: Equal cost for all variables
+#' @param family Model family, should be one of: 'cox', 'mse'/'gaussian', or 'logistic, Default: 'cox'
+#' @param metric Goodness metric, Default(s): Concordance index for Cox, MSE for Gaussian, and AUC for logistic regression
 #' @param solver Solver used in the optimization, should be  1/'DBDC' or 2/'LMBM', Default: 1.
 #' @param verb Level of verbosity in R, Default: 1
 #' @param print Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}, Default: 3
-#' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality
-#' @param sanitize Whether input column names should be cleaned of potentially problematic symbols
-#' @param oscar.control Tuning parameters for the optimizers, see function oscar.control()
+#' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality, Default: ncol(x)
+#' @param sanitize Whether input column names should be cleaned of potentially problematic symbols, Default: TRUE
+#' @param oscar.control Tuning parameters for the optimizers, see function oscar.control(), Default: see ?oscar.control
 #' @param ... Additional parameters
 #'
 #' @return Fitted oscar-object
