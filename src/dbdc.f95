@@ -7565,7 +7565,7 @@ CONTAINS
 
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/   
 !------------------------------------------------------------------------------------------- 
-    SUBROUTINE deallocate_LMBMinfo()  ! User supplied subroutine to deallocate data from LMBM_set
+    SUBROUTINE deallocate_LMBMinfo_cox()  ! User supplied subroutine to deallocate data from LMBM_set
 
         IMPLICIT NONE
            
@@ -7573,9 +7573,38 @@ CONTAINS
    
         CALL deallocate_data_cox(LMBM_set)
    
-    END SUBROUTINE deallocate_LMBMinfo
+    END SUBROUTINE deallocate_LMBMinfo_cox
 !-------------------------------------------------------------------------------------------
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/   
+!------------------------------------------------------------------------------------------- 
+    SUBROUTINE deallocate_LMBMinfo_mse()  ! User supplied subroutine to deallocate data from LMBM_set
+
+        IMPLICIT NONE
+           
+        !***********************************************************************************
+   
+        CALL deallocate_data_mse(LMBM_set)
+   
+    END SUBROUTINE deallocate_LMBMinfo_mse
+!-------------------------------------------------------------------------------------------
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/   
+!------------------------------------------------------------------------------------------- 
+    SUBROUTINE deallocate_LMBMinfo_log()  ! User supplied subroutine to deallocate data from LMBM_set
+
+        IMPLICIT NONE
+           
+        !***********************************************************************************
+   
+        CALL deallocate_data_log(LMBM_set)
+   
+    END SUBROUTINE deallocate_LMBMinfo_log
+!-------------------------------------------------------------------------------------------
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+
 
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
 !------------------------------------------------------------------------------------------- 
@@ -12546,7 +12575,7 @@ END MODULE lmbm_mod
                   CALL set_lambda_LMBM(0.0_c_double)                  
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
                   CALL copy_x_var(x_koe)
-				  CALL deallocate_LMBMinfo()
+				  CALL deallocate_LMBMinfo_cox()
                   			  
               END IF			  
 !**
@@ -13630,7 +13659,7 @@ END MODULE lmbm_mod
                   CALL set_lambda_LMBM(0.0_c_double)                  
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
                   CALL copy_x_var(x_koe)
-				  CALL deallocate_LMBMinfo()
+				  CALL deallocate_LMBMinfo_mse()
 				  
                   			  
               END IF			  
@@ -14738,7 +14767,7 @@ END MODULE lmbm_mod
                   CALL set_lambda_LMBM(0.0_c_double)                  
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
                   CALL copy_x_var(x_koe)
- 				  CALL deallocate_LMBMinfo()
+ 				  CALL deallocate_LMBMinfo_log()
                  			  
               END IF			  
 !**           
@@ -14809,8 +14838,6 @@ END MODULE lmbm_mod
                   !----------------------------------------------------------
                   ! Starting points for problem with fixed number of k kits 
                   !----------------------------------------------------------   
-
-				  IF (solver==1) THEN  ! With DBDC parallelization is used
  
                   !$OMP PARALLEL DO PRIVATE(x_solution, f_solution, i) & 
                   !$OMP FIRSTPRIVATE(x_ed, x_koe, kits_beta_ed, kit_num_ed)  &             
@@ -14854,33 +14881,6 @@ END MODULE lmbm_mod
                         
                    END DO          
                   !$OMP END PARALLEL DO  
-
-				ELSE IF (solver==2) THEN  ! With LMBM parallelization is not used
-				
-                      CALL solution_with_k_kits_log(x_solution, f_solution, k, i, small, &
-                                               & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
-                                               & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
-                                               & agg_used, stepsize_used, nft, problem1, problem2, &
-                                               & mXt, mYt, mK, in_mC, nrecord,  & 
-                                               & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, mc, solver)
-                    
-                    ! Storing of the obtained solution and the corresponding objective value
-                     startind = 1
-                     IF (i > 1) THEN    
-                       DO j3 = 1, i-1
-                          startind = startind + mPrNum(j3)
-                       END DO   
-                     END IF                        
-                        
-                     DO j3 = 1, mPrNum(i)   
-                        DO j = 1, user_n
-                            points(j,startind+(j3-1)) = x_solution(j,startind+(j3-1))
-                        END DO     
-                      f_points(startind+j3-1) = f_solution(startind+j3-1)
-                     END DO  
-       
-				 END IF
   
 !**  
                    IF (start == 1) THEN 
@@ -15604,7 +15604,7 @@ END MODULE lmbm_mod
 
 !**				   
 				   IF (solver == 2) THEN
-                      CALL deallocate_LMBMinfo()
+                      CALL deallocate_LMBMinfo_cox()
 				      CALL deallocate_data_cox(set1)             
                    END IF
 !**         
@@ -16123,7 +16123,7 @@ END MODULE lmbm_mod
 				   
 !**
                     IF (solver == 2) THEN 
-						   CALL deallocate_LMBMinfo()
+						   CALL deallocate_LMBMinfo_mse()
                     END IF	             
 !**
          
@@ -16639,7 +16639,7 @@ END MODULE lmbm_mod
 
 !**				   
                     IF (solver == 2) THEN 
-						CALL deallocate_LMBMinfo()
+						CALL deallocate_LMBMinfo_log()
                     END IF	              
 !**
          
