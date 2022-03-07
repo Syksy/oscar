@@ -12643,9 +12643,12 @@ END MODULE lmbm_mod
                   kokoosa = nk/tread_num         ! The integer part obtained from the division
                   
                   mPrNum = kokoosa               ! The initialization of the number of problems for threads
-                  DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
-                     mPrNum(i) = mPrNum(i)+1                  
-                  END DO
+		  
+                  IF(jaannos > 0) THEN
+                  	DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
+                    	 mPrNum(i) = mPrNum(i)+1                  
+                  	END DO
+		  END IF
 
                   !----------------------------------------------------------
                   ! Starting points for problem with fixed number of k kits 
@@ -13726,10 +13729,12 @@ END MODULE lmbm_mod
                   kokoosa = nk/tread_num         ! The integer part obtained from the division
                   
                   mPrNum = kokoosa               ! The initialization of the number of problems for threads
-                  DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
-                     mPrNum(i) = mPrNum(i)+1                  
-                  END DO
-
+		  
+                  IF(jaannos > 0) THEN
+                  	DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
+                    	 mPrNum(i) = mPrNum(i)+1                  
+                  	END DO
+		  END IF
                   !----------------------------------------------------------
                   ! Starting points for problem with fixed number of k kits 
                   !----------------------------------------------------------
@@ -14831,9 +14836,12 @@ END MODULE lmbm_mod
                   kokoosa = nk/tread_num         ! The integer part obtained from the division
                   
                   mPrNum = kokoosa               ! The initialization of the number of problems for threads
-                  DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
-                     mPrNum(i) = mPrNum(i)+1                  
-                  END DO
+		  
+		  IF(jaannos > 0) THEN
+                  	DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
+                    	 mPrNum(i) = mPrNum(i)+1                  
+                  	END DO
+		  END IF
 
                   !----------------------------------------------------------
                   ! Starting points for problem with fixed number of k kits 
