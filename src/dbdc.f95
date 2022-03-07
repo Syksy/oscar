@@ -12575,7 +12575,8 @@ END MODULE lmbm_mod
                   CALL init_LMBMinfo(problem1, info) 
                   CALL init_x_var(x_0)          
                   CALL set_rho_LMBM(0.0_c_double)                 
-                  CALL set_lambda_LMBM(0.0_c_double)                  
+                  CALL set_lambda_LMBM(0.0_c_double)  
+		  CALL cpu_time(LMBMstart)   ! Start CPU timining
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
                   CALL copy_x_var(x_koe)
 				  CALL deallocate_LMBMinfo_cox()
@@ -13665,7 +13666,8 @@ END MODULE lmbm_mod
                   CALL init_LMBMinfo(problem1, info) 
                   CALL init_x_var(x_0)          
                   CALL set_rho_LMBM(0.0_c_double)                 
-                  CALL set_lambda_LMBM(0.0_c_double)                  
+                  CALL set_lambda_LMBM(0.0_c_double)
+		  CALL cpu_time(LMBMstart)   ! Start CPU timining
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
                   CALL copy_x_var(x_koe)
 				  CALL deallocate_LMBMinfo_mse()
@@ -14778,7 +14780,8 @@ END MODULE lmbm_mod
                   CALL init_LMBMinfo(problem1, info) 
                   CALL init_x_var(x_0)          
                   CALL set_rho_LMBM(0.0_c_double)                 
-                  CALL set_lambda_LMBM(0.0_c_double)                  
+                  CALL set_lambda_LMBM(0.0_c_double)  
+		  CALL cpu_time(LMBMstart)   ! Start CPU timining
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
                   CALL copy_x_var(x_koe)
  				  CALL deallocate_LMBMinfo_log()
@@ -15519,10 +15522,8 @@ END MODULE lmbm_mod
 						ELSE IF (solver == 2) THEN
 						
                            CALL init_x_var(x_0)
-                           CALL set_rho_LMBM(rho)                 
-	!WRITE(*,*)
-	!WRITE(*,*) 'before lmbm'
-	!WRITE(*,*)						   
+                           CALL set_rho_LMBM(rho)   
+			   CALL cpu_time(LMBMstart)   ! Start CPU timining
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
                            CALL copy_x_var(beta_solution)
 						   set%user_rho = rho
@@ -16049,7 +16050,8 @@ END MODULE lmbm_mod
 						ELSE IF (solver == 2) THEN
 						
                            CALL init_x_var(x_0)
-                           CALL set_rho_LMBM(rho)                 
+                           CALL set_rho_LMBM(rho)   
+			   CALL cpu_time(LMBMstart)   ! Start CPU timining
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
                            CALL copy_x_var(beta_solution)  
 						   set%user_rho = rho						   
@@ -16568,7 +16570,8 @@ END MODULE lmbm_mod
 						ELSE IF (solver == 2) THEN
 						
                            CALL init_x_var(x_0)
-                           CALL set_rho_LMBM(rho)                 
+                           CALL set_rho_LMBM(rho)
+			   CALL cpu_time(LMBMstart)   ! Start CPU timining
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
                            CALL copy_x_var(beta_solution)   
 						   set%user_rho = rho
