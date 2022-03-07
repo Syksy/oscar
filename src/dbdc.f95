@@ -12280,6 +12280,9 @@ END MODULE lmbm_mod
                ! Maximum number of possible treads in parallellization
 			   IF(solver==1) THEN
 				 max_threads = omp_get_max_threads()
+				 IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
+					max_threads=nkits
+				 END IF				 
 				 CALL omp_set_num_threads(max_threads)
 			   END IF
                
@@ -13391,6 +13394,9 @@ END MODULE lmbm_mod
                ! Maximum number of possible treads in parallellization
 			   IF(solver==1) THEN
 				 max_threads = omp_get_max_threads()
+				 IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
+					max_threads=nkits
+				 END IF
 				 CALL omp_set_num_threads(max_threads)
 			   END IF
                
@@ -14502,6 +14508,9 @@ END MODULE lmbm_mod
              ! Maximum number of possible treads in parallellization
 			   IF(solver==1) THEN
 				 max_threads = omp_get_max_threads()
+				 IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
+					max_threads=nkits
+				 END IF
 				 CALL omp_set_num_threads(max_threads)
 			   END IF
                
