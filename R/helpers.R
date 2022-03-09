@@ -32,7 +32,9 @@ cv.oscar <- function(
 	# Should some strata be balanced over the bins? By default no, should be a vector equal to the number of rows in x
         strata = rep(1, times=nrow(fit@x)),
 	# Level of verbosity mainly for debugging
-	verb = 0
+	verb = 0,
+	# Additional parameters passed to oscar-function
+	...
 ){
 	# Internal cv-sample allocation function, modified from the ePCR-package
 	cv <- function(
@@ -84,10 +86,10 @@ cv.oscar <- function(
 		# Constructing appropriate model object
 		if(fit@family == "cox"){
 			# Cox model is 2-column in y-response
-			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=fit@family, k=fit@k, w=fit@w, verb=verb, start=fit@start)
+			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=fit@family, k=fit@k, w=fit@w, verb=verb, start=fit@start, ...)
 		}else if(fit@family %in% c("mse", "gaussian", "logistic")){
 			# All other models have a y-vector
-			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=c(fit@y)[cvsets$train[[z]]], family=fit@family, k=fit@k, w=fit@w, verb=verb, start=fit@start)
+			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=c(fit@y)[cvsets$train[[z]]], family=fit@family, k=fit@k, w=fit@w, verb=verb, start=fit@start, ...)
 		}else{
 			stop(paste("Incorrect family-parameter fit@family:", fit@family))
 		}
@@ -202,7 +204,9 @@ bs.oscar <- function(
 	# RNG seed (integer) that can be set for exact reproducibility
 	seed = NULL,
 	# Level of verbosity (<1 supresses everything in R; parameter also passed to Fortran subroutine)
-	verb = 0
+	verb = 0,
+	# Additional parameters passed to oscar-function
+	...
 ){
 	# Seed number for RNG reproducibility
 	if(!is.null(seed)) set.seed(seed)
@@ -215,7 +219,7 @@ bs.oscar <- function(
 		ytemp <- fit@y[samps,]
 		# Wrap expression inside try for catching errors
 		try({
-			ftemp <- oscar::oscar(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, kmax = fit@kmax, print = verb, start = fit@start, verb = verb)		
+			ftemp <- oscar::oscar(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, kmax = fit@kmax, print = verb, start = fit@start, verb = verb, ...)		
 		})
 		# Return successfully fitted model
 		if(!class(ftemp)=="try-error"){

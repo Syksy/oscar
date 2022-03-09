@@ -1,5 +1,5 @@
 ---
-title: "Vignette oscar"
+title: "OSCAR vignette"
 output: rmarkdown::html_vignette
 date: "`r Sys.Date()`"
 vignette: >

@@ -12,25 +12,13 @@ oscar(
   w,
   family = "cox",
   metric,
-  print = 3,
-  start = 2,
+  solver = 1,
   verb = 1,
+  print = 3,
   kmax,
   sanitize = TRUE,
-  in_mrounds = 5000,
-  in_mit = 5000,
-  in_mrounds_esc = 5000,
-  in_b1,
-  in_b2 = 3,
-  in_b,
-  in_m = 0.01,
-  in_m_clarke = 0.01,
-  in_c = 0.1,
-  in_r_dec,
-  in_r_inc = 10^5,
-  in_eps1 = 5 * 10^(-5),
-  in_eps,
-  in_crit_tol = 10^(-5)
+  control,
+  ...
 )
 }
 \arguments{
@@ -44,15 +32,19 @@ oscar(
 
 \item{family}{Model family, should be one of: 'cox', 'mse'/'gaussian', or 'logistic, Default: 'gaussian'}
 
+\item{solver}{Solver used in the optimization, should be  1/'DBDC' or 2/'LMBM', Default: 1.}
+
+\item{verb}{Level of verbosity in R, Default: 1}
+
 \item{print}{Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}, Default: 3}
-
-\item{start}{Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2}
-
-\item{verb}{Integer with additional integer values giving verbal feedback, Default: 1}
 
 \item{kmax}{Maximum k step tested, by default all k are tested from k to maximum dimensionality}
 
 \item{sanitize}{Whether input column names should be cleaned of potentially problematic symbols}
+
+\item{...}{Additional parameters}
+
+\item{oscar.control}{Tuning parameters for the optimizers, see function oscar.control()}
 }
 \value{
 Fitted oscar-object

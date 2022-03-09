@@ -7393,7 +7393,7 @@ MODULE initializat  ! Initialization of parameters and x_var for LDGBM and LMBM
         !mcu, &                        ! Upper limit for maximum number of stored corrections, mcu >= 3.
         mcu    =    7_c_int, &       ! Upper limit for maximum number of stored corrections, mcu >= 3.
         !mcinit, &                     ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
-        mcinit =    7_c_int, &       ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
+        mcinit =    7_c_int, &        ! Initial maximum number of stored corrections, mcu >= mcinit >= 3.
                                       ! If mcinit <= 0, the default value mcinit = 3 will be used. 
                                       ! However, the value mcinit = 7 is recommented.
         inma    = 3_c_int, &          ! Selection of line search method:
@@ -7565,7 +7565,7 @@ CONTAINS
 
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/   
 !------------------------------------------------------------------------------------------- 
-    SUBROUTINE deallocate_LMBMinfo()  ! User supplied subroutine to deallocate data from LMBM_set
+    SUBROUTINE deallocate_LMBMinfo_cox()  ! User supplied subroutine to deallocate data from LMBM_set
 
         IMPLICIT NONE
            
@@ -7573,9 +7573,38 @@ CONTAINS
    
         CALL deallocate_data_cox(LMBM_set)
    
-    END SUBROUTINE deallocate_LMBMinfo
+    END SUBROUTINE deallocate_LMBMinfo_cox
 !-------------------------------------------------------------------------------------------
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/   
+!------------------------------------------------------------------------------------------- 
+    SUBROUTINE deallocate_LMBMinfo_mse()  ! User supplied subroutine to deallocate data from LMBM_set
+
+        IMPLICIT NONE
+           
+        !***********************************************************************************
+   
+        CALL deallocate_data_mse(LMBM_set)
+   
+    END SUBROUTINE deallocate_LMBMinfo_mse
+!-------------------------------------------------------------------------------------------
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/   
+!------------------------------------------------------------------------------------------- 
+    SUBROUTINE deallocate_LMBMinfo_log()  ! User supplied subroutine to deallocate data from LMBM_set
+
+        IMPLICIT NONE
+           
+        !***********************************************************************************
+   
+        CALL deallocate_data_log(LMBM_set)
+   
+    END SUBROUTINE deallocate_LMBMinfo_log
+!-------------------------------------------------------------------------------------------
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+
 
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
 !------------------------------------------------------------------------------------------- 
@@ -11935,6 +11964,7 @@ END MODULE lmbm_mod
                ! REAL(KIND=c_double), INTENT(IN) ::  in_tolg2               ! Tolerance for the second termination criterion (default = tolg). clustering code small data
                ! REAL(KIND=c_double), INTENT(IN) ::  in_eta                 ! Distance measure parameter, eta >= 0.
                ! REAL(KIND=c_double), INTENT(IN) ::  in_epsL                ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
+			   			   
 !**
 
             ! INPUTs
@@ -11982,6 +12012,7 @@ END MODULE lmbm_mod
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolg2        ! Tolerance for the second termination criterion (default = tolg). clustering code small data
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_eta          ! Distance measure parameter, eta >= 0.
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_epsL         ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
+			   
 !**
             !--------------------------------------------------------------------------
             ! ^^^^ START: If Fortran code is used with R-C-interface ^^^^
@@ -12234,6 +12265,12 @@ END MODULE lmbm_mod
                    solver = 1 !DBDC
                ELSE IF (solver_id == 2) THEN
                    solver = 2 !LMBM
+				   ! Initial maximum number of stored corrections
+				   IF (in_mcinit > 0) THEN
+				       mc = in_mcinit
+				   ELSE
+                       mc = 0
+                   END IF				   
                ELSE 
                    solver = 1 !DBDC              
                END IF
@@ -12243,6 +12280,9 @@ END MODULE lmbm_mod
                ! Maximum number of possible treads in parallellization
 			   IF(solver==1) THEN
 				 max_threads = omp_get_max_threads()
+				 IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
+					max_threads=nkits
+				 END IF				 
 				 CALL omp_set_num_threads(max_threads)
 			   END IF
                
@@ -12267,6 +12307,7 @@ END MODULE lmbm_mod
                                 & in_tolg2, in_eta, in_epsL)
 !**
                info%user_rho = 0.0_c_double
+			   
 			   
                ! Set the number of rows and columns inside Fortran  + kits           
                nrecord = nrow
@@ -12534,10 +12575,11 @@ END MODULE lmbm_mod
                   CALL init_LMBMinfo(problem1, info) 
                   CALL init_x_var(x_0)          
                   CALL set_rho_LMBM(0.0_c_double)                 
-                  CALL set_lambda_LMBM(0.0_c_double)                  
+                  CALL set_lambda_LMBM(0.0_c_double)  
+		  CALL cpu_time(LMBMstart)   ! Start CPU timining
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
                   CALL copy_x_var(x_koe)
-				  CALL deallocate_LMBMinfo()
+				  CALL deallocate_LMBMinfo_cox()
                   			  
               END IF			  
 !**
@@ -12605,9 +12647,12 @@ END MODULE lmbm_mod
                   kokoosa = nk/tread_num         ! The integer part obtained from the division
                   
                   mPrNum = kokoosa               ! The initialization of the number of problems for threads
-                  DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
-                     mPrNum(i) = mPrNum(i)+1                  
-                  END DO
+		  
+                  IF(jaannos > 0) THEN
+                  	DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
+                    	 mPrNum(i) = mPrNum(i)+1                  
+                  	END DO
+		  END IF
 
                   !----------------------------------------------------------
                   ! Starting points for problem with fixed number of k kits 
@@ -12623,7 +12668,7 @@ END MODULE lmbm_mod
                   !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
                   !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
                   !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
-                  !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC)                    &  
+                  !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC, mc)                &  
                   !$OMP SHARED(points, f_points, mPrNum)               
                   
                    DO i = 1, tread_num              ! Different starting points in threads are looked through to solve the problem 3 with fixed number of nonzero kits                   
@@ -12634,7 +12679,7 @@ END MODULE lmbm_mod
                                                & agg_used, stepsize_used, user_n, problem1, problem2, &
                                                & mXt, mYt, mK, in_mC, nrecord,  & 
                                                & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, solver)
+                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, mc, solver)
                     
                     ! Storing of the obtained solutions and the corresponding objective values
                      !$OMP CRITICAL 
@@ -12955,7 +13000,6 @@ END MODULE lmbm_mod
             !         * in_tolg      : Tolerance for the first termination criterion (default = 1.0E-5).   
             !         * in_tolg2     : Tolerance for the second termination criterion (default = tolg). clustering code small data  
             !         * in_eta       : Distance measure parameter, eta >= 0.   
-            !         * in_epsL      : Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.)                
             !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
             !
@@ -13035,6 +13079,8 @@ END MODULE lmbm_mod
                ! REAL(KIND=c_double), INTENT(IN) ::  in_tolg2               ! Tolerance for the second termination criterion (default = tolg). clustering code small data
                ! REAL(KIND=c_double), INTENT(IN) ::  in_eta                 ! Distance measure parameter, eta >= 0.
                ! REAL(KIND=c_double), INTENT(IN) ::  in_epsL                ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
+			   
+			   
 !**		
 
               ! INPUTs
@@ -13082,6 +13128,8 @@ END MODULE lmbm_mod
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolg2        ! Tolerance for the second termination criterion (default = tolg). clustering code small data
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_eta          ! Distance measure parameter, eta >= 0.
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_epsL         ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
+			   
+			   
 !**
 
             !--------------------------------------------------------------------------
@@ -13331,7 +13379,13 @@ END MODULE lmbm_mod
                    solver = 1 !DBDC
                ELSE IF (solver_id == 2) THEN
                    solver = 2 !LMBM
-               ELSE 
+				   ! Initial maximum number of stored corrections
+				   IF (in_mcinit > 0) THEN
+				       mc = in_mcinit
+				   ELSE
+                       mc = 0
+                   END IF	
+			   ELSE 
                    solver = 1 !DBDC              
                END IF
 !**
@@ -13341,6 +13395,9 @@ END MODULE lmbm_mod
                ! Maximum number of possible treads in parallellization
 			   IF(solver==1) THEN
 				 max_threads = omp_get_max_threads()
+				 IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
+					max_threads=nkits
+				 END IF
 				 CALL omp_set_num_threads(max_threads)
 			   END IF
                
@@ -13609,9 +13666,12 @@ END MODULE lmbm_mod
                   CALL init_LMBMinfo(problem1, info) 
                   CALL init_x_var(x_0)          
                   CALL set_rho_LMBM(0.0_c_double)                 
-                  CALL set_lambda_LMBM(0.0_c_double)                  
+                  CALL set_lambda_LMBM(0.0_c_double)
+		  CALL cpu_time(LMBMstart)   ! Start CPU timining
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
                   CALL copy_x_var(x_koe)
+				  CALL deallocate_LMBMinfo_mse()
+				  
                   			  
               END IF			  
 !**
@@ -13677,10 +13737,12 @@ END MODULE lmbm_mod
                   kokoosa = nk/tread_num         ! The integer part obtained from the division
                   
                   mPrNum = kokoosa               ! The initialization of the number of problems for threads
-                  DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
-                     mPrNum(i) = mPrNum(i)+1                  
-                  END DO
-
+		  
+                  IF(jaannos > 0) THEN
+                  	DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
+                    	 mPrNum(i) = mPrNum(i)+1                  
+                  	END DO
+		  END IF
                   !----------------------------------------------------------
                   ! Starting points for problem with fixed number of k kits 
                   !----------------------------------------------------------
@@ -13695,7 +13757,7 @@ END MODULE lmbm_mod
                   !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
                   !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
                   !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
-                  !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC)                    &  
+                  !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC, mc)                    &  
                   !$OMP SHARED(points, f_points, mPrNum)               
                   
                    DO i = 1, tread_num          ! Different starting points for threads are looked through to solve the problem 4 with fixed number of nonzero kits                   
@@ -13706,7 +13768,7 @@ END MODULE lmbm_mod
                                                & agg_used, stepsize_used, nft, problem1, problem2, &
                                                & mXt, mYt, mK, in_mC, nrecord,  & 
                                                & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, solver)
+                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, mc, solver)
                     
                     ! Storing of the obtained solution and the corresponding objective value
                     !$OMP CRITICAL 
@@ -14050,7 +14112,8 @@ END MODULE lmbm_mod
             !         * in_tolg      : Tolerance for the first termination criterion (default = 1.0E-5).   
             !         * in_tolg2     : Tolerance for the second termination criterion (default = tolg). clustering code small data  
             !         * in_eta       : Distance measure parameter, eta >= 0.   
-            !         * in_epsL      : Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.)    			
+            !         * in_epsL      : Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.)    		
+            !	
             !
             !         NOTICE: DATA IS GIVEN IN VECTOR FORMAT ! Due to this values for observations/kits are given in these vector one after another
             !
@@ -14131,6 +14194,8 @@ END MODULE lmbm_mod
                ! REAL(KIND=c_double), INTENT(IN) ::  in_tolg2               ! Tolerance for the second termination criterion (default = tolg). clustering code small data
                ! REAL(KIND=c_double), INTENT(IN) ::  in_eta                 ! Distance measure parameter, eta >= 0.
                ! REAL(KIND=c_double), INTENT(IN) ::  in_epsL                ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
+			   
+			   
 !**		
 
               ! INPUTs
@@ -14178,6 +14243,8 @@ END MODULE lmbm_mod
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_tolg2        ! Tolerance for the second termination criterion (default = tolg). clustering code small data
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_eta          ! Distance measure parameter, eta >= 0.
                REAL(KIND=c_double), INTENT(IN), VALUE ::  in_epsL         ! Line search parameter, 0 < epsL < 0.25 (default = 1.0E-4.) 
+			   
+			   
 !**
  
             !--------------------------------------------------------------------------
@@ -14427,6 +14494,12 @@ END MODULE lmbm_mod
                    solver = 1 !DBDC
                ELSE IF (solver_id == 2) THEN
                    solver = 2 !LMBM
+				   ! Initial maximum number of stored corrections
+				   IF (in_mcinit > 0) THEN
+				       mc = in_mcinit
+				   ELSE
+                       mc = 0
+                   END IF	
                ELSE 
                    solver = 1 !DBDC              
                END IF
@@ -14437,6 +14510,9 @@ END MODULE lmbm_mod
              ! Maximum number of possible treads in parallellization
 			   IF(solver==1) THEN
 				 max_threads = omp_get_max_threads()
+				 IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
+					max_threads=nkits
+				 END IF
 				 CALL omp_set_num_threads(max_threads)
 			   END IF
                
@@ -14704,10 +14780,12 @@ END MODULE lmbm_mod
                   CALL init_LMBMinfo(problem1, info) 
                   CALL init_x_var(x_0)          
                   CALL set_rho_LMBM(0.0_c_double)                 
-                  CALL set_lambda_LMBM(0.0_c_double)                  
+                  CALL set_lambda_LMBM(0.0_c_double)  
+		  CALL cpu_time(LMBMstart)   ! Start CPU timining
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
                   CALL copy_x_var(x_koe)
-                  			  
+ 				  CALL deallocate_LMBMinfo_log()
+                 			  
               END IF			  
 !**           
  
@@ -14770,15 +14848,16 @@ END MODULE lmbm_mod
                   kokoosa = nk/tread_num         ! The integer part obtained from the division
                   
                   mPrNum = kokoosa               ! The initialization of the number of problems for threads
-                  DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
-                     mPrNum(i) = mPrNum(i)+1                  
-                  END DO
+		  
+		  IF(jaannos > 0) THEN
+                  	DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
+                    	 mPrNum(i) = mPrNum(i)+1                  
+                  	END DO
+		  END IF
 
                   !----------------------------------------------------------
                   ! Starting points for problem with fixed number of k kits 
                   !----------------------------------------------------------   
-
-				  IF (solver==1) THEN  ! With DBDC parallelization is used
  
                   !$OMP PARALLEL DO PRIVATE(x_solution, f_solution, i) & 
                   !$OMP FIRSTPRIVATE(x_ed, x_koe, kits_beta_ed, kit_num_ed)  &             
@@ -14790,7 +14869,7 @@ END MODULE lmbm_mod
                   !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
                   !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
                   !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
-                  !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC)                    &  
+                  !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC, mc)                    &  
                   !$OMP SHARED(points, f_points, mPrNum)               
                   
                    DO i = 1, tread_num          ! Different starting points for threads are looked through to solve the problem 3 with fixed number of nonzero kits                   
@@ -14801,7 +14880,7 @@ END MODULE lmbm_mod
                                                & agg_used, stepsize_used, nft, problem1, problem2, &
                                                & mXt, mYt, mK, in_mC, nrecord,  & 
                                                & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, solver)
+                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, mc, solver)
                     
                     ! Storing of the obtained solution and the corresponding objective value
                     !$OMP CRITICAL 
@@ -14822,33 +14901,6 @@ END MODULE lmbm_mod
                         
                    END DO          
                   !$OMP END PARALLEL DO  
-
-				ELSE IF (solver==2) THEN  ! With LMBM parallelization is not used
-				
-                      CALL solution_with_k_kits_log(x_solution, f_solution, k, i, small, &
-                                               & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
-                                               & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
-                                               & agg_used, stepsize_used, nft, problem1, problem2, &
-                                               & mXt, mYt, mK, in_mC, nrecord,  & 
-                                               & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, solver)
-                    
-                    ! Storing of the obtained solution and the corresponding objective value
-                     startind = 1
-                     IF (i > 1) THEN    
-                       DO j3 = 1, i-1
-                          startind = startind + mPrNum(j3)
-                       END DO   
-                     END IF                        
-                        
-                     DO j3 = 1, mPrNum(i)   
-                        DO j = 1, user_n
-                            points(j,startind+(j3-1)) = x_solution(j,startind+(j3-1))
-                        END DO     
-                      f_points(startind+j3-1) = f_solution(startind+j3-1)
-                     END DO  
-       
-				 END IF
   
 !**  
                    IF (start == 1) THEN 
@@ -15062,7 +15114,7 @@ END MODULE lmbm_mod
                                     & agg_used, stepsize_used, nft, problem1, problem2,  &      
                                     & in_mX, in_mY, in_mK, in_mC, nrecord, & 
                                     & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, solver) 
+                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, mc, solver) 
             !_____________________________________________________________________________________
             ! 
             !           
@@ -15198,6 +15250,9 @@ END MODULE lmbm_mod
             ! OUTPUTs
                REAL(KIND = c_double), INTENT(OUT), DIMENSION(nft,nk)  :: x_solution   !Output variable for beta coefficients with k kits and starting points for the thread i
                REAL(KIND = c_double), DIMENSION(nk), INTENT(OUT)      :: f_solution   !Output variable target function value with k kits and starting points for the thread i
+             
+			 ! Scalar in LMBM          
+  		       INTEGER(KIND=c_int), INTENT(INOUT) :: mc           ! Initial maximum number of stored corrections.
                
            
            !***************************** LOCAL VARIABLES ************************************      
@@ -15269,14 +15324,13 @@ END MODULE lmbm_mod
                INTEGER(KIND=c_int) :: help_counter
                INTEGER(KIND=c_int) :: num_rho
                INTEGER(KIND=c_int) :: kit_num               ! The number of kits in the current solution
-               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2
+               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2, ui
                INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization         
 
                INTEGER(KIND=c_int) :: startind, j3, kk      ! the start index for starting point    
  
 !**
                ! Scalars in LMBM
-               INTEGER(KIND=c_int) ::  mc        ! Number of corrections.
                REAL(KIND=c_double) :: LMBMstart  ! The starting time
                INTEGER, DIMENSION(4) :: iout     ! Output integer parameters.
                                                  !   iout(1)   Number of used iterations.
@@ -15318,7 +15372,6 @@ END MODULE lmbm_mod
 
                     tol_zero = (10.0_c_double)**(-6)
  
-
                    ! The initialization of parametrs used in DBDC methods
                    CALL allocate_parameters(set, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
                                            & in_b, in_m_clarke, in_eps, in_crit_tol)
@@ -15331,23 +15384,30 @@ END MODULE lmbm_mod
                                       & nrecord, nft, nk)
 									  
 					set%user_rho = 0.0_c_double
-
                     
                     CALL  set_k(set, k)                        ! The number of nonzero kits is fixed
-                    
-					! The initialization of parametrs used in DBDC methods
-                     CALL allocate_parameters(set1, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, &
+ 
+!** 
+					IF (solver == 2) THEN
+					
+					   ! The initialization of parametrs used in DBDC methods
+                       CALL allocate_parameters(set1, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, &
                                            & in_eps1, in_b, in_m_clarke, in_eps, in_crit_tol)
   
-                   ! Allocation of sizes od data matrices in function.f95
-                    CALL allocate_data_cox(set1, nft, nrecord, nk, k)   
+                       ! Allocation of sizes od data matrices in function.f95
+                       CALL allocate_data_cox(set1, nft, nrecord, nk, k)   
                     
-                   ! Allocation of data matrices    
-                    CALL allocate_matrices_cox(set1, in_mX, in_mY, in_mK, in_mC,  & 
+                       ! Allocation of data matrices    
+                       CALL allocate_matrices_cox(set1, in_mX, in_mY, in_mK, in_mC,  & 
                                       & nrecord, nft, nk)
                     
-                    CALL  set_k(set1, k)                        ! The number of nonzero kits is fixed
-
+                       CALL  set_k(set1, k)                        ! The number of nonzero kits is fixed
+					
+                       CALL init_LMBMinfo(problem1, set1)   
+					   CALL set_lambda_LMBM(0.0_c_double)              
+					
+					END IF
+!**
                      ! Determination of the first starting point for the thread i                    
                     startind = 1
                     IF (i > 1) THEN 
@@ -15461,20 +15521,18 @@ END MODULE lmbm_mod
 								
 						ELSE IF (solver == 2) THEN
 						
-                           CALL init_LMBMinfo(problem1, set1)   
                            CALL init_x_var(x_0)
-                           CALL set_rho_LMBM(rho)                 
-                           CALL set_lambda_LMBM(0.0_c_double) 
-	!WRITE(*,*)
-	!WRITE(*,*) 'before lmbm'
-	!WRITE(*,*)						   
+                           CALL set_rho_LMBM(rho)   
+			   CALL cpu_time(LMBMstart)   ! Start CPU timining
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
                            CALL copy_x_var(beta_solution)
-						   CALL deallocate_LMBMinfo()						   
+						   set%user_rho = rho
 						   
                         END IF
 !**						
                 
+						
+						
                         IF (ed_sol_in_pen) THEN 
                           x_0 = beta_solution   ! Starting point for the next round
                         END IF    
@@ -15487,6 +15545,12 @@ END MODULE lmbm_mod
                           END IF
                         END DO
                   
+						!WRITE(*,*) 'beta'
+						!DO ui = 1, user_n
+						! WRITE(*,*) beta_solution(ui)
+						!END DO
+						!WRITE(*,*)
+						
                         cost = 0.0_c_double      ! The initialization of the cost of 'beta_solution'
                         kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
                         kits_beta = 0            ! The initialization of kits in 'beta_solution'
@@ -15527,7 +15591,8 @@ END MODULE lmbm_mod
                         f2_current = f2(set,beta_solution,problem2,user_n)
         
                         IF (iprint > 2) THEN
-                           WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+!**                         ! WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+						  WRITE(*,*) 'rho', rho, 'f1',f1_current, 'f2',f2_current, 'kits', kit_num
                         END IF
                         
                         IF (run_stop) THEN
@@ -15554,9 +15619,13 @@ END MODULE lmbm_mod
                    END DO
                    
                    CALL deallocate_data_cox(set) 
-				   CALL deallocate_data_cox(set1)             
-             
-         
+
+!**				   
+				   IF (solver == 2) THEN
+                      CALL deallocate_LMBMinfo_cox()
+				      CALL deallocate_data_cox(set1)             
+                   END IF
+!**         
          END SUBROUTINE  solution_with_k_kits_cox
         !.......................................................................................
         ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>        
@@ -15585,7 +15654,7 @@ END MODULE lmbm_mod
                                     & agg_used, stepsize_used, nft, problem1, problem2,  &      
                                     & in_mX, in_mY, in_mK, in_mC, nrecord, & 
                                     & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                    & in_b, in_m_clarke, in_eps, in_crit_tol ,mPrNum, solver) 
+                                    & in_b, in_m_clarke, in_eps, in_crit_tol ,mPrNum, mc, solver) 
             !_____________________________________________________________________________________
             ! 
             !           
@@ -15721,6 +15790,9 @@ END MODULE lmbm_mod
             ! OUTPUTs
                REAL(KIND = c_double), INTENT(OUT), DIMENSION(nft+1,nk)  :: x_solution   !Output variable for beta coefficients with k kits and starting points for the thread i
                REAL(KIND = c_double), INTENT(OUT), DIMENSION(nk)        :: f_solution   !Output variable target function value with k kits and starting point for the thread i             
+
+			 ! Scalar in LMBM          
+  		       INTEGER(KIND=c_int), INTENT(INOUT) :: mc           ! Initial maximum number of stored corrections.
            
            !***************************** LOCAL VARIABLES ************************************      
  
@@ -15798,7 +15870,6 @@ END MODULE lmbm_mod
 			   
  !**
                ! Scalars in LMBM
-               INTEGER(KIND=c_int) ::  mc        ! Number of corrections.
                REAL(KIND=c_double) :: LMBMstart  ! The starting time
                INTEGER, DIMENSION(4) :: iout     ! Output integer parameters.
                                                  !   iout(1)   Number of used iterations.
@@ -15856,8 +15927,14 @@ END MODULE lmbm_mod
 					set%user_rho = 0.0_c_double
 
 
-                    CALL  set_k(set, k)                        ! The number of nonzero kits is fixe                 
-                    
+                    CALL  set_k(set, k)                        ! The number of nonzero kits is fixed
+
+!**
+                    IF (solver == 2) THEN 
+                       CALL init_LMBMinfo(problem1, set)   
+ 					   CALL set_lambda_LMBM(0.0_c_double)              
+                    END IF					
+!**                    
                     ! Determination of the first starting point for the thread i                   
                     startind = 1
                     IF (i > 1) THEN 
@@ -15972,12 +16049,12 @@ END MODULE lmbm_mod
 								
 						ELSE IF (solver == 2) THEN
 						
-                           CALL init_LMBMinfo(problem1, set)   
                            CALL init_x_var(x_0)
-                           CALL set_rho_LMBM(rho)                 
-                           CALL set_lambda_LMBM(0.0_c_double)              
+                           CALL set_rho_LMBM(rho)   
+			   CALL cpu_time(LMBMstart)   ! Start CPU timining
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
-                           CALL copy_x_var(beta_solution)   
+                           CALL copy_x_var(beta_solution)  
+						   set%user_rho = rho						   
 						   
                         END IF
 !**										
@@ -16062,7 +16139,12 @@ END MODULE lmbm_mod
                        
              
                    CALL deallocate_data_mse(set)             
-             
+				   
+!**
+                    IF (solver == 2) THEN 
+						   CALL deallocate_LMBMinfo_mse()
+                    END IF	             
+!**
          
          END SUBROUTINE  solution_with_k_kits_mse
         !.......................................................................................
@@ -16093,7 +16175,7 @@ END MODULE lmbm_mod
                                     & agg_used, stepsize_used, nft, problem1, problem2,  &      
                                     & in_mX, in_mY, in_mK, in_mC, nrecord, & 
                                     & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, solver) 
+                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, mc, solver) 
             !_____________________________________________________________________________________
             ! 
             !           
@@ -16127,6 +16209,8 @@ END MODULE lmbm_mod
             !         * 'mPrNum'        : the information about starting points for the thread i
             !         
             !         * 'solver'   : defines the solver used (1=DBDC, 2=LMBM)
+            !         
+			!         * 'mc'       : Initial maximum number of stored corrections in LMBM. 
             !         
             !         PARAMETERS in DBDC method:
             !
@@ -16229,7 +16313,9 @@ END MODULE lmbm_mod
             ! OUTPUTs
                REAL(KIND = c_double), INTENT(OUT), DIMENSION(nft+1,nk)  :: x_solution   !Output variable for beta coefficients with k kits and starting points for the thread i
                REAL(KIND = c_double), INTENT(OUT), DIMENSION(nk)        :: f_solution   !Output variable target function value with k kits and starting point for the thread i
-               
+ 
+			 ! Scalar in LMBM          
+  		       INTEGER(KIND=c_int), INTENT(INOUT) :: mc           ! Initial maximum number of stored corrections. 
            
            !***************************** LOCAL VARIABLES ************************************      
  
@@ -16305,7 +16391,6 @@ END MODULE lmbm_mod
 
  !**
                ! Scalars in LMBM
-               INTEGER(KIND=c_int) ::  mc        ! Number of corrections.
                REAL(KIND=c_double) :: LMBMstart  ! The starting time
                INTEGER, DIMENSION(4) :: iout     ! Output integer parameters.
                                                  !   iout(1)   Number of used iterations.
@@ -16362,9 +16447,14 @@ END MODULE lmbm_mod
                     
 					set%user_rho = 0.0_c_double
 
-
                     CALL  set_k(set, k)                        ! The number of nonzero kits is fixed
 
+!**
+                    IF (solver == 2) THEN 
+					   CALL init_LMBMinfo(problem1, set)   
+					   CALL set_lambda_LMBM(0.0_c_double)              
+					END IF 
+!** 				
                     ! Determination of the first starting point for the thread i                   
                     startind = 1
                     IF (i > 1) THEN 
@@ -16479,12 +16569,12 @@ END MODULE lmbm_mod
 								
 						ELSE IF (solver == 2) THEN
 						
-                           CALL init_LMBMinfo(problem1, set)   
                            CALL init_x_var(x_0)
-                           CALL set_rho_LMBM(rho)                 
-                           CALL set_lambda_LMBM(0.0_c_double)              
+                           CALL set_rho_LMBM(rho)
+			   CALL cpu_time(LMBMstart)   ! Start CPU timining
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
                            CALL copy_x_var(beta_solution)   
+						   set%user_rho = rho
 						   
                         END IF
 !**		 
@@ -16565,8 +16655,13 @@ END MODULE lmbm_mod
 
                    END DO                      
              
-                   CALL deallocate_data_log(set)             
-             
+                   CALL deallocate_data_log(set)   
+
+!**				   
+                    IF (solver == 2) THEN 
+						CALL deallocate_LMBMinfo_log()
+                    END IF	              
+!**
          
          END SUBROUTINE  solution_with_k_kits_log
         !.......................................................................................
