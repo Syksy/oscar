@@ -469,6 +469,7 @@ oscar <- function(
 	}
 	
 	kperk<- as.list(apply(kperk,MARGIN=1,FUN=function(z){z[which(!z==0)]}))
+	kperk <- kperk[1:kmax]  # Take only until kmax already here, since for i>kmax, kperk[[i]] could be problematic
 	# If dealing with non-Cox regression, omit intercept from kit names
 	for(i in 1:length(kperk)){
 		names(kperk[[i]])<-rownames(k)[kperk[[i]]]

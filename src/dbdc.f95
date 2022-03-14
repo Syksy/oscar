@@ -12280,6 +12280,9 @@ END MODULE lmbm_mod
                ! Maximum number of possible treads in parallellization
 			   IF(solver==1) THEN
 				 max_threads = omp_get_max_threads()
+				 IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
+					max_threads=nkits
+				 END IF				 
 				 CALL omp_set_num_threads(max_threads)
 			   END IF
                
@@ -12572,7 +12575,8 @@ END MODULE lmbm_mod
                   CALL init_LMBMinfo(problem1, info) 
                   CALL init_x_var(x_0)          
                   CALL set_rho_LMBM(0.0_c_double)                 
-                  CALL set_lambda_LMBM(0.0_c_double)                  
+                  CALL set_lambda_LMBM(0.0_c_double)  
+		  CALL cpu_time(LMBMstart)   ! Start CPU timining
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
                   CALL copy_x_var(x_koe)
 				  CALL deallocate_LMBMinfo_cox()
@@ -12643,9 +12647,12 @@ END MODULE lmbm_mod
                   kokoosa = nk/tread_num         ! The integer part obtained from the division
                   
                   mPrNum = kokoosa               ! The initialization of the number of problems for threads
-                  DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
-                     mPrNum(i) = mPrNum(i)+1                  
-                  END DO
+		  
+                  IF(jaannos > 0) THEN
+                  	DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
+                    	 mPrNum(i) = mPrNum(i)+1                  
+                  	END DO
+		  END IF
 
                   !----------------------------------------------------------
                   ! Starting points for problem with fixed number of k kits 
@@ -13388,6 +13395,9 @@ END MODULE lmbm_mod
                ! Maximum number of possible treads in parallellization
 			   IF(solver==1) THEN
 				 max_threads = omp_get_max_threads()
+				 IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
+					max_threads=nkits
+				 END IF
 				 CALL omp_set_num_threads(max_threads)
 			   END IF
                
@@ -13656,7 +13666,8 @@ END MODULE lmbm_mod
                   CALL init_LMBMinfo(problem1, info) 
                   CALL init_x_var(x_0)          
                   CALL set_rho_LMBM(0.0_c_double)                 
-                  CALL set_lambda_LMBM(0.0_c_double)                  
+                  CALL set_lambda_LMBM(0.0_c_double)
+		  CALL cpu_time(LMBMstart)   ! Start CPU timining
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
                   CALL copy_x_var(x_koe)
 				  CALL deallocate_LMBMinfo_mse()
@@ -13726,10 +13737,12 @@ END MODULE lmbm_mod
                   kokoosa = nk/tread_num         ! The integer part obtained from the division
                   
                   mPrNum = kokoosa               ! The initialization of the number of problems for threads
-                  DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
-                     mPrNum(i) = mPrNum(i)+1                  
-                  END DO
-
+		  
+                  IF(jaannos > 0) THEN
+                  	DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
+                    	 mPrNum(i) = mPrNum(i)+1                  
+                  	END DO
+		  END IF
                   !----------------------------------------------------------
                   ! Starting points for problem with fixed number of k kits 
                   !----------------------------------------------------------
@@ -14497,6 +14510,9 @@ END MODULE lmbm_mod
              ! Maximum number of possible treads in parallellization
 			   IF(solver==1) THEN
 				 max_threads = omp_get_max_threads()
+				 IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
+					max_threads=nkits
+				 END IF
 				 CALL omp_set_num_threads(max_threads)
 			   END IF
                
@@ -14764,7 +14780,8 @@ END MODULE lmbm_mod
                   CALL init_LMBMinfo(problem1, info) 
                   CALL init_x_var(x_0)          
                   CALL set_rho_LMBM(0.0_c_double)                 
-                  CALL set_lambda_LMBM(0.0_c_double)                  
+                  CALL set_lambda_LMBM(0.0_c_double)  
+		  CALL cpu_time(LMBMstart)   ! Start CPU timining
                   CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
                   CALL copy_x_var(x_koe)
  				  CALL deallocate_LMBMinfo_log()
@@ -14831,9 +14848,12 @@ END MODULE lmbm_mod
                   kokoosa = nk/tread_num         ! The integer part obtained from the division
                   
                   mPrNum = kokoosa               ! The initialization of the number of problems for threads
-                  DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
-                     mPrNum(i) = mPrNum(i)+1                  
-                  END DO
+		  
+		  IF(jaannos > 0) THEN
+                  	DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
+                    	 mPrNum(i) = mPrNum(i)+1                  
+                  	END DO
+		  END IF
 
                   !----------------------------------------------------------
                   ! Starting points for problem with fixed number of k kits 
@@ -15502,10 +15522,8 @@ END MODULE lmbm_mod
 						ELSE IF (solver == 2) THEN
 						
                            CALL init_x_var(x_0)
-                           CALL set_rho_LMBM(rho)                 
-	!WRITE(*,*)
-	!WRITE(*,*) 'before lmbm'
-	!WRITE(*,*)						   
+                           CALL set_rho_LMBM(rho)   
+			   CALL cpu_time(LMBMstart)   ! Start CPU timining
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
                            CALL copy_x_var(beta_solution)
 						   set%user_rho = rho
@@ -16032,7 +16050,8 @@ END MODULE lmbm_mod
 						ELSE IF (solver == 2) THEN
 						
                            CALL init_x_var(x_0)
-                           CALL set_rho_LMBM(rho)                 
+                           CALL set_rho_LMBM(rho)   
+			   CALL cpu_time(LMBMstart)   ! Start CPU timining
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
                            CALL copy_x_var(beta_solution)  
 						   set%user_rho = rho						   
@@ -16551,7 +16570,8 @@ END MODULE lmbm_mod
 						ELSE IF (solver == 2) THEN
 						
                            CALL init_x_var(x_0)
-                           CALL set_rho_LMBM(rho)                 
+                           CALL set_rho_LMBM(rho)
+			   CALL cpu_time(LMBMstart)   ! Start CPU timining
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
                            CALL copy_x_var(beta_solution)   
 						   set%user_rho = rho
