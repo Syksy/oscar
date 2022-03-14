@@ -2999,66 +2999,48 @@
              
                     ! ln-exp-term in Cox model                      
                       IF (use_log) THEN
+					  
+					  ! ------------------------------------------------------
+					  ! Update: the way to calculate ln-exp-term is rewritten. 
+					  ! This also seems to make calculations faster.
                       
-                      mG = 0.0_c_double
-                      sum_r = 0.0_c_double
+                          mG = 0.0_c_double
+                          sum_r = 0.0_c_double 
                       
-                      DO i = 1, set%nrecord0
-                         apu = 0.0_c_double
-                         DO j = 1, set%nft0
-                           apu = apu + set%mX(j,i)*y(j) 
-                         END DO     
+                          time2 = set%nrecord0				  
+					  
+						  DO k = set%nfailunique, 1, -1            ! Unique fail times are looked through
+							 time1 = set%mUnique(1,k)              ! The index of first observation at the k:th failure time 
+							 d = set%mUnique(2,k)                  ! The number of failures for the k:th failure time  
+							 
+							 DO i = time1, time2
+								apu = 0.0_c_double
+								DO j = 1, set%nft0
+								  apu = apu + set%mX(j,i)*y(j) 
+								END DO     
+								
+								apu = Exp(apu)                  
+								sum_r = sum_r + apu
+	  
+								DO j = 1, set%nft0
+								   mG(j) = mG(j) + set%mX(j,i) * apu                    
+								END DO   
+		
+							 END DO
+							 
+							 f = f + d * Log(sum_r)   
+													 
+							 div = 1.0_c_double / sum_r
+							 DO j = 1, set%nft0
+							   grad(j) = grad(j) + d * mG(j) * div
+							 END DO		
 
-                         apu = Exp(apu)                  
-                         sum_r = sum_r + apu
+							 time2 = time1-1						 
 
-                         DO j = 1, set%nft0
-                            mG(j) = mG(j) + set%mX(j,i) * apu                    
-                         END DO                         
-                      END DO
-                      
-                      ind = 1                              ! The first failure happens at time t_1
-                      time1 = 1       
-                     
-                      DO k = 1, set%nfailunique
-                         time2 = set%mUnique(1,k)              ! The first failure at time t_ind 
-                         d = set%mFail(2,ind)                  ! The number of failures for time t_ind
-                         IF (time1<time2) THEN 
-                            DO i = time1, time2-1
-                              apu = 0.0_c_double
-                              DO j = 1, set%nft0
-                                apu = apu + set%mX(j,i)*y(j) 
-                              END DO       
-                              apu = Exp(apu)
-                              
-                              sum_r = sum_r - apu
-                              
-                              DO j = 1, set%nft0
-                                 mG(j) = mG(j) - set%mX(j,i) * apu                   
-                              END DO                                  
-                            END DO
-                 
-                            f = f + d * Log(sum_r)
-                      
-                            div = 1.0_c_double / sum_r
-                            DO j = 1, set%nft0
-                               grad(j) = grad(j) + d * mG(j) * div
-                            END DO
-                        
-                            ind = ind + d
-                            time1 = time2 
-                         ELSE 
-                            f = f + d * Log(sum_r)
-                  
-                            div = 1.0_c_double / sum_r
-                            DO j = 1, set%nft0
-                               grad(j) = grad(j) + d * mG(j) * div
-                            END DO
-                        
-                            ind = ind + d
-                            time1 = time2                         
-                         END IF 
-                      END DO
+						  END DO	
+					  ! ------------------------------------------------------
+
+						 				  
                       ELSE
                       ! maximum term is used instead of ln-exp-term
                       
@@ -3519,44 +3501,37 @@
                       ! ln-exp-term in Cox model                      
                       IF (use_log) THEN
                       
-                      sum_r = 0.0_c_double
-                      
-                      DO i = 1, set%nrecord0
-                         apu = 0.0_c_double
-                         DO j = 1, set%nft0
-                           apu = apu + set%mX(j,i)*y(j) 
-                         END DO     
+					  ! ------------------------------------------------------
+					  ! Update: the way to calculate ln-exp-term is rewritten. 
+					  ! This also seems to make calculations faster.
+                      					  
+					      time2 = set%nrecord0
+					  
+                          sum_r = 0.0_c_double
+					  
+						  DO k = set%nfailunique, 1, -1                ! Unique fail times are looked through
+							 time1 = set%mUnique(1,k)              ! The index of first observation at the k:th failure time 
+							 d = set%mUnique(2,k)                  ! The number of failures for the k:th failure time 
+						  
+							 DO i = time1, time2 
+								apu = 0.0_c_double
+								DO j = 1, set%nft0
+								  apu = apu + set%mX(j,i)*y(j) 
+								END DO     
+								
+								apu = Exp(apu)                  
+								sum_r = sum_r + apu
+							
+							 END DO
+								
+							 f = f + d * Log(sum_r) 
 
-                         apu = Exp(apu)                  
-                         sum_r = sum_r + apu
-                        
-                      END DO
-                      
-                      ind = 1                              ! The first failure happens at time t_1
-                      time1 = 1       
-                     
-                      DO k = 1, set%nfailunique
-                         time2 = set%mUnique(1,k)              ! The first failure at time t_ind 
-                         d = set%mFail(2,ind)                  ! The number of failures for time t_ind
-                         IF (time1<time2) THEN 
-                            DO i = time1, time2-1
-                              apu = 0.0_c_double
-                              DO j = 1, set%nft0
-                                apu = apu + set%mX(j,i)*y(j) 
-                              END DO       
-                              apu = Exp(apu)
-                              sum_r = sum_r - apu
-                                  
-                            END DO
-                            f = f + d * Log(sum_r)              
-                            ind = ind + d
-                            time1 = time2 
-                         ELSE 
-                            f = f + d * Log(sum_r)
-                            ind = ind + d
-                            time1 = time2                         
-                         END IF 
-                      END DO
+							 time2 = time1-1						 
+
+						  END DO						  
+
+					  ! ------------------------------------------------------
+
                       ELSE
                       ! maximum term is used instead of ln-exp-term
                       
@@ -4182,62 +4157,45 @@
                       ! ln-exp-term in Cox model                      
                       IF (use_log) THEN
                       
-                      mG = 0.0_c_double
-                      sum_r = 0.0_c_double
-                      
-                      DO i = 1, set%nrecord0
-                         apu = 0.0_c_double
-                         DO j = 1, set%nft0
-                           apu = apu + set%mX(j,i)*y(j) 
-                         END DO     
+					  ! ------------------------------------------------------
+					  ! Update: the way to calculate ln-exp-term is rewritten. 
+					  ! This also seems to make calculations faster.
 
-                         apu = Exp(apu)                  
-                         sum_r = sum_r + apu
+						  time2 = set%nrecord0
+						  
+						  mG = 0.0_c_double
+						  sum_r = 0.0_c_double 
+							 
+						  DO k = set%nfailunique, 1, -1            ! Unique fail times are looked through
+							 time1 = set%mUnique(1,k)              ! The index of first observation at the k:th failure time 
+							 d = set%mUnique(2,k)                  ! The number of failures for the k:th failure time  
+							 
+							 DO i = time1, time2
+								apu = 0.0_c_double
+								DO j = 1, set%nft0
+								  apu = apu + set%mX(j,i)*y(j) 
+								END DO     
+								
+								apu = Exp(apu)                  
+								sum_r = sum_r + apu
+	  
+								DO j = 1, set%nft0
+								   mG(j) = mG(j) + set%mX(j,i) * apu                    
+								END DO   
+		
+							 END DO
+													  
+							 div = 1.0_c_double / sum_r
+							 DO j = 1, set%nft0
+							   grad(j) = grad(j) + d * mG(j) * div
+							 END DO						 
 
-                         DO j = 1, set%nft0
-                            mG(j) = mG(j) + set%mX(j,i) * apu                    
-                         END DO                         
-                      END DO
-                      
-                      ind = 1                              ! The first failure happens at time t_1
-                      time1 = 1       
-                     
-                      DO k = 1, set%nfailunique
-                         time2 = set%mUnique(1,k)              ! The first failure at time t_ind 
-                         d = set%mFail(2,ind)                  ! The number of failures for time t_ind
-                         IF (time1<time2) THEN 
-                            DO i = time1, time2-1
-                              apu = 0.0_c_double
-                              DO j = 1, set%nft0
-                                apu = apu + set%mX(j,i)*y(j) 
-                              END DO       
-                              apu = Exp(apu)
-                              
-                              sum_r = sum_r - apu
-                              
-                              DO j = 1, set%nft0
-                                 mG(j) = mG(j) - set%mX(j,i) * apu                   
-                              END DO                                  
-                            END DO
-                            
-                            div = 1.0_c_double / sum_r
-                            DO j = 1, set%nft0
-                               grad(j) = grad(j) + d * mG(j) * div
-                            END DO
-                        
-                            ind = ind + d
-                            time1 = time2 
-                         ELSE 
-                  
-                            div = 1.0_c_double / sum_r
-                            DO j = 1, set%nft0
-                               grad(j) = grad(j) + d * mG(j) * div
-                            END DO
-                        
-                            ind = ind + d
-                            time1 = time2                         
-                         END IF 
-                      END DO
+							 time2 = time1-1
+
+						  END DO							  
+
+					  ! ------------------------------------------------------
+
                       ELSE
                       ! maximum term is used instead of ln-exp-term
                       
@@ -13957,10 +13915,7 @@ END MODULE lmbm_mod
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
                         beta_solution(i) = x_koe(i)
-			
-			WRITE(*,*) beta_solution(i)
                    END DO
-		   WRITE(*,*) '---------'
                    f1_current = f1(info,beta_solution,problem1,user_n) ! The f_1 value 
                    f2_current = f2(info,beta_solution,problem2,user_n) ! The f_2 value
                    fperk(k) = f1_current-f2_current                    ! The objective function value for problem 4 with k nonzero kits         
