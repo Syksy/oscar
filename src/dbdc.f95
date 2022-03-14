@@ -13957,7 +13957,10 @@ END MODULE lmbm_mod
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
                         beta_solution(i) = x_koe(i)
+			
+			WRITE(*,*) beta_solution(i)
                    END DO
+		   WRITE(*,*) '---------'
                    f1_current = f1(info,beta_solution,problem1,user_n) ! The f_1 value 
                    f2_current = f2(info,beta_solution,problem2,user_n) ! The f_2 value
                    fperk(k) = f1_current-f2_current                    ! The objective function value for problem 4 with k nonzero kits         
