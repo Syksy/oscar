@@ -8,6 +8,7 @@
 \alias{feat}
 \alias{kits}
 \alias{cost}
+\alias{cost.after}
 \title{Showing oscar-objects}
 \usage{
 \S4method{show}{oscar}(object)
@@ -28,6 +29,8 @@ feat(object, k)
 kits(object, k)
 
 cost(object, k)
+
+cost.after(object, kit.matrix, cost.vector)
 }
 \description{
 Showing oscar-objects
@@ -43,4 +46,7 @@ Return named vector of feature indices with a given k that are non-zero
 Return named vector of kits indices with a given k that are non-zero
 
 Return total cost of model fit based on provided kit/variable costs vector
+
+Return total cost of model fits if the cost is not included in the oscar object
+If at least one measurement from a kit is included in the model, the kit cost is added.
 }

@@ -34,60 +34,66 @@ oscar.control(
 )
 }
 \arguments{
+\item{x}{Input data matrix 'x'; will be used for calculating various control parameter defaults.}
+
+\item{family}{Model family; should be one of 'cox', 'logistic', or 'gaussian'/'mse'}
+
 \item{start}{Starting point generation method, see vignettes for details; should be an integer between {range,range}, Default: 2}
 
-\item{in_mrounds}{DESCRIPTION}
+\item{in_mrounds}{DBDC: The maximum number of rounds in one main iteration, Default: 5000}
 
-\item{in_mit}{DESCRIPTION}
+\item{in_mit}{DBDC: The maximum number of main iterations, Default: 5000}
 
-\item{in_mrounds_esc}{DESCRIPTION}
+\item{in_mrounds_esc}{DBDC: The maximum number of rounds in escape procedure, Default: 5000}
 
-\item{in_b1}{DESCRIPTION}
+\item{in_b1}{DBDC: The size of bundle B1, Default: min(n_feat+5,1000)}
 
-\item{in_b2}{DESCRIPTION}
+\item{in_b2}{DBDC: The size of bundle B2, Default: 3}
 
-\item{in_m}{DESCRIPTION}
+\item{in_b}{DBDC: Bundle B in escape procedure, Default: 2*n_feat}
 
-\item{in_m_clarke}{DESCRIPTION}
+\item{in_m}{DBDC: The descent parameter in main iteration, Default: 0.01}
 
-\item{in_c}{DESCRIPTION}
+\item{in_m_clarke}{DBDC: The descent parameter in escape procedure, Default: 0.01}
 
-\item{in_r_dec}{DESCRIPTION}
+\item{in_c}{DBDC: The extra decrease parameter in main iteration, Default: 0.1}
 
-\item{in_r_inc}{DESCRIPTION}
+\item{in_r_dec}{DBDC: The decrease parameter in main iteration, Default: 0.75, 0.99, or larger depending on n_obs (thresholds 10, 300, and above)}
 
-\item{in_eps1}{DESCRIPTION}
+\item{in_r_inc}{DBDC: The increase parameter in main iteration, Default: 10^5}
 
-\item{in_eps}{DESCRIPTION}
+\item{in_eps1}{DBDC: The enlargement parameter, Default: 5*10^(-5)}
 
-\item{in_crit_tol}{DESCRIPTION}
+\item{in_eps}{DBDC: The stopping tolerance (proximity measure), Default: 10^(-6) if number of features is <= 50, otherwise 10^(-5)}
 
-\item{na}{DESCRIPTION}
+\item{in_crit_tol}{DBDC: The stopping tolerance (criticality tolerance), Default: 10^(-5)}
 
-\item{mcu}{DESCRIPTION}
+\item{na}{LMBM: Size of the bundle, Default: 4}
 
-\item{mcinit}{DESCRIPTION}
+\item{mcu}{LMBM: Upper limit for maximum number of stored corrections, Default: 7}
 
-\item{tolf}{DESCRIPTION}
+\item{mcinit}{LMBM: Initial maximum number of stored corrections, Default: 7}
 
-\item{tolf2}{DESCRIPTION}
+\item{tolf}{LMBM: Tolerance for change of function values, Default: 10^(-5)}
 
-\item{tolg}{DESCRIPTION}
+\item{tolf2}{LMBM: Second tolerance for change of function values, Default: 10^4}
 
-\item{tolg2}{DESCRIPTION}
+\item{tolg}{LMBM: Tolerance for the first termination criterion, Default: 10^(-5)}
 
-\item{eta}{DESCRIPTION}
+\item{tolg2}{LMBM: Tolerance for the second termination criterion, Default: same as 'tolg'}
 
-\item{epsL}{DESCRIPTION}
+\item{eta}{LMBM: Distance measure parameter (>0), Default: 0.5}
+
+\item{epsL}{LMBM: Line search parameter (0 < epsL < 0.25), Default: 0.125}
 }
 \value{
-A list of parameters for the OSCAR optimizers.
+A list of sanity checked parameter values for the OSCAR optimizers.
 }
 \description{
 Fine-tuning the parameters available for the DBDC and LMBM optimizers. See oscar documentation for the optimization algorithms for further details.
 }
 \details{
-This function sanity checks and provides reasonable DBDC and LMBM optimization tuning parameters. User may override custom values, though sanity checks will prevent unreasonable values and replace them.
+This function sanity checks and provides reasonable DBDC and LMBM optimization tuning parameters. User may override custom values, though sanity checks will prevent unreasonable values and replace them. The returned list of parameters can be provided for the 'control' parameter when fitting oscar-objects.
 }
 \examples{
 \dontrun{

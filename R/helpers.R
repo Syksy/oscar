@@ -19,10 +19,10 @@
 #'  }
 #' }
 #'
-#' @rdname cv
+#' @rdname oscar.cv
 #' @export 
 #' @importFrom survival coxph Surv
-cv.oscar <- function(
+oscar.cv <- function(
 	# oscar-object
 	fit,
 	# k-fold
@@ -194,9 +194,9 @@ cv.oscar <- function(
 #'  #EXAMPLE1
 #'  }
 #' }
-#' @rdname bs
+#' @rdname oscar.bs
 #' @export 
-bs.oscar <- function(
+oscar.bs <- function(
 	# oscar-object
 	fit,
 	# How many bootstrapped datasets to generate
@@ -248,14 +248,15 @@ bs.oscar <- function(
 #'  #EXAMPLE1
 #'  }
 #' }
-#' @rdname bs.k
+#' @rdname oscar.bs.k
 #' @export
-bs.k <- function(
+oscar.bs.k <- function(
 	bs	# Bootstrapped list from bs.oscar
 ){
 	# Omit entries with try-errors
 	if(any(unlist(lapply(bs, FUN=class))=="try-error")){
 		bs <- bs[-which(unlist(lapply(bs, FUN=class))=="try-error")]
+		warning(paste("try-errors detected in some bootstrap runs; failed bootstrap count:", sum(unlist(lapply(bs, FUN=class))=="try-error")))
 	}
 	
 	# Choices of variables as a function of k
@@ -296,10 +297,9 @@ bs.k <- function(
 #'  }
 #' }
 #'
-#' @rdname sparsify
+#' @rdname oscar.sparsify
 #' @export 
-#' @importFrom Matrix sparseMatrix
-sparsify <- function(
+oscar.sparsify <- function(
 	fit,
 	kmax = fit@kmax
 ){
@@ -341,9 +341,9 @@ sparsify <- function(
 #'  }
 #' }
 #'
-#' @rdname binarize
+#' @rdname oscar.binarize
 #' @export 
-binarize <- function(
+oscar.binarize <- function(
 	fit, # oscar model object
 	kmax = fit@kmax # limit to kmax
 ){
@@ -352,7 +352,7 @@ binarize <- function(
 	}
 	
 	# Full sparse matrix representation
-	binmat <- apply(oscar::sparsify(fit), MARGIN=2, FUN=function(z) { ifelse(z==0, FALSE, TRUE) })
+	binmat <- apply(oscar::oscar.sparsify(fit), MARGIN=2, FUN=function(z) { ifelse(z==0, FALSE, TRUE) })
 	
 	binmat[,1:kmax]
 }

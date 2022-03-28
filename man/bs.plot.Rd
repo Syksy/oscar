@@ -9,7 +9,7 @@ bs.plot(
   bs,
   kmax,
   cex.axis = 0.6,
-  palet = colorRampPalette(c("orange", "red", "black", "blue", "cyan"))(100),
+  palet = colorRampPalette(c("orange", "red", "black", "blue", "cyan"))(dim(bs)[3]),
   nbins = 100,
   Colv = NA,
   Rowv = NA,

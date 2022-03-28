@@ -26,11 +26,13 @@ oscar(
 
 \item{y}{Response vector/two-column matrix 'y' (see: family); number of rows equal to nrow(x)}
 
-\item{k}{Integer (0/1) kit indicator matrix; number of columns equal to ncol(x)}
+\item{k}{Integer (0/1) kit indicator matrix; number of columns equal to ncol(x), Default: Unit diagonal indicator matrix}
 
-\item{w}{Kit cost weight vector w of length nrow(k)}
+\item{w}{Kit cost weight vector w of length nrow(k), Default: Equal cost for all variables}
 
-\item{family}{Model family, should be one of: 'cox', 'mse'/'gaussian', or 'logistic, Default: 'gaussian'}
+\item{family}{Model family, should be one of: 'cox', 'mse'/'gaussian', or 'logistic, Default: 'cox'}
+
+\item{metric}{Goodness metric, Default(s): Concordance index for Cox, MSE for Gaussian, and AUC for logistic regression}
 
 \item{solver}{Solver used in the optimization, should be  1/'DBDC' or 2/'LMBM', Default: 1.}
 
@@ -38,13 +40,13 @@ oscar(
 
 \item{print}{Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}, Default: 3}
 
-\item{kmax}{Maximum k step tested, by default all k are tested from k to maximum dimensionality}
+\item{kmax}{Maximum k step tested, by default all k are tested from k to maximum dimensionality, Default: ncol(x)}
 
-\item{sanitize}{Whether input column names should be cleaned of potentially problematic symbols}
+\item{sanitize}{Whether input column names should be cleaned of potentially problematic symbols, Default: TRUE}
 
 \item{...}{Additional parameters}
 
-\item{oscar.control}{Tuning parameters for the optimizers, see function oscar.control()}
+\item{oscar.control}{Tuning parameters for the optimizers, see function oscar.control(), Default: see ?oscar.control}
 }
 \value{
 Fitted oscar-object
