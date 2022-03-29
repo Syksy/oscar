@@ -7,9 +7,9 @@
 oscar.binarize(fit, kmax = fit@kmax)
 }
 \arguments{
-\item{kmax}{Create matrix until kmax-value; by default same as for fit object, but for high dimensional tasks one may wish to reduce this}
+\item{fit}{Fit oscar-model object}
 
-\item{Fit}{oscar-model object}
+\item{kmax}{Create matrix until kmax-value; by default same as for fit object, but for high dimensional tasks one may wish to reduce this}
 }
 \value{
 A binary logical indicator matrix of variables (rows) as a function of cardinality k (columns), where elements are binary indicators for 1 as non-zero and 0 as zero.

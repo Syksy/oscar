@@ -85,7 +85,7 @@ setClass("oscar", # abbreviation
 #' @param print Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}, Default: 3
 #' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality, Default: ncol(x)
 #' @param sanitize Whether input column names should be cleaned of potentially problematic symbols, Default: TRUE
-#' @param oscar.control Tuning parameters for the optimizers, see function oscar.control(), Default: see ?oscar.control
+#' @param control Tuning parameters for the optimizers, see function oscar.control(), Default: see ?oscar.control
 #' @param ... Additional parameters
 #'
 #' @return Fitted oscar-object

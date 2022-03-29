@@ -7,7 +7,7 @@
 oscar.bs.k(bs)
 }
 \arguments{
-\item{bs}{PARAM_DESCRIPTION}
+\item{bs}{Bootstrapped list from oscar.bs}
 }
 \value{
 OUTPUT_DESCRIPTION

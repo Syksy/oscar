@@ -12,6 +12,7 @@
 #' @param legend PARAM_DESCRIPTION, Default: 'top'
 #' @param mtexts PARAM_DESCRIPTION, Default: TRUE
 #' @param add PARAM_DESCRIPTION
+#' @param main Main title
 #' @return OUTPUT_DESCRIPTION
 #' @details DETAILS
 #' @examples 
@@ -20,9 +21,9 @@
 #'  #EXAMPLE1
 #'  }
 #' }
-#' @rdname visu
+#' @rdname oscar.visu
 #' @export
-visu <- function(
+oscar.visu <- function(
 	object,	# oscar-object (with corresponding slots available)
 	## Options for plotting on the y-axes:
 	# target: Target objective function value at each k step
@@ -148,11 +149,13 @@ pareto <- function(
 }
 
 #' @title Visualize bootstrapping of a fit oscar object
-#' @description FUNCTION_DESCRIPTION
-#' @param bs PARAM_DESCRIPTION
-#' @param intercept PARAM_DESCRIPTION, Default: FALSE
-#' @param add PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
+#'
+#' @description This function visualizes bootstrapped model coefficients over multiple bootstrap runs as lines in a graph
+#'
+#' @param bs Bootstrapped 3-dimensional array for an oscar object as produced by oscar.bs
+#' @param intercept Whether model intercept should be plotted also as a coefficient, Default: FALSE
+#' @param add Should plot be added on top of an existing plot device
+#'
 #' @details DETAILS
 #' @examples 
 #' \dontrun{
@@ -160,9 +163,9 @@ pareto <- function(
 #'  #EXAMPLE1
 #'  }
 #' }
-#' @rdname bs
+#' @rdname oscar.bs.visu
 #' @export
-bs.visu <- function(
+oscar.bs.visu <- function(
 	bs, # Bootstrap array as produced by bs.oscar
 	intercept = FALSE, # Whether intercept coefficient ought to be plotted as well
 	add = FALSE # Should plot be added into an existing frame / plot
@@ -194,23 +197,26 @@ bs.visu <- function(
 }
 
 #' @title Visualize cross-validation as a function of k
-#' @description FUNCTION_DESCRIPTION
-#' @param cvs PARAM_DESCRIPTION
-#' @param add PARAM_DESCRIPTION
-#' @param main PARAM_DESCRIPTION
-#' @param ... PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#'
+#' @description This function plots the model performance as a function of cardinality for k-fold cross-validation. Performance metric depends on user choice and model family (i.e. lower MSE is good, higher C-index is good).
+#'
+#' @param cvs Matrix produced by oscar.cv; rows are cv-folds, cols are k-values
+#' @param add Should plot be added on top of an existing plot device
+#' @param main Main title
+#' @param xlab X-axis label
+#' @param ylab Y-axis label
+#' @param ... Additional parameters passed on top the CV points
+#'
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
 #'  #EXAMPLE1
 #'  }
 #' }
-#' @rdname cv
+#' @rdname oscar.cv.visu
 #' @export
-cv.visu <- function(
-	cvs, # Matrix produced by cv.oscar; rows are cv-folds, cols are k-values
+oscar.cv.visu <- function(
+	cvs, # Matrix produced by oscar.cv; rows are cv-folds, cols are k-values
 	add = FALSE, # Should plot be added into an existing frame / plot
 	main = "OSCAR cross-validation", # Main title
 	xlab = "Cardinality 'k'",
@@ -231,17 +237,23 @@ cv.visu <- function(
 		title(main=main, xlab=xlab, ylab=ylab)
 	}
 	# Plotting
-	points(x, means, type="l")
+	points(x, means, type="l", ...)
 	# Means as a function of k
-	points(x, means, pch=16, col="red")
+	points(x, means, pch=16, col="red", ...)
 	# Standard errors as a function of k
 	arrows(x0=x, y0=means-sds, x1=x, y1=means+sds, code=3, angle=90, length=0.1)
 }
 
 #' @title Bootstrap visualization with boxplot, percentage of new additions
 #'
+#' @description This function plots as barplots as a function of k-cardinality in what proporties certain coefficients were chosen as non-zero over the bootstrap runs.
+#' 
+#' @param bs Bootstrapped 3-dimensional array for an oscar object as produced by oscar.bs
+#' @param ... Additional parameters passed on to barplot
+#'
+#' @rdname oscar.bs.boxplot
 #' @export
-bs.boxplot <- function(
+oscar.bs.boxplot <- function(
 	bs, # Bootstrap array as produced by bs.oscar
 	...
 ){
@@ -268,15 +280,26 @@ bs.boxplot <- function(
 		howoften.new[k,i] <- lkm/nbootstrap}
 	  }
 	}
-	barplot(t(howoften.new)[,nkits:1,drop=FALSE],horiz=TRUE,col=rainbow(38))
+	barplot(t(howoften.new)[,nkits:1,drop=FALSE],horiz=TRUE,col=rainbow(38), ...)
 
 }
 
 #' @title Visualize binary indicator matrix optionally coupled with cross-validation performance
 #'
+#' @description TODO
+#'
+#' @param fit TODO
+#' @param cv TODO
+#' @param kmax TODO
+#' @param collines TODO
+#' @param rowlines TODO
+#' @param cex.axis TODO
+#' @param heights TODO
+#' @param ... Additional parameters passed on to hamlet::hmap
+#'
 #' @importFrom hamlet hmap hmap.key
 #' @export
-binplot <- function(
+oscar.binplot <- function(
 	fit, # Model fit object
 	cv, # Cross-validation performance if calculated
 	kmax, # Maximum k to draw to; if missing, using kmax from fit@kmax
@@ -323,9 +346,21 @@ binplot <- function(
 
 #' @title Bootstrap + cross-validation heatmap plot
 #'
+#' @description TODO
+#'
+#' @param fit TODO
+#' @param bs TODO
+#' @param kmax TODO
+#' @param cex.axis TODO
+#' @param palet TODO
+#' @param nbins TODO
+#' @param Colv TODO
+#' @param Rowv TODO
+#' @param ... TODO
+#'
 #' @importFrom hamlet hmap hmap.key
 #' @export
-bs.plot <- function(
+oscar.bs.plot <- function(
 	fit, # Model fit object
 	bs, # Bootstrapped data estimates if calculated
 	kmax, # Maximum k to draw to; if missing, using kmax from fit@kmax
@@ -370,6 +405,9 @@ bs.plot <- function(
 }
 					
 #' @title Visualize cost and C-index with paretofront without oscar object
+#'
+#' @description TODO
+#'
 #' @param costs Vector including costs values
 #' @param cindexes Vector including C-index values
 #' @param nzeros Vector including the number of non-zeros of the model in each point

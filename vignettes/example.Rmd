@@ -86,7 +86,7 @@ Model convergence in target function is important, while an another axis can be 
 
 ```{r eval=TRUE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Target function value as a function of k."}
 
-visu(fit, y="target")
+oscar.visu(fit, y="target")
 
 ```
 
@@ -96,9 +96,9 @@ Fit model object can be inspected based on visual diagnostics such as cross-vali
 
 ```{r eval=TRUE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="5-fold cross-validation for optimally generalizable cardinality 'k'"}
 # Perform 5-fold cross-validation to find out optimal k
-cv <- cv.oscar(fit, fold=5, seed=123, solver=2)
+cv <- oscar.cv(fit, fold=5, seed=123, solver=2)
 # Visualize model generalization performance as a function of k
-cv.visu(cv)
+oscar.cv.visu(cv)
 ```
 
 It appears that k-values around 5 or above present a shoulder-point saturate the model, with no further coefficients contributing to the model's generalization capability. 
@@ -107,9 +107,9 @@ Further, there is some uncertainty as to what order the coefficients should be n
 
 ```{r eval=TRUE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Bootstrapped coefficient trajectories"}
 # Bootstrap original data 20 times (sampling with replacement and refitting)
-bs <- bs.oscar(fit, bootstrap=20, seed=234, solver=2)
+bs <- oscar.bs(fit, bootstrap=20, seed=234, solver=2)
 # Visualize trajectories of bootstrapped coefficients
-bs.plot(fit=fit, bs=bs, nbins=20)
+oscar.bs.plot(fit=fit, bs=bs, nbins=20)
 
 ```
 
@@ -148,16 +148,16 @@ Similarly bootstrapping and cross-validation:
 
 ```{r eval=TRUE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Bootstrapping of Swiss fertility data (Gaussian/MSE)"}
 # Bootstrap original data 50 times (sampling with replacement and refitting)
-bs_swiss <- bs.oscar(fit_swiss, bootstrap=50, seed=1, solver=2)
+bs_swiss <- oscar.bs(fit_swiss, bootstrap=50, seed=1, solver=2)
 # Visualize trajectories of bootstrapped coefficients
-bs.plot(fit=fit_swiss, bs=bs_swiss, nbins=50)
+oscar.bs.plot(fit=fit_swiss, bs=bs_swiss, nbins=50)
 ```
 
 ```{r eval=TRUE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="10-fold cross-validation for optimally generalizable cardinality 'k'"}
 # Perform 5-fold cross-validation to find out optimal k
-cv_swiss <- cv.oscar(fit_swiss, fold=10, seed=2, solver=2)
+cv_swiss <- oscar.cv(fit_swiss, fold=10, seed=2, solver=2)
 # Visualize model generalization performance as a function of k
-cv.visu(cv_swiss)
+oscar.cv.visu(cv_swiss)
 ```
 
 

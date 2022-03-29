@@ -44,9 +44,9 @@ oscar(
 
 \item{sanitize}{Whether input column names should be cleaned of potentially problematic symbols, Default: TRUE}
 
-\item{...}{Additional parameters}
+\item{control}{Tuning parameters for the optimizers, see function oscar.control(), Default: see ?oscar.control}
 
-\item{oscar.control}{Tuning parameters for the optimizers, see function oscar.control(), Default: see ?oscar.control}
+\item{...}{Additional parameters}
 }
 \value{
 Fitted oscar-object

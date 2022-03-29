@@ -40,7 +40,6 @@ setMethod("coef", "oscar",
 			stop("Invalid k-value, should be an integer between {1,2, ..., kmax}")
 		}
 		# Returning the correct coef at k:th step
-		#stats::coef(object@fits[[k]])
 		object@bperk[k,]
 	}
 )
@@ -164,7 +163,7 @@ setMethod("feat", "oscar",
 	}
 )
 
-#' Return named vector of kits indices with a given k that are non-zero
+#' Return named vector of indices for kits with a given k that are non-zero
 #'
 #' @rdname generics
 #'

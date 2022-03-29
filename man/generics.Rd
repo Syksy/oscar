@@ -43,7 +43,7 @@ Plot oscar-coefficients as a function of k and override default plot generic
 
 Return named vector of feature indices with a given k that are non-zero
 
-Return named vector of kits indices with a given k that are non-zero
+Return named vector of indices for kits with a given k that are non-zero
 
 Return total cost of model fit based on provided kit/variable costs vector
 

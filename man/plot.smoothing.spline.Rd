@@ -71,6 +71,8 @@ plot.smoothing.spline(
 OUTPUT_DESCRIPTION
 }
 \description{
+TODO
+
 FUNCTION_DESCRIPTION
 }
 \details{

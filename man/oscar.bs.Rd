@@ -14,6 +14,8 @@ oscar.bs(fit, bootstrap = 100, seed = NULL, verb = 0, ...)
 \item{seed}{Random seed for reproducibility with NULL indicating that it is not set, Default: NULL}
 
 \item{verb}{Level of verbosity with higher integer giving more information, Default: 0}
+
+\item{...}{Additional parameters passed to oscar-function}
 }
 \value{
 3-dimensional array with dimensions corresponding to k-steps, beta coefficients, and bootstrap runs
