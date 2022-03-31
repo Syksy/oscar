@@ -12,5 +12,10 @@
 #'
 #' @docType package
 #' @name oscar
+#' @importFrom grDevices colorRampPalette extendrange rainbow
+#' @importFrom graphics abline arrows axis barplot box layout legend lines mtext par plot.new
+#' @importFrom methods new
+#' @importFrom stats sd smooth.spline
+#' @importfrom utils str
 #' @useDynLib oscar, .registration=TRUE
 NULL
