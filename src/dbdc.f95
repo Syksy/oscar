@@ -364,17 +364,17 @@
                INTEGER(KIND=c_int) :: i, allocstat             
                
                DEALLOCATE(set%current_element%subgrad, STAT=allocstat)     ! deallocates the subgradient in the 'current element'
-               IF (allocstat /= 0) STOP "*** Could Not release memory B1 ***"              
+        !       IF (allocstat /= 0) STOP "*** Could Not release memory B1 ***"              
                DEALLOCATE(set%agg_element%subgrad, STAT=allocstat)         ! deallocates the subgradient in the 'aggregated element'
-               IF (allocstat /= 0) STOP "*** Could Not release memory B1 ***"                          
+        !       IF (allocstat /= 0) STOP "*** Could Not release memory B1 ***"                          
 
                DO i=1, set%b_maxsize
                     DEALLOCATE(set%b_elements(i)%subgrad, STAT=allocstat)  ! deallocates subgradients in the table 'b_elements'
-                    IF (allocstat /= 0) STOP "*** Could Not release memory B1 ***"             
+        !            IF (allocstat /= 0) STOP "*** Could Not release memory B1 ***"             
                     
                END DO            
                DEALLOCATE(set%b_elements, STAT=allocstat)  ! deallocates the bundle table 'b_elements' 
-               IF (allocstat /= 0) STOP "*** Could Not release memory B1 ***"              
+        !       IF (allocstat /= 0) STOP "*** Could Not release memory B1 ***"              
 
                
            END SUBROUTINE deallocation_b1         
@@ -1081,19 +1081,19 @@
                
                DO i=1, set%b_maxsize
                     DEALLOCATE(set%b_elements(i)%subgrad, STAT=allocstat)    ! deallocates subgradients in the table 'b_elements'
-                    IF (allocstat /= 0) STOP "*** Could Not release memory B2 ***"             
+         !           IF (allocstat /= 0) STOP "*** Could Not release memory B2 ***"             
                     DEALLOCATE(set%b_elements(i)%direction, STAT=allocstat)  ! deallocates searh directions in the table 'b_elements'
-                    IF (allocstat /= 0) STOP "*** Could Not release memory B2 ***"                          
+         !           IF (allocstat /= 0) STOP "*** Could Not release memory B2 ***"                          
                END DO  
 
                DEALLOCATE(set%b_elements , STAT=allocstat)   ! deallocates the bundle element table 'b_elements'    
-               IF (allocstat /= 0) STOP "*** Could Not release memory B2 ***"                      
+         !      IF (allocstat /= 0) STOP "*** Could Not release memory B2 ***"                      
  
                DEALLOCATE(set%current_element%subgrad, STAT=allocstat)      ! deallocates the subgradient in the 'current element'
-               IF (allocstat /= 0) STOP "*** Could Not release memory B2 ***"              
+         !      IF (allocstat /= 0) STOP "*** Could Not release memory B2 ***"              
                
                DEALLOCATE(set%current_element%direction, STAT=allocstat)    ! deallocates the searh direction in the 'current element'
-               IF (allocstat /= 0) STOP "*** Could Not release memory B2 ***"                          
+         !      IF (allocstat /= 0) STOP "*** Could Not release memory B2 ***"                          
                
            END SUBROUTINE deallocation_b2   
 
@@ -16653,7 +16653,7 @@ END MODULE lmbm_mod
  
               CALL RANDOM_SEED(size=seed_size) 
               ALLOCATE(seed(seed_size), stat=state)
-              IF(state>0) STOP 'Reservation of space failed!'
+        !      IF(state>0) STOP 'Reservation of space failed!'
               CALL DATE_AND_TIME(values=t)
               seed = 100 * t(7) + t(8)/10
               CALL RANDOM_SEED(put=seed)
