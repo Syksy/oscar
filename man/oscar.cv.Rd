@@ -20,7 +20,11 @@ oscar.cv(
 
 \item{seed}{Random seed for reproducibility with NULL indicating that it is not set, Default: NULL}
 
+\item{strata}{Should stratified cross-validation be used; separate values indicate balanced strata. Default: Unit vector, which will treat all observations equally.}
+
 \item{verb}{Level of verbosity with higher integer giving more information, Default: 0}
+
+\item{...}{Additional parameters passed to oscar-function}
 }
 \value{
 A matrix with goodness of fit over folds and k-values
