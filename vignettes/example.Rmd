@@ -163,7 +163,7 @@ oscar.cv.visu(cv_swiss)
 
 # References
 
-1: Laajala TD, Murtojarvi M, Virkki A, Aittokallio T. ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to real-world patient cohorts. Bioinformatics. 2018;34(22):3957-3959. doi:10.1093/bioinformatics/bty477
+1: Laajala TD, Murtojarvi M, Virkki A, Aittokallio T. ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to real-world patient cohorts. Bioinformatics. 2018;34(22):3957-3959. \doi{10.1093/bioinformatics/bty477}
 
 # Session info
 ```{r sesinfo}

@@ -1,1 +1,2 @@
-^.tws
+^data-raw$
+^oscar.tws$

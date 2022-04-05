@@ -33,8 +33,8 @@ setClass("oscar", # abbreviation
 		info = "character",	# Additional error messages, warnings or such reported e.g. during model fitting
 		kmax = "integer",	# Number of maximum k tested
 		metric = "character",	# Name of the goodness-of-fit metric used
-		solver = "character",  # Name of the solver used in the optimization (DBDC = 1 or LMBM = 2)
-		call = "call"	# Function call
+		solver = "character",  	# Name of the solver used in the optimization (DBDC = 1 or LMBM = 2)
+		call = "call"		# Function call
 	),	
 	prototype(
 		# Prototype base model object

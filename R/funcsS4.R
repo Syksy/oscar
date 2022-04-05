@@ -13,8 +13,9 @@
 
 #' Showing oscar-objects
 #'
-#' @rdname generics
+#' @param object Fit oscar S4-object
 #'
+#' @rdname generics
 #' @export
 setMethod("show", "oscar",
 	function(object){
@@ -28,9 +29,12 @@ setMethod("show", "oscar",
 
 #' Extract coefficients of oscar-objects
 #'
-#' @rdname generics
+#' @param object Fit oscar S4-object
+#' @param k Cardinality 'k' to extract coefficients at
 #'
 #' @export
+#' @docType methods
+#' @rdname oscar-methods
 setMethod("coef", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
@@ -44,11 +48,16 @@ setMethod("coef", "oscar",
 	}
 )
 
-#' Predicting based on oscar-objects
+#' Prediction based on oscar-objects
 #'
-#' @rdname generics
+#' @param object Fit oscar S4-object
+#' @param k Cardinality 'k' to perform predictions at
+#' @param type Type of prediction; valid values are 'response', 'link', 'nonzero', 'coefficients', or 'label'
+#' @param newdata Data to predict on; if no alternate is supplied, the function uses the original 'x' data matrix used to fit object
 #'
 #' @export
+#' @docType methods
+#' @rdname oscar-methods
 setMethod("predict", "oscar",
 	# Showing possible options for types of responses
 	function(object, k, type = c("response","link","nonzero","coefficients","label"), newdata = object@x){
@@ -96,9 +105,16 @@ setMethod("predict", "oscar",
 
 #' Plot oscar-coefficients as a function of k and override default plot generic
 #'
-#' @rdname generics
+#' @param x Values on x-axis
+#' @param y Values on y-axis
+#' @param k Vector of cardinality 'k' values
+#' @param add Should the plot be added on top of an existing plot (if FALSE, create a new graphics device), Default: FALSE
+#' @param intercept Should model intercept be plotted, Default: FALSE
+#' @param ... Additional parameters passed on to the points-function drawing lines as a function of cardinality
 #'
 #' @export
+#' @docType methods
+#' @rdname oscar-methods
 setMethod("plot", "oscar",
 	function(x, y, k=1:x@kmax, add=FALSE, intercept=FALSE, ...){
 		# Should intercept be omitted from the plot
@@ -121,7 +137,7 @@ setMethod("plot", "oscar",
 		ret <- lapply(1:ncol(bperk), FUN=function(i){
 			vec <- bperk[,i]
 			names(vec) <- paste("k_", k, sep="")
-			points(x=k, y=vec, col=i, type="l")
+			points(x=k, y=vec, col=i, type="l", ...)
 			vec
 		})
 		names(ret) <- colnames(bperk)
@@ -138,16 +154,19 @@ setMethod("plot", "oscar",
 ###
 
 
-#' Return named vector of feature indices with a given k that are non-zero
-#'
-#' @rdname generics
-#'
-#' @export
 setGeneric("feat",
 	function(object, k){
 		standardGeneric("feat")
 	}
 )
+#' Return named vector of feature indices with a given k that are non-zero
+#'
+#' @param object Fit oscar S4-object 
+#' @param k Cardinality 'k' to extract non-zero features at
+#'
+#' @export
+#' @docType methods
+#' @rdname oscar-methods
 setMethod("feat", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
@@ -163,16 +182,19 @@ setMethod("feat", "oscar",
 	}
 )
 
-#' Return named vector of indices for kits with a given k that are non-zero
-#'
-#' @rdname generics
-#'
-#' @export
 setGeneric("kits",
 	function(object, k){
 		standardGeneric("kits")
 	}
 )
+#' Return named vector of indices for kits with a given k that are non-zero
+#'
+#' @param object Fit oscar S4-object 
+#' @param k Cardinality 'k' to extract kit indices at
+#'
+#' @export
+#' @docType methods
+#' @rdname oscar-methods
 setMethod("kits", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
@@ -194,16 +216,19 @@ setMethod("kits", "oscar",
 	}
 )
 
-#' Return total cost of model fit based on provided kit/variable costs vector
-#'
-#' @rdname generics
-#'
-#' @export
 setGeneric("cost",
 	function(object, k){
 		standardGeneric("cost")
 	}
 )
+#' Return total cost of model fit based on provided kit/variable costs vector
+#'
+#' @param object Fit oscar S4-object 
+#' @param k Cardinality 'k' to compute total feature cost at
+#'
+#' @export
+#' @docType methods
+#' @rdname oscar-methods
 setMethod("cost", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
@@ -219,39 +244,3 @@ setMethod("cost", "oscar",
 	}
 )
 
-		
-#' Return total cost of model fits if the cost is not included in the oscar object
-#' If at least one measurement from a kit is included in the model, the kit cost is added.
-#'
-#' @rdname generics
-#'
-#' @export
-cost.after <- function(object, kit.matrix, cost.vector){
-  # Assume that the features are in the same order in x-matrix of oscar object and kit matrix
-  # Assume that the kits are in the same order in kit.matrix and cost.vector
-  
-  #Sanity checks
-  if(nrow(kit.matrix)!=length(cost.vector)){
-    stop("Number of kits in the kit matrix is different from the length of cost vector.")
-  }
-  if(ncol(kit.matrix)!=ncol(object@x)){
-    stop("Number of predictors in the kit.matrix differs from the number of predictors in x-matrix of oscar object.")
-  }
-  
-  costs <- c()
-  for(i in 1:object@kmax){ # Go through each cardinality
-    cost.tmp <-0
-    nzero <- which(object@bperk[i,]!=0)
-
-    for(j in 1:ncol(kit.matrix)){ #Go through kits
-      if(any(kit.matrix[j,nzero]!=0)){
-        cost.tmp <- cost.tmp+cost.vector[j] # Add kit price if any feature is incl.
-      }
-    }
-    costs<-c(costs,as.numeric(cost.tmp))
-  }
-  return(costs)
-}
-
-
-		
