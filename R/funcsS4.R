@@ -166,7 +166,6 @@ setGeneric("feat",
 #'
 #' @export
 #' @docType methods
-#' @rdname oscar-methods
 setMethod("feat", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
@@ -194,7 +193,6 @@ setGeneric("kits",
 #'
 #' @export
 #' @docType methods
-#' @rdname oscar-methods
 setMethod("kits", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
@@ -228,7 +226,6 @@ setGeneric("cost",
 #'
 #' @export
 #' @docType methods
-#' @rdname oscar-methods
 setMethod("cost", "oscar",
 	function(object, k){
 		# Sanity checking for k-values

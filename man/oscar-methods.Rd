@@ -5,9 +5,6 @@
 \alias{coef,oscar-method}
 \alias{predict,oscar-method}
 \alias{plot,oscar-method}
-\alias{feat,oscar-method}
-\alias{kits,oscar-method}
-\alias{cost,oscar-method}
 \title{Extract coefficients of oscar-objects}
 \usage{
 \S4method{coef}{oscar}(object, k)
@@ -20,17 +17,11 @@
 )
 
 \S4method{plot}{oscar}(x, y, k = 1:x@kmax, add = FALSE, intercept = FALSE, ...)
-
-\S4method{feat}{oscar}(object, k)
-
-\S4method{kits}{oscar}(object, k)
-
-\S4method{cost}{oscar}(object, k)
 }
 \arguments{
 \item{object}{Fit oscar S4-object}
 
-\item{k}{Cardinality 'k' to compute total feature cost at}
+\item{k}{Vector of cardinality 'k' values}
 
 \item{type}{Type of prediction; valid values are 'response', 'link', 'nonzero', 'coefficients', or 'label'}
 
@@ -52,10 +43,4 @@ Extract coefficients of oscar-objects
 Prediction based on oscar-objects
 
 Plot oscar-coefficients as a function of k and override default plot generic
-
-Return named vector of feature indices with a given k that are non-zero
-
-Return named vector of indices for kits with a given k that are non-zero
-
-Return total cost of model fit based on provided kit/variable costs vector
 }
