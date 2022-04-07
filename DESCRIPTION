@@ -16,7 +16,7 @@ License: GPL-3
 LazyData: true
 NeedsCompilation: yes
 Depends: R (>= 3.6.0)
-Imports: graphics, grDevices, methods, stats, utils, survival, hamlet
+Imports: graphics, grDevices, methods, stats, utils, Matrix, survival, hamlet
 Suggests: glmnet, ePCR, pROC, rmarkdown, knitr, rPref
 Encoding: UTF-8
 VignetteBuilder: knitr

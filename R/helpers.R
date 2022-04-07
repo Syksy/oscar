@@ -301,6 +301,7 @@ oscar.bs.k <- function(
 #' }
 #'
 #' @rdname oscar.sparsify
+#' @importFrom Matrix sparseMatrix
 #' @export 
 oscar.sparsify <- function(
 	fit,
