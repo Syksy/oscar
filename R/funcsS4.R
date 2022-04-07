@@ -154,6 +154,15 @@ setMethod("plot", "oscar",
 ###
 
 
+#' Return named vector of feature indices with a given k that are non-zero
+#'
+#' @param object Fit oscar S4-object 
+#' @param k Cardinality 'k' to extract non-zero features at
+#'
+#' @docType methods
+#' @export
+#' @aliases feat,oscar-methods
+#' @rdname feat
 setGeneric("feat",
 	function(object, k){
 		standardGeneric("feat")
@@ -164,8 +173,10 @@ setGeneric("feat",
 #' @param object Fit oscar S4-object 
 #' @param k Cardinality 'k' to extract non-zero features at
 #'
-#' @export
 #' @docType methods
+#' @export
+#' @aliases feat,oscar-methods
+#' @rdname feat
 setMethod("feat", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
@@ -181,6 +192,15 @@ setMethod("feat", "oscar",
 	}
 )
 
+#' Return named vector of indices for kits with a given k that are non-zero
+#'
+#' @param object Fit oscar S4-object 
+#' @param k Cardinality 'k' to extract kit indices at
+#'
+#' @docType methods
+#' @export
+#' @aliases kits,oscar-methods
+#' @rdname kits
 setGeneric("kits",
 	function(object, k){
 		standardGeneric("kits")
@@ -191,8 +211,10 @@ setGeneric("kits",
 #' @param object Fit oscar S4-object 
 #' @param k Cardinality 'k' to extract kit indices at
 #'
-#' @export
 #' @docType methods
+#' @export
+#' @aliases kits,oscar-methods
+#' @rdname kits
 setMethod("kits", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
@@ -214,6 +236,15 @@ setMethod("kits", "oscar",
 	}
 )
 
+#' Return total cost of model fit based on provided kit/variable costs vector
+#'
+#' @param object Fit oscar S4-object 
+#' @param k Cardinality 'k' to compute total feature cost at
+#'
+#' @aliases cost,oscar-methods
+#' @export
+#' @docType methods
+#' @rdname cost
 setGeneric("cost",
 	function(object, k){
 		standardGeneric("cost")
@@ -224,8 +255,10 @@ setGeneric("cost",
 #' @param object Fit oscar S4-object 
 #' @param k Cardinality 'k' to compute total feature cost at
 #'
+#' @aliases cost,oscar-methods
 #' @export
 #' @docType methods
+#' @rdname cost
 setMethod("cost", "oscar",
 	function(object, k){
 		# Sanity checking for k-values
