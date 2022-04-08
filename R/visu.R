@@ -366,3 +366,54 @@ oscar.bs.plot <- function(
 	axis(2, at=h$rowtext$yseq, labels=h$rowtext$rownam, cex.axis=cex.axis, las=1)
 	hamlet::hmap.key(h)
 }
+
+#' Visualize oscar model pareto front
+#'
+#' Visualization function for showing the pareto front for cardinality 'k' and model goodness metric, either from goodness-of-fit or from cross-validation
+#'
+#' @param fit Fit oscar S4-object
+#' @param cv A cross-validation matrix as produced by oscar.cv; if CV is not provided, then goodness-of-fit from fit object itself is used rather than cross-validation generalization metric
+#' @param xval The x-axis to construct pareto front based on; by default 'cost' vector for features/kits, can also be 'cardinality'/'k'
+#' @param summarize Function that summarizes over cross-validation folds; by default, this is the mean over the k-folds.
+#' @param add If the fit should be added on top of an existing plot; in that case leaving out labels etc. By default new plot is called.
+#' @param ... Additional parameters provided for the plotting functions
+#'
+#' @export
+oscar.pareto.visu <- function(
+	fit,
+	cv,
+	xval = "cost",
+	summarize = mean,
+	add = FALSE,
+	...
+){
+	# Use oscar.pareto-function to obtain the pareto front, and then focus on plotting
+	if(missing(cv)){
+		#paretos <- oscar::oscar.pareto(fit = fit)
+		paretos <- oscar.pareto(fit = fit, xval = xval)
+	}else{
+		#paretos <- oscar::oscar.pareto(fit = fit, cv = cv, summarize = summarize)
+		paretos <- oscar.pareto(fit = fit, cv = cv, xval = xval, summarize = summarize)
+	}
+	# If we don't add to an existing plot, an informative canvas is created
+	if(!add){
+		plot.new()
+		plot.window(xlim=range(paretos$k), ylim=range(paretos[,2]))
+		box(); axis(1); axis(2)
+		if(xval == "cost"){
+			title(xlab="Variable/kit cost")
+		}else if(xval %in% c("cardinality", "k")){
+			title(xlab="Cardinality 'k'")
+		}
+		if(!missing(cv)){
+			title(ylab=paste("CV performance (", fit@metric, ")", sep=""))
+		}else{
+			title(ylab=paste("Model performance (", fit@metric, ")", sep=""))
+		}
+		title(main="Pareto front for oscar fit")
+	}
+	# Actual pareto front, with model fits in black and front with a red line
+	points(x=paretos[,1], y=paretos[,2], pch=16)
+	points(x=paretos[which(paretos[,3]),1], y=paretos[which(paretos[,3]),2], type="l", col="red", lwd=2, ...)
+}
+

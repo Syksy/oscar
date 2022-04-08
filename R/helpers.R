@@ -361,6 +361,72 @@ oscar.binarize <- function(
 	binmat[,1:kmax]
 }
 
+#' Retriever a set pareto-optimal points for an oscar-model based on model goodness-of-fit or cross-validation
+#'
+#' This function retrieves the set of pareto optimal points for an oscar model fit in n-proportional time as cardinality axis is readily sorted. It is advisable to optimize model generalization (via cross-validation) rather than mere goodness-of-fit.
+#'
+#' @param fit Fit oscar S4-object
+#' @param cv A cross-validation matrix as produced by oscar.cv; if CV is not provided, then goodness-of-fit from fit object itself is used rather than cross-validation generalization metric
+#' @param xval The x-axis to construct pareto front based on; by default 'cost' vector for features/kits, can also be 'cardinality'/'k'
+#' @param summarize Function that summarizes over cross-validation folds; by default, this is the mean over the k-folds.
+#' 
+#' @return The indices at which pareto optimal points exist
+#'
+#' @export
+oscar.pareto <- function(
+	fit,
+	cv,
+	xval = "cost",
+	summarize = mean
+){
+	# 
+	if(xval == "cost"){
+		xs <- unlist(lapply(1:fit@kmax, FUN=function(k) { oscar::cost(fit, k) }))
+		ord <- order(xs)
+	}else if(xval %in% c("cardinality", "k")){
+		xs <- 1:fit@kmax
+		ord <- 1:fit@kmax
+	}else{
+		stop(paste("Invalid xval value:",xval))
+	}
+	# x-axis is always the cardinality k
+	# y-axis is either the goodness of fit or cross-validation performance. Latter is preferred.
+	# No CV provided
+	if(missing(cv)){
+		ys <- fit@goodness
+	# CV provided
+	}else{
+		# Apply summarization function over columns (the cardinality values), as rows are the folds in CV
+		ys <- apply(cv, MARGIN=2, FUN=summarize)
+	}
+	# For certain metrics, test in the other direction
+	if(fit@metric %in% c("mse")){
+		ys <- -ys
+	}
+	# Loop over the x-values in ascending order; first one is always a pareto point, so we'll store it
+	# Assuming x-axis is cardinality, we want lower cardinality models i.e. conservative in terms of their complexity
+	# xs are actually cardinalities starting from 1, so we can just use integer indices
+	df <- data.frame(y = ys, x = xs, ord = ord)
+	df <- df[ord,]	
+	ymax <- df$y[1]
+	paretos <- 1
+	for(i in 1:nrow(df)){
+		# Always testing for higher values, as the metrics in other direction were already flipped
+		if(df$y[i] > ymax){
+			paretos <- c(paretos, i)
+			ymax <- df$y[i]
+		}
+	}
+	# Result for {x,y,pareto yes/no}
+	res <- data.frame(k = df$x, y = df$y, paretofront = FALSE, ord = ord)
+	# Replace y with the actual model metric
+	names(res)[2] <- fit@metric
+	res[paretos,"paretofront"] <- TRUE
+	# Return to original point ordering
+	res <- res[order(res$ord),]
+	res
+}
+
 #' Return total cost of model fits if the cost is not included in the oscar object
 #' If at least one measurement from a kit is included in the model, the kit cost is added.
 #'

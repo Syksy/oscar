@@ -531,10 +531,14 @@ oscar <- function(
 			# Use correct classification percent as the goodness measure
 			# ROC-AUC
 			if(metric=="auc"){
-			
+				# TODO
+				stop("ROC-AUC yet to be implemented.")
 			# Accuracy
 			}else if(metric=="accuracy"){
 				#obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { sum(as.numeric(y == (predict.glm(z, type="response")>0.5)))/length(y) }))
+				stop("TODO for the generic case")
+			}else{
+				stop(paste("Invalid goodness-of-fit metric:", metric))
 			}
 		}
 	})

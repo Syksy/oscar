@@ -76,8 +76,8 @@ fit
 
 A pareto-optimal front provides information on potential optimal saddle points, where model generalization and clinical applicability pair nicely:
 
-```{r pareto, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Pareto front for the clinical measurements and C-index."}
-#plot.pareto.costCI(costs=fit@w, cindexes=fit@goodness, nzeros=1:fit@kmax)
+```{r pareto, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Pareto front for the clinical measurements, their total cost and C-index."}
+oscar.pareto.visu(fit=fit)
 ```
 
 ### Goodness of fit vs. model coefficient cost
