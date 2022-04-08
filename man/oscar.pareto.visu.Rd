@@ -4,7 +4,15 @@
 \alias{oscar.pareto.visu}
 \title{Visualize oscar model pareto front}
 \usage{
-oscar.pareto.visu(fit, cv, xval = "cost", summarize = mean, add = FALSE, ...)
+oscar.pareto.visu(
+  fit,
+  cv,
+  xval = "cost",
+  weak = FALSE,
+  summarize = mean,
+  add = FALSE,
+  ...
+)
 }
 \arguments{
 \item{fit}{Fit oscar S4-object}
@@ -12,6 +20,8 @@ oscar.pareto.visu(fit, cv, xval = "cost", summarize = mean, add = FALSE, ...)
 \item{cv}{A cross-validation matrix as produced by oscar.cv; if CV is not provided, then goodness-of-fit from fit object itself is used rather than cross-validation generalization metric}
 
 \item{xval}{The x-axis to construct pareto front based on; by default 'cost' vector for features/kits, can also be 'cardinality'/'k'}
+
+\item{weak}{If weak pareto-optimality is allowed; by default FALSE.}
 
 \item{summarize}{Function that summarizes over cross-validation folds; by default, this is the mean over the k-folds.}
 

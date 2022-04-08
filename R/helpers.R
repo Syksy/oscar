@@ -368,6 +368,7 @@ oscar.binarize <- function(
 #' @param fit Fit oscar S4-object
 #' @param cv A cross-validation matrix as produced by oscar.cv; if CV is not provided, then goodness-of-fit from fit object itself is used rather than cross-validation generalization metric
 #' @param xval The x-axis to construct pareto front based on; by default 'cost' vector for features/kits, can also be 'cardinality'/'k'
+#' @param weak If weak pareto-optimality is allowed; by default FALSE.
 #' @param summarize Function that summarizes over cross-validation folds; by default, this is the mean over the k-folds.
 #' 
 #' @return The indices at which pareto optimal points exist
@@ -377,6 +378,7 @@ oscar.pareto <- function(
 	fit,
 	cv,
 	xval = "cost",
+	weak = FALSE,
 	summarize = mean
 ){
 	# 
@@ -420,9 +422,14 @@ oscar.pareto <- function(
 	# Result for {x,y,pareto yes/no}
 	res <- data.frame(k = df$x, y = df$y, paretofront = FALSE, ord = ord)
 	# Replace y with the actual model metric
-	names(res)[2] <- fit@metric
+	names(res)[1:2] <- c(xval, fit@metric)
 	res[paretos,"paretofront"] <- TRUE
-	# Return to original point ordering
+	# If weak pareto-optimal points should be removed as per default
+	if(!weak){
+		res <- do.call("rbind", by(res, INDICES=res[,1], FUN=function(x) { x[which(!x[,2]==max(x[,2])),3]<-FALSE; x }))
+		rownames(res) <- NULL
+	}
+		# Return to original point ordering
 	res <- res[order(res$ord),]
 	res
 }
