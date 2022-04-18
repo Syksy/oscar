@@ -5,26 +5,29 @@
 ####
 
 #' @title Target function value and total kit cost as a function of number of kits included
-#' @description FUNCTION_DESCRIPTION
-#' @param object PARAM_DESCRIPTION
-#' @param y PARAM_DESCRIPTION, Default: c("target", "cost", "goodness", "cv")
-#' @param cols PARAM_DESCRIPTION, Default: c("red", "blue")
-#' @param legend PARAM_DESCRIPTION, Default: 'top'
-#' @param mtexts PARAM_DESCRIPTION, Default: TRUE
-#' @param add PARAM_DESCRIPTION
+#'
+#' @description Plot oscar S4-object goodness-of-fit, kit costs, and similar performance metrics.
+#'
+#' @param fit Fitted oscar S4-class object
+#' @param y Plotted y-axes supporting two simultaneous axes with different scales, Default: c("target", "cost", "goodness", "cv")
+#' @param cols Colours for drawn lines, Default: c("red", "blue")
+#' @param legend Location of legend or omission of legend with NA, Default: 'top'
+#' @param mtexts Outer margin texts
+#' @param add Should plot be added into an existing frame / plot
 #' @param main Main title
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#'
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   oscar.visu(fit, y=c("target", "cost"))
 #'  }
 #' }
 #' @rdname oscar.visu
 #' @export
 oscar.visu <- function(
-	object,	# oscar-object (with corresponding slots available)
+	fit,	# oscar-object (with corresponding slots available)
 	## Options for plotting on the y-axes:
 	# target: Target objective function value at each k step
 	# cost: model kit cost at each k step
@@ -39,32 +42,33 @@ oscar.visu <- function(
 	add = FALSE, # Should plot be added into an existing frame / plot
 	main = ""
 ){
-	if(!class(object) %in% "oscar") stop("'object' should be of class 'oscar'")
+	if(!inherits(fit, "oscar")) stop("'fit' should be of class 'oscar'")
+	opar <- par(no.readonly = TRUE)
+
 	par(las=2,  # All labels orthogonally to axes
 		mar=c(7,4,1,4), # Inner margins
 		oma=c(ifelse(mtexts, 2, 0), ifelse(mtexts, 2, 0), 0, ifelse(mtexts, 2, 0))) # Outer margins depend on additional labels with mtext
-	#x <- 1:nrow(object@k)
 	# Use kmax to truncate k-path
-	x <- 1:object@kmax
+	x <- 1:fit@kmax
 	# Maximum of two y-axes overlayed in a single graphics device
 	plot.new()
 
 	leg <- c()
 	# First y-axis options
 	if(y[1]=="target"){
-		y1 <- object@fperk	
+		y1 <- fit@fperk	
 		leg <- c(leg, "Target function value")
 	}else if(y[1]=="cost"){
-		y1 <- object@cperk
+		y1 <- fit@cperk
 		leg <- c(leg, "Total kit cost")		
 	}else if(y[1]=="goodness"){
-		y1 <- object@goodness
-		leg <- c(leg, paste("Model goodness-of-fit (", object@metric, ")"))		
+		y1 <- fit@goodness
+		leg <- c(leg, paste("Model goodness-of-fit (", fit@metric, ")"))		
 	}else if(y[1]=="cv"){
 		# TODO
 		leg <- c(leg, "Cross-validated goodness-of-fit")		
 	}else if(y[1]=="AIC"){
-		y1 <- object@AIC
+		y1 <- fit@AIC
 		leg <- c(leg, "AIC")
 	}else{
 		stop(paste("Invalid y[1] parameter (", y[1],"), should be one of: 'target', 'cost', 'goodness', 'cv', 'AIC'", sep=""))
@@ -80,19 +84,19 @@ oscar.visu <- function(
 	# If length(y)>1, then plot a second y-axis
 	if(length(y)>1){
 		if(y[2]=="target"){
-			y2 <- object@fperk	
+			y2 <- fit@fperk	
 			leg <- c(leg, "Target function value")
 		}else if(y[2]=="cost"){
-			y2 <- object@cperk
+			y2 <- fit@cperk
 			leg <- c(leg, "Total kit cost")		
 		}else if(y[2]=="goodness"){
-			y2 <- object@goodness
-			leg <- c(leg, paste("Model goodness-of-fit", object@metric, ")"))		
+			y2 <- fit@goodness
+			leg <- c(leg, paste("Model goodness-of-fit", fit@metric, ")"))		
 		}else if(y[2]=="cv"){
 			# TODO
-			leg <- c(leg, paste("Cross-validated goodness-of-fit", object@metric, ")"))		
+			leg <- c(leg, paste("Cross-validated goodness-of-fit", fit@metric, ")"))		
 		}else if(y[2]=="aic"){
-			y2 <- object@aic
+			y2 <- fit@aic
 			leg <- c(leg, "AIC")
 		}else{
 			stop(paste("Invalid y[2] parameter (", y[2],"), should be one of: 'target', 'cost', 'goodness', 'cv'", sep=""))
@@ -118,6 +122,7 @@ oscar.visu <- function(
 		mtext(side=2, text=leg[1], las=0, outer=TRUE)
 		if(length(y)>1) mtext(side=4, text=leg[2], las=0, outer=TRUE)
 	}
+	par(opar)
 }
 
 #' @title Visualize bootstrapping of a fit oscar object
@@ -128,11 +133,13 @@ oscar.visu <- function(
 #' @param intercept Whether model intercept should be plotted also as a coefficient, Default: FALSE
 #' @param add Should plot be added on top of an existing plot device
 #'
-#' @details DETAILS
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
+#'   oscar.bs.visu(fit_bs)
 #'  }
 #' }
 #' @rdname oscar.bs.visu
@@ -172,7 +179,7 @@ oscar.bs.visu <- function(
 #'
 #' @description This function plots the model performance as a function of cardinality for k-fold cross-validation. Performance metric depends on user choice and model family (i.e. lower MSE is good, higher C-index is good).
 #'
-#' @param cvs Matrix produced by oscar.cv; rows are cv-folds, cols are k-values
+#' @param cv Matrix produced by oscar.cv; rows are cv-folds, cols are k-values
 #' @param add Should plot be added on top of an existing plot device
 #' @param main Main title
 #' @param xlab X-axis label
@@ -182,13 +189,16 @@ oscar.bs.visu <- function(
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_cv <- oscar.cv(fit, fold = 10, seed = 123)
+#'   oscar.cv.visu(fit_cv)
 #'  }
 #' }
 #' @rdname oscar.cv.visu
 #' @export
 oscar.cv.visu <- function(
-	cvs, # Matrix produced by oscar.cv; rows are cv-folds, cols are k-values
+	cv, # Matrix produced by oscar.cv; rows are cv-folds, cols are k-values
 	add = FALSE, # Should plot be added into an existing frame / plot
 	main = "OSCAR cross-validation", # Main title
 	xlab = "Cardinality 'k'",
@@ -196,10 +206,10 @@ oscar.cv.visu <- function(
 	...
 ){
 	# Compute statistics for the CV-curve
-	means <- apply(cvs, MARGIN=2, FUN=mean)
-	sds <- apply(cvs, MARGIN=2, FUN=sd)
+	means <- apply(cv, MARGIN=2, FUN=mean)
+	sds <- apply(cv, MARGIN=2, FUN=sd)
 	# x-coordinates
-	x <- 1:ncol(cvs)
+	x <- 1:ncol(cv)
 	# Plot new or add
 	if(!add){
 		# If not adding to an existing plot, setup the graphics device
@@ -223,6 +233,15 @@ oscar.cv.visu <- function(
 #' @param bs Bootstrapped 3-dimensional array for an oscar object as produced by oscar.bs
 #' @param ... Additional parameters passed on to barplot
 #'
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
+#'   oscar.bs.boxplot(fit_bs)
+#'  }
+#' }
 #' @rdname oscar.bs.boxplot
 #' @export
 oscar.bs.boxplot <- function(
@@ -256,19 +275,28 @@ oscar.bs.boxplot <- function(
 
 }
 
-#' @title Visualize binary indicator matrix optionally coupled with cross-validation performance
+#' @title Visualize binary indicator matrix optionally coupled with cross-validation performance for oscar models
 #'
-#' @description TODO
+#' @description This visualization function makes use of the sparsified beta-coefficient matrix form as a function of cardinality. Optionally, user may showcase cross-validation performance alongside at the same cardinality values.
 #'
-#' @param fit TODO
-#' @param cv TODO
-#' @param kmax TODO
-#' @param collines TODO
-#' @param rowlines TODO
-#' @param cex.axis TODO
-#' @param heights TODO
+#' @param fit Fitted oscar S4-class object
+#' @param cv Matrix produced by oscar.cv; rows are cv-folds, cols are k-values
+#' @param kmax Maximum cardinality 'k'
+#' @param collines Should vertical lines be drawn to bottom part
+#' @param rowlines Should horizontal lines be drawn to highlight variables
+#' @param cex.axis Axis magnification
+#' @param heights Paneling proportions as a numeric vector of length 2
 #' @param ... Additional parameters passed on to hamlet::hmap
 #'
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_cv <- oscar.cv(fit, fold = 10, seed = 123)
+#'   oscar.binplot(fit=fit, cv=fit_cv)
+#'  }
+#' }
 #' @importFrom hamlet hmap hmap.key
 #' @export
 oscar.binplot <- function(
@@ -281,7 +309,7 @@ oscar.binplot <- function(
 	heights=c(0.2, 0.8),
 	... # Additional parameters passed on to hamlet::hmap
 ){
-	if(!class(fit) %in% c("oscar")){
+	if(!inherits(fit, "oscar")){
 		stop("'fit' should be an oscar S4-object")
 	}
 	if(missing(kmax)){
@@ -289,21 +317,25 @@ oscar.binplot <- function(
 	}
 	
 	if(!missing(cv)){
+		opar <- par(no.readonly = TRUE)
 		# Extra CV annotation on top
 		par(mar=c(0,4,1,1), las=1)
 		# Set up paneling
 		layout(matrix(c(1,2), nrow=2), heights=heights)
 		oscar::oscar.cv.visu(cv[,1:kmax])
 		axis(1, at=1:kmax)
+		par(opar)
 	}
 
+	opar <- par(no.readonly = TRUE)
 	# Bottom binarized indicator panel
 	par(mar=c(4,4,1,1))
 	bfit <- oscar::oscar.binarize(fit)[,1:kmax]
 	plot.new()
 	plot.window(xlim=c(0.2,0.8), ylim=c(0.2,0.8))
+	par(opar)
 	
-	h <- hamlet::hmap(oscar::oscar.binarize(fit), Colv=NA, Rowv=NA, toplim=0.8, bottomlim=0.2, col=c("lightgrey", "darkgrey"), nbins=2, namerows=FALSE, namecols=FALSE, add=TRUE)
+	h <- hamlet::hmap(oscar::oscar.binarize(fit), Colv=NA, Rowv=NA, toplim=0.8, bottomlim=0.2, col=c("lightgrey", "darkgrey"), nbins=2, namerows=FALSE, namecols=FALSE, add=TRUE, ...)
 	#title(ylab="Non-zero coefficients", xlab="Cardinality 'k'")
 	title(xlab="Cardinality 'k'")
 	axis(1, at=h$coltext$xseq[1:kmax], labels=1:kmax)
@@ -316,20 +348,31 @@ oscar.binplot <- function(
 	box()
 }
 
-#' @title Bootstrap + cross-validation heatmap plot
+#' @title Bootstrap heatmap plot for oscar models
 #'
-#' @description TODO
+#' @description This function neatly plots a colourized proportion of variables chosen as a function of cardinalities over a multitude of bootstrap runs. This helps model diagnostics in assesssing variable importance.
 #'
-#' @param fit TODO
-#' @param bs TODO
-#' @param kmax TODO
-#' @param cex.axis TODO
-#' @param palet TODO
-#' @param nbins TODO
-#' @param Colv TODO
-#' @param Rowv TODO
-#' @param ... TODO
+#' @param fit Fitted oscar S4-class object
+#' @param bs Bootstrapped 3-dimensional array for an oscar object as produced by oscar.bs
+#' @param kmax Maximum cardinality 'k'
+#' @param cex.axis Axis magnification
+#' @param palet Colour palette
+#' @param nbins Number of bins (typically ought to be same as number of colours in the palette)
+#' @param Colv Column re-ordering indices or a readily built dendrogram
+#' @param Rowv Row re-ordering indices or a readily built dendrogram
+#' @param ... Additional parameters passed on to the hamlet::hmap function
 #'
+#' @details Further heatmap parameters available from ?hmap
+#'
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
+#'   oscar.bs.plot(fit, fit_bs)
+#'  }
+#' }
 #' @importFrom hamlet hmap hmap.key
 #' @export
 oscar.bs.plot <- function(
@@ -338,17 +381,18 @@ oscar.bs.plot <- function(
 	kmax, # Maximum k to draw to; if missing, using kmax from fit@kmax
 	cex.axis = 0.6, # Axis cex, for scaling
 	palet = colorRampPalette(c("orange", "red", "black", "blue", "cyan"))(dim(bs)[3]), # color palette used in the heatmap, by default the number of bootstrapped datasets as separate colors
-	nbins = 100, # Number of color bins
+	nbins = dim(bs)[3], # Number of color bins
 	Colv=NA, # Sorting of columns
 	Rowv=NA, # Sorting of rows
 	...
 ){
-	if(!class(fit) %in% c("oscar")){
+	if(!inherits(fit, "oscar")){ 
 		stop("'fit' should be an oscar S4-object")
 	}
 	if(missing(kmax)){
 		kmax <- fit@kmax
 	}
+	opar <- par(no.readonly = TRUE)
 	par(mar=c(4,4,0,0))
 	# Bootstrapping
 	if(!missing(bs)){
@@ -360,11 +404,12 @@ oscar.bs.plot <- function(
 	varorder <- unique(unlist(apply(fit@bperk, MARGIN=1, FUN=function(z) which(!z==0))))
 	bmat <- t(bmat[,varorder])
 
-	h <- hamlet::hmap(bmat, Colv=Colv, Rowv=Rowv, xlim=c(0.25, 1), ylim=c(0, 0.75), col=palet, nbins=nbins, namerows=FALSE, namecols=FALSE)
+	h <- hamlet::hmap(bmat, Colv=Colv, Rowv=Rowv, xlim=c(0.25, 1), ylim=c(0, 0.75), col=palet, nbins=nbins, namerows=FALSE, namecols=FALSE, ...)
 	title(xlab="Cardinality 'k'")
 	axis(1, at=h$coltext$xseq[1:kmax], labels=1:kmax)
 	axis(2, at=h$rowtext$yseq, labels=h$rowtext$rownam, cex.axis=cex.axis, las=1)
 	hamlet::hmap.key(h)
+	par(opar)
 }
 
 #' Visualize oscar model pareto front
@@ -379,6 +424,17 @@ oscar.bs.plot <- function(
 #' @param add If the fit should be added on top of an existing plot; in that case leaving out labels etc. By default new plot is called.
 #' @param ... Additional parameters provided for the plotting functions
 #'
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_cv <- oscar.cv(fit, fold = 10, seed = 123)
+#'   par(mfrow=c(1,2))
+#'   oscar.pareto.visu(fit=fit) # Model goodness-of-fit
+#'   oscar.pareto.visu(fit=fit, cv=fit_cv) # Model cross-validation performance
+#'  }
+#' }
 #' @export
 oscar.pareto.visu <- function(
 	fit,

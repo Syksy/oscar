@@ -5,7 +5,7 @@
 \title{Visualize cross-validation as a function of k}
 \usage{
 oscar.cv.visu(
-  cvs,
+  cv,
   add = FALSE,
   main = "OSCAR cross-validation",
   xlab = "Cardinality 'k'",
@@ -14,7 +14,7 @@ oscar.cv.visu(
 )
 }
 \arguments{
-\item{cvs}{Matrix produced by oscar.cv; rows are cv-folds, cols are k-values}
+\item{cv}{Matrix produced by oscar.cv; rows are cv-folds, cols are k-values}
 
 \item{add}{Should plot be added on top of an existing plot device}
 
@@ -32,7 +32,10 @@ This function plots the model performance as a function of cardinality for k-fol
 \examples{
 \dontrun{
 if(interactive()){
- #EXAMPLE1
+  data(ex)
+  fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+  fit_cv <- oscar.cv(fit, fold = 10, seed = 123)
+  oscar.cv.visu(fit_cv)
  }
 }
 }

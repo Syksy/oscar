@@ -2,7 +2,7 @@
 % Please edit documentation in R/helpers.R
 \name{oscar.bs.k}
 \alias{oscar.bs.k}
-\title{FUNCTION_TITLE}
+\title{Reformatting bootstrap output for cardinality k rows}
 \usage{
 oscar.bs.k(bs)
 }
@@ -10,18 +10,20 @@ oscar.bs.k(bs)
 \item{bs}{Bootstrapped list from oscar.bs}
 }
 \value{
-OUTPUT_DESCRIPTION
+Reformatted data.frame
 }
 \description{
-FUNCTION_DESCRIPTION
-}
-\details{
-DETAILS
+The function reformats bootstrapped runs to a single long data.frame, where all bootstrapped runs are covered along with the choices for the variables at each cardinality 'k'.
 }
 \examples{
 \dontrun{
 if(interactive()){
- #EXAMPLE1
+  data(ex)
+  fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+  fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
+  ll <- oscar.bs.k(fit_bs)
+  head(ll)
+  tail(ll)
  }
 }
 }

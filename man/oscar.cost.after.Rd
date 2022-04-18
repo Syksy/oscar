@@ -2,8 +2,7 @@
 % Please edit documentation in R/helpers.R
 \name{oscar.cost.after}
 \alias{oscar.cost.after}
-\title{Return total cost of model fits if the cost is not included in the oscar object
-If at least one measurement from a kit is included in the model, the kit cost is added.}
+\title{Return total cost of model fits if the cost is not included in the oscar object}
 \usage{
 oscar.cost.after(object)
 }
@@ -11,6 +10,15 @@ oscar.cost.after(object)
 \item{object}{Fit oscar S4-object}
 }
 \description{
-Return total cost of model fits if the cost is not included in the oscar object
 If at least one measurement from a kit is included in the model, the kit cost is added.
+}
+\examples{
+\dontrun{
+if(interactive()){
+  data(ex)
+  fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+  oscar.cost.after(fit)
+ }
+}
+
 }

@@ -23,7 +23,9 @@ Uses sparseMatrix-class from Matrix-package
 \examples{
 \dontrun{
 if(interactive()){
- #EXAMPLE1
+  data(ex)
+  fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+  oscar.sparsify(fit, kmax=5)
  }
 }
 

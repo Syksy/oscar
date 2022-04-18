@@ -1,23 +1,27 @@
 Package: oscar
 Type: Package
-Title: Optimal Subset CArdinality Regression (OSCAR) Models Using the L0-Pseudonorm
-Version: 0.9.6
-Date: 2022-04-13
+Title: Optimal Subset Cardinality Regression (OSCAR) Models Using the L0-Pseudonorm
+Version: 1.0.0
+Date: 2022-04-14
 Authors@R: c(
 	person(given="Teemu Daniel", family="Laajala", role=c("aut", "cre"), email="teelaa@utu.fi", comment = c(ORCID = "0000-0002-7016-7354")),
 	person(given="Kaisa", family="Joki", role=c("aut"), email="kjjoki@utu.fi"),
 	person(given="Anni", family="Halkola", role=c("aut"), email="ansuha@utu.fi"))
 Description: 
-	Optimal Subset CArdinality Regression (OSCAR) models offer regularized regression using the L0-pseudonorm, 
+	Optimal Subset Cardinality Regression (OSCAR) models offer regularized linear regression using the L0-pseudonorm, 
 	conventionally known as the number of non-zero coefficients. The package estimates an optimal subset of features 
-	using the L0 penalization, via cross-validation, bootstrapping and visual diagnostics. 
-	Multiple model families are supported: Cox, logistic, and gaussian.
+	using the L0-penalization via cross-validation, bootstrapping and visual diagnostics. Effective Fortran implementations
+	are offered along the package for finding optima for the DC-decomposition, which is used for transforming the discrete 
+	L0-regularized optimization problem into a continuous non-convex optimization task. These optimization modules include 
+	DBDC and LMBM methods. Multiple regression model families are supported: Cox, logistic, and Gaussian.
 License: GPL-3
 LazyData: true
+URL: https://github.com/Syksy/oscar
+BugReports: https://github.com/Syksy/oscar/issues
 NeedsCompilation: yes
 Depends: R (>= 3.6.0)
 Imports: graphics, grDevices, methods, stats, utils, Matrix, survival, hamlet
-Suggests: glmnet, ePCR, pROC, rmarkdown, knitr, rPref
+Suggests: glmnet, ePCR, pROC, rmarkdown, knitr
 Encoding: UTF-8
 VignetteBuilder: knitr
 RoxygenNote: 7.1.2

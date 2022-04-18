@@ -13,14 +13,16 @@
 #' @param verb Level of verbosity with higher integer giving more information, Default: 0
 #' @param ... Additional parameters passed to oscar-function
 #' @return A matrix with goodness of fit over folds and k-values
-#' @details TODO
+#' @details A k-fold cross-validation is run by mimicking the parameters contained in the original oscar S4-object. This requires the original data at slots @x and @y.
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_cv <- oscar.cv(fit, fold=10, seed=123)
+#'   fit_cv
 #'  }
 #' }
-#'
 #' @rdname oscar.cv
 #' @export 
 #' @importFrom survival coxph Surv
@@ -190,11 +192,14 @@ oscar.cv <- function(
 #' @param verb Level of verbosity with higher integer giving more information, Default: 0
 #' @param ... Additional parameters passed to oscar-function
 #' @return 3-dimensional array with dimensions corresponding to k-steps, beta coefficients, and bootstrap runs
-#' @details TODO
+#' @details The function provides a fail-safe try-catch in an event of non-convergence of the model fitting procedure. This may occur for example if a bootstrapped data matrix has a column consist of a single value only over all observations.
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_bs <- oscar.cv(fit, bootstrap = 20, seed = 123)
+#'   fit_bs
 #'  }
 #' }
 #' @rdname oscar.bs
@@ -225,7 +230,7 @@ oscar.bs <- function(
 			ftemp <- oscar::oscar(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, kmax = fit@kmax, print = verb, start = fit@start, verb = verb, ...)		
 		})
 		# Return successfully fitted model
-		if(!class(ftemp)=="try-error"){
+		if(!inherits(ftemp,"try-error")){
 			ftemp@bperk # Return bootstrapped beta per ks
 		}else{
 			NA # Model fitting issues, return NA-bperk
@@ -240,15 +245,20 @@ oscar.bs <- function(
 	dat
 }
 	
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
+#' @title Reformatting bootstrap output for cardinality k rows
+#' @description The function reformats bootstrapped runs to a single long data.frame, where all bootstrapped runs are covered along with the choices for the variables at each cardinality 'k'.
 #' @param bs Bootstrapped list from oscar.bs
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @return Reformatted data.frame
+#'
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
+#'   ll <- oscar.bs.k(fit_bs)
+#'   head(ll)
+#'   tail(ll)
 #'  }
 #' }
 #' @rdname oscar.bs.k
@@ -257,13 +267,13 @@ oscar.bs.k <- function(
 	bs	# Bootstrapped list from oscar.bs
 ){
 	# Omit entries with try-errors
-	if(any(unlist(lapply(bs, FUN=class))=="try-error")){
-		bs <- bs[-which(unlist(lapply(bs, FUN=class))=="try-error")]
-		warning(paste("try-errors detected in some bootstrap runs; failed bootstrap count:", sum(unlist(lapply(bs, FUN=class))=="try-error")))
+	if(any(unlist(lapply(bs, FUN=function(x) { inherits(x, "try-error") })))){
+		bs <- bs[-which(unlist(lapply(bs, FUN=function(x) { inherits(x, "try-error") })))]
+		warning(paste("try-errors detected in some bootstrap runs; failed bootstrap count:", sum(unlist(lapply(bs, FUN=function(x) { inherits(x, "try-error") })))))
 	}
 	
 	# Choices of variables as a function of k
-	bs <- lapply(bs, FUN=function(z){
+	bs <- apply(bs, MARGIN=3, FUN=function(z){
 		apply(z, MARGIN=1, FUN=function(q){
 			colnames(z)[which(!q==0)]
 		})
@@ -296,7 +306,9 @@ oscar.bs.k <- function(
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   oscar.sparsify(fit, kmax=5)
 #'  }
 #' }
 #'
@@ -307,7 +319,7 @@ oscar.sparsify <- function(
 	fit,
 	kmax = fit@kmax
 ){
-	if(!class(fit) %in% c("oscar")){
+	if(!inherits(fit, "oscar")){
 		stop("'fit' should be a fit oscar object")
 	}
 	
@@ -337,11 +349,13 @@ oscar.sparsify <- function(
 #' @param fit Fit oscar-model object
 #' @param kmax Create matrix until kmax-value; by default same as for fit object, but for high dimensional tasks one may wish to reduce this
 #' @return A binary logical indicator matrix of variables (rows) as a function of cardinality k (columns), where elements are binary indicators for 1 as non-zero and 0 as zero.
-#' @details TODO
+#' @details The matrix consists of TRUE/FALSE values, and is very similar to the oscar.sparsify, where the function provides estimate values in a sparse matrix format.
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   oscar.binarize(fit, kmax=5)
 #'  }
 #' }
 #'
@@ -351,7 +365,7 @@ oscar.binarize <- function(
 	fit, # oscar model object
 	kmax = fit@kmax # limit to kmax
 ){
-	if(!class(fit) %in% c("oscar")){
+	if(!inherits(fit, "oscar")){
 		stop("'fit' should be a fit oscar object")
 	}
 	
@@ -371,7 +385,16 @@ oscar.binarize <- function(
 #' @param weak If weak pareto-optimality is allowed; by default FALSE.
 #' @param summarize Function that summarizes over cross-validation folds; by default, this is the mean over the k-folds.
 #' 
-#' @return The indices at which pareto optimal points exist
+#' @return A data.frame containing points and indices at which pareto optimal points exist
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_cv <- oscar.cv(fit, fold=10)
+#'   oscar.pareto(fit, cv=fit_cv)
+#'  }
+#' }
 #'
 #' @export
 oscar.pareto <- function(
@@ -435,9 +458,18 @@ oscar.pareto <- function(
 }
 
 #' Return total cost of model fits if the cost is not included in the oscar object
+#'
 #' If at least one measurement from a kit is included in the model, the kit cost is added.
 #'
 #' @param object Fit oscar S4-object 
+#' @examples 
+#' \dontrun{
+#' if(interactive()){
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   oscar.cost.after(fit)
+#'  }
+#' }
 #'
 #' @export
 #cost.after <- function(object, kit.matrix, cost.vector){

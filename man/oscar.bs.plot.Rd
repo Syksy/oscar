@@ -2,7 +2,7 @@
 % Please edit documentation in R/visu.R
 \name{oscar.bs.plot}
 \alias{oscar.bs.plot}
-\title{Bootstrap + cross-validation heatmap plot}
+\title{Bootstrap heatmap plot for oscar models}
 \usage{
 oscar.bs.plot(
   fit,
@@ -10,31 +10,44 @@ oscar.bs.plot(
   kmax,
   cex.axis = 0.6,
   palet = colorRampPalette(c("orange", "red", "black", "blue", "cyan"))(dim(bs)[3]),
-  nbins = 100,
+  nbins = dim(bs)[3],
   Colv = NA,
   Rowv = NA,
   ...
 )
 }
 \arguments{
-\item{fit}{TODO}
+\item{fit}{Fitted oscar S4-class object}
 
-\item{bs}{TODO}
+\item{bs}{Bootstrapped 3-dimensional array for an oscar object as produced by oscar.bs}
 
-\item{kmax}{TODO}
+\item{kmax}{Maximum cardinality 'k'}
 
-\item{cex.axis}{TODO}
+\item{cex.axis}{Axis magnification}
 
-\item{palet}{TODO}
+\item{palet}{Colour palette}
 
-\item{nbins}{TODO}
+\item{nbins}{Number of bins (typically ought to be same as number of colours in the palette)}
 
-\item{Colv}{TODO}
+\item{Colv}{Column re-ordering indices or a readily built dendrogram}
 
-\item{Rowv}{TODO}
+\item{Rowv}{Row re-ordering indices or a readily built dendrogram}
 
-\item{...}{TODO}
+\item{...}{Additional parameters passed on to the hamlet::hmap function}
 }
 \description{
-TODO
+This function neatly plots a colourized proportion of variables chosen as a function of cardinalities over a multitude of bootstrap runs. This helps model diagnostics in assesssing variable importance.
+}
+\details{
+Further heatmap parameters available from ?hmap
+}
+\examples{
+\dontrun{
+if(interactive()){
+  data(ex)
+  fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+  fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
+  oscar.bs.plot(fit, fit_bs)
+ }
+}
 }

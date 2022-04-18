@@ -32,3 +32,15 @@ oscar.pareto.visu(
 \description{
 Visualization function for showing the pareto front for cardinality 'k' and model goodness metric, either from goodness-of-fit or from cross-validation
 }
+\examples{
+\dontrun{
+if(interactive()){
+  data(ex)
+  fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+  fit_cv <- oscar.cv(fit, fold = 10, seed = 123)
+  par(mfrow=c(1,2))
+  oscar.pareto.visu(fit=fit) # Model goodness-of-fit
+  oscar.pareto.visu(fit=fit, cv=fit_cv) # Model cross-validation performance
+ }
+}
+}

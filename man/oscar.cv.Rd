@@ -33,13 +33,15 @@ A matrix with goodness of fit over folds and k-values
 Create a cross-validation matrix with the chosen goodness metric with n-folds. Based on the goodness metric, one ought to pick optimal cardinality (parameter 'k').
 }
 \details{
-TODO
+A k-fold cross-validation is run by mimicking the parameters contained in the original oscar S4-object. This requires the original data at slots @x and @y.
 }
 \examples{
 \dontrun{
 if(interactive()){
- #EXAMPLE1
+  data(ex)
+  fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+  fit_cv <- oscar.cv(fit, fold=10, seed=123)
+  fit_cv
  }
 }
-
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/visu.R
 \name{oscar.binplot}
 \alias{oscar.binplot}
-\title{Visualize binary indicator matrix optionally coupled with cross-validation performance}
+\title{Visualize binary indicator matrix optionally coupled with cross-validation performance for oscar models}
 \usage{
 oscar.binplot(
   fit,
@@ -16,22 +16,32 @@ oscar.binplot(
 )
 }
 \arguments{
-\item{fit}{TODO}
+\item{fit}{Fitted oscar S4-class object}
 
-\item{cv}{TODO}
+\item{cv}{Matrix produced by oscar.cv; rows are cv-folds, cols are k-values}
 
-\item{kmax}{TODO}
+\item{kmax}{Maximum cardinality 'k'}
 
-\item{collines}{TODO}
+\item{collines}{Should vertical lines be drawn to bottom part}
 
-\item{rowlines}{TODO}
+\item{rowlines}{Should horizontal lines be drawn to highlight variables}
 
-\item{cex.axis}{TODO}
+\item{cex.axis}{Axis magnification}
 
-\item{heights}{TODO}
+\item{heights}{Paneling proportions as a numeric vector of length 2}
 
 \item{...}{Additional parameters passed on to hamlet::hmap}
 }
 \description{
-TODO
+This visualization function makes use of the sparsified beta-coefficient matrix form as a function of cardinality. Optionally, user may showcase cross-validation performance alongside at the same cardinality values.
+}
+\examples{
+\dontrun{
+if(interactive()){
+  data(ex)
+  fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+  fit_cv <- oscar.cv(fit, fold = 10, seed = 123)
+  oscar.binplot(fit=fit, cv=fit_cv)
+ }
+}
 }

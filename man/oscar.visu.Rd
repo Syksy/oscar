@@ -5,7 +5,7 @@
 \title{Target function value and total kit cost as a function of number of kits included}
 \usage{
 oscar.visu(
-  object,
+  fit,
   y = c("target", "cost", "goodness", "cv", "AIC"),
   cols = c("red", "blue"),
   legend = "top",
@@ -15,33 +15,29 @@ oscar.visu(
 )
 }
 \arguments{
-\item{object}{PARAM_DESCRIPTION}
+\item{fit}{Fitted oscar S4-class object}
 
-\item{y}{PARAM_DESCRIPTION, Default: c("target", "cost", "goodness", "cv")}
+\item{y}{Plotted y-axes supporting two simultaneous axes with different scales, Default: c("target", "cost", "goodness", "cv")}
 
-\item{cols}{PARAM_DESCRIPTION, Default: c("red", "blue")}
+\item{cols}{Colours for drawn lines, Default: c("red", "blue")}
 
-\item{legend}{PARAM_DESCRIPTION, Default: 'top'}
+\item{legend}{Location of legend or omission of legend with NA, Default: 'top'}
 
-\item{mtexts}{PARAM_DESCRIPTION, Default: TRUE}
+\item{mtexts}{Outer margin texts}
 
-\item{add}{PARAM_DESCRIPTION}
+\item{add}{Should plot be added into an existing frame / plot}
 
 \item{main}{Main title}
 }
-\value{
-OUTPUT_DESCRIPTION
-}
 \description{
-FUNCTION_DESCRIPTION
-}
-\details{
-DETAILS
+Plot oscar S4-object goodness-of-fit, kit costs, and similar performance metrics.
 }
 \examples{
 \dontrun{
 if(interactive()){
- #EXAMPLE1
+  data(ex)
+  fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+  oscar.visu(fit, y=c("target", "cost"))
  }
 }
 }

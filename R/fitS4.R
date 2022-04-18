@@ -90,7 +90,7 @@ setClass("oscar", # abbreviation
 #'
 #' @return Fitted oscar-object
 #'
-#' @details DETAILS
+#' @details OSCAR utilizes the L0-pseudonorm, also known as the best subset selection, and makes use of a DC-formulation of the discrete feature selection task into a continuous one. Then an appropriate optimization algorithm is utilized to find optima at different cardinalities (k). The S4 model objects 'oscar' can then be passed on to various down-stream functions, such as oscar.pareto, oscar.cv, and oscar.bs, along with their supporting visualization functions.
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
@@ -100,6 +100,7 @@ setClass("oscar", # abbreviation
 #'  }
 #' }
 #' @rdname oscar
+#' @seealso \code{\link{oscar.cv}} \code{\link{oscar.bs}} \code{\link{oscar.pareto}} \code{\link{oscar.visu}} \code{\link{oscar.cv.visu}} \code{\link{oscar.bs.visu}} \code{\link{oscar.pareto.visu}} \code{\link{oscar.binplot}}
 #' @export 
 oscar <- function(
 	# Data matrix x
@@ -167,7 +168,7 @@ oscar <- function(
 	}
 
 	# Flip Cox event/time columns to correct column order
-	if(family == "cox" & any(class(y) %in% c("matrix", "array", "Surv"))){
+	if(family == "cox" & inherits(y, c("matrix", "array", "Surv"))){
 		# For Cox, we expect events to be second column
 		if(all(y[,1] %in% c(0,1))){
 			tmp <- y[,1]
@@ -190,7 +191,7 @@ oscar <- function(
 	# Check that input k is a matrix
 	if(!is.matrix(k)){
 		try(k <- as.matrix(k))
-		if(class(k) == "try-error") stop("Error casting kit matrix 'k' into a matrix; should consist only of indicator values 0 and 1")
+		if(inherits(k, "try-error")) stop("Error casting kit matrix 'k' into a matrix; should consist only of indicator values 0 and 1")
 	}
 	# Check that kit matrix k and predictor matrix x have equal number of columns (features)
 	if(family=="cox" && ncol(k)!=ncol(x)){
@@ -221,9 +222,9 @@ oscar <- function(
 	if(missing(kmax)){
 		kmax <- nrow(k)
 	# Sanity checking for user provided parameter
-	}else if(class(kmax) %in% "numeric"){
+	}else if(inherits(kmax, "numeric")){
 		kmax <- as.integer(kmax)
-	}else if(!any(class(kmax) %in% c("integer", "numeric"))){
+	}else if(!inherits(kmax, c("integer", "numeric"))){
 		stop("Provided kmax parameter ought to be of type 'integer' or 'numeric' cast to an integer")
 	}
 	# If kit weights are missing, assume them to be unit cost
