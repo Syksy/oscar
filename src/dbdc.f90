@@ -6628,15 +6628,21 @@ MODULE lmbm_sub  ! Subprograms for lmbm
        copy, &   ! S Copying a vector.
        copy2, &  ! S Copying two vectors.
        xdiffy, & ! S Difference of two vectors z:= x - y.
+       xdiffy2, &! S Difference of two vectors z:= x - y. (Variant)
        xsumy, &  ! S Sum of two vectors z:= x + y.
+       xsumy2, & ! S Sum of two vectors z:= x + y. (Variant)
        scdiff, & ! S Difference of the scaled vector and a vector z:= a*x - y.
+       scdiff2, &! S Difference of the scaled vector and a vector z:= a*x - y. (Variant)
        scsum, &  ! S Sum of a vector and the scaled vector z:= y + a*x.
+       scsum2, & ! S Sum of a vector and the scaled vector y:= y + a*x. (variant INOUT for y)
        vxdiag, & ! S Vector is multiplied by a diagonal matrix y:=d*x.
        symax, &  ! S Multiplication of a dense symmetric matrix A by a vector x.
        cwmaxv, & ! S Multiplication of a columnwise stored dense rectangular matrix by a vector.
        rwaxv2, & ! S Multiplication of two rowwise stored dense rectangular  
                  !   matrices A and B by vectors X and Y.
        trlieq, & ! S Solving x from linear equation u*x=y or u'*x=y, 
+                 !   where u is an upper triangular matrix.
+       trlieq2, &! S Solving x from linear equation u*x=y or u'*x=y, (variant)
                  !   where u is an upper triangular matrix.
        lineq, &  ! S Solver from linear equation.
        calq      ! S Solving x from linear equation A*x=y. Contains:
@@ -6735,6 +6741,34 @@ CONTAINS
  
   END SUBROUTINE xdiffy
 
+  ! Variant with x:= x - y
+!  SUBROUTINE xdiffy(n,x,y,z)  ! Difference of two vectors z:= x - y.
+  SUBROUTINE xdiffy2(n,x,y)  ! Difference of two vectors x:= x - y.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+!         x,y         ! Input vectors.
+         y         ! Input vectors.
+!    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+!         z           ! Output vector z:= x - y.
+         x           ! Output vector x:= x - y.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+      
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO  i = 1,n
+!       z(i) = x(i) - y(i)
+       x(i) = x(i) - y(i)
+    END DO
+ 
+  END SUBROUTINE xdiffy2
+
   SUBROUTINE xsumy(n,x,y,z)  ! Sum of two vectors z:= x + y.
     IMPLICIT NONE
 
@@ -6756,6 +6790,33 @@ CONTAINS
     END DO
 
   END SUBROUTINE xsumy
+
+  ! Variant with x = z
+  SUBROUTINE xsumy2(n,x,y)  ! Sum of two vectors x:= x + y.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+!         x,y         ! Input vectors.
+         y           ! Input vectors.
+!    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+!         z           ! Output vector z:= x + y.
+         x           ! Output vector x:= x + y.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+      
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO  i = 1,n
+!       z(i) = x(i) + y(i)
+       x(i) = x(i) + y(i)
+    END DO
+
+  END SUBROUTINE xsumy2
 
   SUBROUTINE scdiff(n,a,x,y,z)  ! Difference of the scaled vector and a vector z:= a*x - y.
     IMPLICIT NONE
@@ -6781,6 +6842,35 @@ CONTAINS
  
   END SUBROUTINE scdiff
 
+  ! Variant subroutine for cases where x = z when calling the subroutine
+!  SUBROUTINE scdiff(n,a,x,y,z)  ! Difference of the scaled vector and a vector z:= a*x - y.
+  SUBROUTINE scdiff2(n,a,x,y)  ! Difference of the scaled vector and a vector x:= a*x - y.
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+!         x,y         ! Input vectors.
+         y           ! Input vectors.
+!    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+         x           ! Output vector x:= a*x - y. (variant)
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(IN) :: &
+         a           ! Scaling factor.
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+      
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO  i = 1,n
+       x(i) = a*x(i) - y(i)
+    END DO
+ 
+  END SUBROUTINE scdiff2
+
+
   SUBROUTINE scsum(n,a,x,y,z)  ! Sum of a vector and the scaled vector z:= y + a*x.
     IMPLICIT NONE
 
@@ -6804,6 +6894,32 @@ CONTAINS
     END DO
 
   END SUBROUTINE scsum
+
+! Variant for subroutine scsum with one paramameter as INOUT
+
+  SUBROUTINE scsum2(n,a,x,y)  ! Sum of a vector and the scaled vector y:= y + a*x. 
+    IMPLICIT NONE
+
+! Array Arguments
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         x         ! Input vectors.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+         y           ! Output vector z:= a*x + y.
+
+! Scalar Arguments
+    REAL(KIND=c_double), INTENT(IN) :: &
+         a           ! Scaling factor.
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n           ! Vectors dimension.
+      
+! Local Scalars
+    INTEGER(KIND=c_int) :: i
+
+    DO  i = 1,n
+       y(i) = a*x(i) + y(i)
+    END DO
+
+  END SUBROUTINE scsum2
 
   SUBROUTINE copy(n,x,y)  ! Copying of vector Y:= X.
     IMPLICIT NONE
@@ -6947,7 +7063,7 @@ CONTAINS
 
     k = 1
     DO j = 1,m
-       CALL scsum(n,x(j),a(k:),y,y)
+       CALL scsum2(n,x(j),a(k:),y)
        k = k + n
     END DO
 
@@ -7086,6 +7202,115 @@ CONTAINS
     ierr = 0
 
   END SUBROUTINE trlieq
+
+  ! VARIANT SUBROUTINE where trlieq(n,m,iold,u,x,y,job,ierr) -> trlieq2(n,m,iold,u,y,job,ierr) for inputs where x = y
+  SUBROUTINE trlieq2(n,m,iold,u,y,job,ierr)    ! Solving x from linear equation u*x=y or u'*x=y, 
+                                               ! where u is an upper triangular matrix.
+    USE param, ONLY : small
+    IMPLICIT NONE
+
+! Array Arguments
+!   REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+!        y, &        ! Input vector stored in a circular order.
+         y           ! Input vector stored in a circular order.
+    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+         u           ! Triangular matrix.
+!   REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+!        x           ! Output vector x_new:= a*x. Vector x_new has the same circular order than x. (variant: x_new replaces y)
+                     ! Note that x may be equal to y in calling sequence. ! DEBUGGING: Causes compiler errors!
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n, &         ! Order of matrix U.
+         m, &         ! Length of vectors x and y, m >= n, note that only n
+                      ! components from vectors are used.
+         iold, &      ! Index, which controlls the circular order of
+                      ! the vectors x and y.
+         job          ! Option:
+                      !   0  - x:=(u')**(-1)*y, u upper triangular.
+                      !   1  - x:=u**(-1)*y, u upper triangular.
+    INTEGER(KIND=c_int), INTENT(OUT) :: &
+         ierr         ! Error indicador: 
+                      !   0   - Everything is ok.
+                      !  -3   - Error; 0 at diagonal.
+
+! Local Scalars
+    INTEGER(KIND=c_int) :: i,ii,ij,j,k,l,ji
+
+! Local Array
+    REAL(KIND=c_double), DIMENSION(m) :: &
+         x            ! DEBUGGING: For variant trlieq2 to avoid compiler errors a local x is used
+
+! Intrinsic Functions
+    INTRINSIC ABS
+      
+    ierr = -3
+      
+    DO i=1,m
+       x(i)=y(i)
+    END DO
+      
+    IF (job == 0) THEN
+     
+! x=u'**(-1)*y, u' = [u1         ] is lower triangular.
+!                    [u2 u3      ]
+!                    [u4 u5 u6   ]
+!                    [.  .  .  . ]
+         
+       ii = 0
+       DO  i = 1,n
+          ii=ii+i
+          l=i+iold-1
+          IF (l > m) l=l-m
+          IF (ABS(u(ii)) <= small) RETURN
+          x(l) = x(l)/u(ii)
+          DO j = i+1,n
+             ji = (j-1)*j/2+i
+             k=j+iold-1
+             IF (k > m) k=k-m
+             x(k) = x(k) - u(ji)*x(l)
+          END DO
+       END DO
+             
+         
+    ELSE IF (job == 1) THEN
+     
+! x=u**(-1)*y, u = [u1 u2 u4 . ] is upper triangular.
+!                  [   u3 u5 . ]
+!                  [      u6 . ]
+!                  [         . ]
+         
+       ii = n* (n+1)/2
+       DO i = n,1,-1
+          l=i+iold-1
+          IF (l > m) l=l-m
+          IF (ABS(u(ii)) <= small) RETURN
+          ij = ii
+          DO j = i + 1,n
+             k=j+iold-1
+             IF (k > m) k=k-m
+             ij = ij + j - 1
+             x(l) = x(l) - u(ij)*x(k)
+          END DO
+          x(l)=x(l)/u(ii)
+          ii = ii - i
+       END DO
+         
+         
+    ELSE
+         
+       RETURN
+    END IF
+      
+    ierr = 0
+
+  ! trlieq2 variant; copying x to y so a single identical parameter can be used for calling the subroutine
+    DO i=1,m
+       y(i)=x(i)
+    END DO
+
+  END SUBROUTINE trlieq2
       
   SUBROUTINE lineq(n,m,iold,a,x,y,ierr)  ! Solving X from linear equation A*X=Y. 
                                          ! Positive definite matrix A+E is given using 
@@ -7982,6 +8207,7 @@ CONTAINS
          vdot, &      ! Dot product.
          vneg, &      ! Copying of a vector with change of the sign.
          xdiffy, &    ! Difference of two vectors.
+         xdiffy2, &   ! Difference of two vectors. (Variant)
          copy, &      ! Copying of a vector.
          copy2        ! Copying of two vectors.
 
@@ -9542,14 +9768,17 @@ END SUBROUTINE nmlls
          vneg, &   ! Copying of a vector with change of the sign.
          xdiffy, & ! Difference of two vectors.
          xsumy, &  ! Sum of two vectors.
+         xsumy2, & ! Sum of two vectors. (Variant)
          scdiff, & ! Difference of the scaled vector and a vector.
          scsum, &  ! Sum of a vector and the scaled vector.
+         scsum2, & ! Sum of a vector and the scaled vector. (Variant)
          vxdiag, & ! Multiplication of a vector and a diagonal matrix.
          symax, &  ! Multiplication of a dense symmetric matrix by a vector.
          cwmaxv, & ! Multiplication of a vector by a dense rectangular matrix.
          rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
                    ! matrices A and B by vectors x and y.         
          trlieq, & ! Solving x from linear equation L*x=y or trans(L)*x=y.
+         trlieq2, &! Solving x from linear equation L*x=y or trans(L)*x=y. (Variant constructed for one fewer parameters in debugging)
          copy2     ! Copying of two vectors.
     IMPLICIT NONE
 
@@ -9868,7 +10097,8 @@ END SUBROUTINE nmlls
     ELSE 
        CALL cwmaxv(n,inew-1,um,tmpmc1,d)
        CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc1(iold:),tmpn1)
-       CALL xsumy(n,d,tmpn1,d)
+!       CALL xsumy(n,d,tmpn1,d)
+       CALL xsumy2(n,d,tmpn1)
        CALL xdiffy(n,d,g,d)
        CALL cwmaxv(n,inew-1,sm,tmpmc2,tmpn1)
        CALL scdiff(n,gamma,d,tmpn1,d)
@@ -9994,14 +10224,17 @@ END SUBROUTINE nmlls
     USE lmbm_sub, ONLY : &
          vneg, &   ! Copying of a vector with change of the sign.
          xsumy, &  ! Sum of two vectors.
+         xsumy2, & ! Sum of two vectors. (Variant)
          xdiffy, & ! Difference of two vectors.
          scsum, &  ! Sum of a vector and the scaled vector.
+         scsum2, & ! Sum of a vector and the scaled vector. (Variant)
          scdiff, & ! Difference of the scaled vector and a vector.
          symax, &  ! Multiplication of a dense symmetric matrix by a vector.
          cwmaxv, & ! Multiplication of a vector by a dense rectangular matrix.
          rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
                    ! matrices A and B by vectors x and y.         
          trlieq, & ! Solving x from linear equation L*x=y or trans(L)*x=y.
+         trlieq2, &! Solving x from linear equation L*x=y or trans(L)*x=y. (Variant constructed for one fewer parameters in debugging)
          vxdiag    ! Multiplication of a vector and a diagonal matrix.
     IMPLICIT NONE
 
@@ -10124,7 +10357,8 @@ END SUBROUTINE nmlls
     ELSE 
        CALL cwmaxv(n,inew-1,um,tmpmc3,d)
        CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc3(iold:),tmpn1)
-       CALL xsumy(n,d,tmpn1,d)
+!       CALL xsumy(n,d,tmpn1,d)
+       CALL xsumy2(n,d,tmpn1)
     END IF
 
     CALL xdiffy(n,d,ga,d)
@@ -10708,6 +10942,7 @@ END SUBROUTINE nmlls
          rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
                    ! matrices A and B by vectors x and y.
          trlieq, & ! Solving x from linear equation L*x=y or trans(L)*x=y.
+         trlieq2, &! Solving x from linear equation L*x=y or trans(L)*x=y. (Variant built in debugging with one fewer parameter)
          vdot      ! Dot product.
 
     IMPLICIT NONE
@@ -10815,7 +11050,8 @@ END SUBROUTINE nmlls
 
        IF (iold == 1 .OR. ibfgs == 2) THEN
           CALL rwaxv2(n,mcnew,sm,um,u,u,tmpmc1,tmpmc2)
-          CALL trlieq(mcnew,mcnew,iold,rm,tmpmc1,tmpmc1,1,ierr)
+!          CALL trlieq(mcnew,mcnew,iold,rm,tmpmc1,tmpmc1,1,ierr)
+          CALL trlieq2(mcnew,mcnew,iold,rm,tmpmc1,1,ierr) ! Debugged version with no compiler warnings
 
           q = q - 2.0_c_double*vdot(mcnew,tmpmc2,tmpmc1)
           q = gamma*q
@@ -10834,7 +11070,8 @@ END SUBROUTINE nmlls
           CALL rwaxv2(n,inew-1,sm,um,u,u,tmpmc1,tmpmc2)
           CALL rwaxv2(n,mcc-inew,sm((iold-1)*n+1:),um((iold-1)*n+1:), &
                u,u,tmpmc1(iold:),tmpmc2(iold:))
-          CALL trlieq(mcnew,mcc,iold,rm,tmpmc1,tmpmc1,1,ierr)
+!          CALL trlieq(mcnew,mcc,iold,rm,tmpmc1,tmpmc1,1,ierr)
+          CALL trlieq2(mcnew,mcc,iold,rm,tmpmc1,1,ierr) ! Debugged version with no compiler warnings
 
           q = q - 2.0_c_double*(vdot(mcc-inew,tmpmc2(iold:),tmpmc1(iold:)) + &
                vdot(inew-1,tmpmc2,tmpmc1))
@@ -10892,6 +11129,7 @@ END SUBROUTINE nmlls
          xdiffy, & ! Difference of two vectors.
          scsum, &  ! Sum of a vector and the scaled vector.
          scdiff, & ! Difference of the scaled vector and a vector.
+         scdiff2, &! Difference of the scaled vector and a vector. ! Variant with INOUT
          rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
                    ! matrices A and B by vectors x and y.   
          cwmaxv, & ! Multiplication of a vector by a dense rectangular matrix.
@@ -10993,7 +11231,8 @@ END SUBROUTINE nmlls
 
        IF (iold == 1) THEN
           CALL xdiffy(mcnew,umtgp,umtga,tmpmc4)
-          CALL scdiff(mcnew,gamma,tmpmc4,smtgp,tmpmc4)
+!          CALL scdiff(mcnew,gamma,tmpmc4,smtgp,tmpmc4)
+          CALL scdiff2(mcnew,gamma,tmpmc4,smtgp) ! Variant with INOUT
           CALL xsumy(mcnew,tmpmc4,smtga,tmpmc4)
           
           CALL calq(mcnew,mcnew,iold,tmpmat,tmpmc3,tmpmc4,0)
@@ -11006,7 +11245,8 @@ END SUBROUTINE nmlls
 
        ELSE
           CALL xdiffy(mcc,umtgp,umtga,tmpmc4)
-          CALL scdiff(mcc,gamma,tmpmc4,smtgp,tmpmc4)
+!          CALL scdiff(mcc,gamma,tmpmc4,smtgp,tmpmc4)
+          CALL scdiff2(mcc,gamma,tmpmc4,smtgp) ! Variant with INOUT
           CALL xsumy(mcc,tmpmc4,smtga,tmpmc4)
 
           CALL calq(mcnew,mcc,iold,tmpmat,tmpmc3,tmpmc4,0)
@@ -11096,7 +11336,8 @@ END SUBROUTINE nmlls
 
 ! Minimum on the boundary
 
-100 continue
+!100 continue
+    continue
     lam1 = zero
     lam2 = zero
     IF (alfn <= alfv) lam2 = one
@@ -11152,10 +11393,12 @@ END SUBROUTINE nmlls
     USE param, ONLY : zero,half,one,small
     USE lmbm_sub, ONLY : &
          xdiffy, & ! Difference of two vectors.
+         xdiffy2, &! Difference of two vectors. (Variant)
          symax, &  ! Multiplication of a dense symmetric matrix by a vector.
          rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
                    ! matrices A and B by vectors x and y.         
          trlieq, & ! Solving x from linear equation l*x=y or trans(l)*x=y.
+         trlieq2, &! Solving x from linear equation l*x=y or trans(l)*x=y. (Debugging variant)
          vdot      ! Dot product
     IMPLICIT NONE
 
@@ -11256,7 +11499,8 @@ END SUBROUTINE nmlls
 
        IF (iold == 1) THEN
           CALL rwaxv2(n,mcnew,sm,um,u,u,tmpmc3,tmpmc4)
-          CALL trlieq(mcnew,mcnew,iold,rm,tmpmc3,tmpmc3,1,ierr)
+!          CALL trlieq(mcnew,mcnew,iold,rm,tmpmc3,tmpmc3,1,ierr)
+          CALL trlieq2(mcnew,mcnew,iold,rm,tmpmc3,1,ierr) ! Debugged variant with no compiler warnings
           
           pq = pq - 2.0_c_double*vdot(mcnew,tmpmc4,tmpmc3)
           pq = gamma*pq
@@ -11275,7 +11519,8 @@ END SUBROUTINE nmlls
           CALL rwaxv2(n,inew-1,sm,um,u,u,tmpmc3,tmpmc4)
           CALL rwaxv2(n,mcc-inew,sm((iold-1)*n+1:),um((iold-1)*n+1:),&
                u,u,tmpmc3(iold:),tmpmc4(iold:))
-          CALL trlieq(mcnew,mcc,iold,rm,tmpmc3,tmpmc3,1,ierr)
+!          CALL trlieq(mcnew,mcc,iold,rm,tmpmc3,tmpmc3,1,ierr)
+          CALL trlieq2(mcnew,mcc,iold,rm,tmpmc3,1,ierr) ! Debugged variant with no compiler warnings
 
           pq = pq - 2.0_c_double*(vdot(mcc-inew,tmpmc4(iold:),tmpmc3(iold:)) + &
                vdot(inew-1,tmpmc4,tmpmc3))
@@ -11317,7 +11562,8 @@ END SUBROUTINE nmlls
              tmpmc3(i)=smtgp(i)-smtga(i)
              tmpmc4(i)=umtgp(i)-umtga(i)
           END DO
-          CALL trlieq(mcnew,mcnew,iold,rm,tmpmc3,tmpmc3,1,ierr)
+!          CALL trlieq(mcnew,mcnew,iold,rm,tmpmc3,tmpmc3,1,ierr)
+          CALL trlieq2(mcnew,mcnew,iold,rm,tmpmc3,1,ierr) ! Debugged variant with no compiler warnings
              
           pr = pr - 2.0_c_double*vdot(mcnew,tmpmc4,tmpmc3)
           pr = gamma*pr
@@ -11337,7 +11583,8 @@ END SUBROUTINE nmlls
              tmpmc3(i)=smtgp(i)-smtga(i)
              tmpmc4(i)=umtgp(i)-umtga(i)
           END DO
-          CALL trlieq(mcnew,mcc,iold,rm,tmpmc3,tmpmc3,1,ierr)
+!          CALL trlieq(mcnew,mcc,iold,rm,tmpmc3,tmpmc3,1,ierr)
+          CALL trlieq2(mcnew,mcc,iold,rm,tmpmc3,1,ierr) ! Debugged variant with no compiler warnings
 
           pr = pr - 2.0_c_double*(vdot(mcc-inew,tmpmc4(iold:),tmpmc3(iold:)) + &
                vdot(inew-1,tmpmc4,tmpmc3))
@@ -11381,7 +11628,8 @@ END SUBROUTINE nmlls
 
        IF (iold == 1) THEN
           CALL rwaxv2(n,mcnew,sm,um,tmpn2,tmpn2,tmpmc3,tmpmc4)
-          CALL trlieq(mcnew,mcnew,iold,rm,tmpmc3,tmpmc3,1,ierr)
+!          CALL trlieq(mcnew,mcnew,iold,rm,tmpmc3,tmpmc3,1,ierr)
+          CALL trlieq2(mcnew,mcnew,iold,rm,tmpmc3,1,ierr) ! Debugged variant with no compiler warnings
 
           qr = qr - 2.0_c_double*vdot(mcnew,tmpmc4,tmpmc3)
           qr = gamma*qr
@@ -11400,7 +11648,8 @@ END SUBROUTINE nmlls
           CALL rwaxv2(n,inew-1,sm,um,tmpn2,tmpn2,tmpmc3,tmpmc4)
           CALL rwaxv2(n,mcc-inew,sm((iold-1)*n+1:),um((iold-1)*n+1:),&
                tmpn2,tmpn2,tmpmc3(iold:),tmpmc4(iold:))
-          CALL trlieq(mcnew,mcc,iold,rm,tmpmc3,tmpmc3,1,ierr)
+!          CALL trlieq(mcnew,mcc,iold,rm,tmpmc3,tmpmc3,1,ierr)
+          CALL trlieq2(mcnew,mcc,iold,rm,tmpmc3,1,ierr) ! Debugged variant with no compiler warnings
 
           qr = qr - 2.0_c_double*(vdot(mcc-inew,tmpmc4(iold:),tmpmc3(iold:)) + &
                vdot(inew-1,tmpmc4,tmpmc3))
