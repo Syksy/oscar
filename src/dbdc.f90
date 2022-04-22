@@ -7558,6 +7558,191 @@ CONTAINS
     END SUBROUTINE mxdpgf
   END SUBROUTINE calq
 
+! Variant calq2 where x = y
+
+!  SUBROUTINE calq2(n,m,iold,a,x,y,iprint)  ! Solving x from linear equation A*x=y.
+  SUBROUTINE calq2(n,m,iold,a,y,iprint)  ! Solving x from linear equation A*x=y.
+    USE param, ONLY : zero,small,one
+    IMPLICIT NONE
+
+! Array Arguments
+!    REAL(KIND=c_double), DIMENSION(:), INTENT(IN) :: &
+!         y           ! Input vector stored in a circular order (dimension m).
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+         a           ! On input: Dense symmetric matrix stored in the packed form. 
+                     ! On output: factorization A+E=L*D*trans(L).
+!    REAL(KIND=c_double), DIMENSION(:), INTENT(OUT) :: &
+    REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+         y           ! Output vector x:= a*x. Vector x has the same circular order than y.
+                     ! Note that x may be equal to y in calling sequence.
+
+! Scalar Arguments
+    INTEGER(KIND=c_int), INTENT(IN) :: &
+         n, &        ! Order of matrix a.
+         m, &        ! Length of vectors x and y, m >= n, note that only n
+                     ! components from vectors are used.
+         iold, &     ! Index, which controlls the circular order of
+                     ! the vectors x and y.
+         iprint      ! Printout specification.
+!    INTEGER, INTENT(OUT) :: &
+!         ierr        ! Error indicador: 
+!                     !   0   - Everything is ok.
+!                     !  -2   - Error; indefinite matrix.
+
+! Local Array
+    REAL(KIND=c_double), DIMENSION(m) :: & ! Variant
+         x
+
+! Local Scalars
+    REAL(KIND=c_double) :: eta,bet
+    INTEGER(KIND=c_int) :: inf,ierr,i ! i added for variant
+
+  ! Variant; copy y to x
+  DO i = 1,m
+     x(i) = y(i)
+  END DO
+      
+      
+    eta = small+small
+      
+    CALL mxdpgf(n,a,inf,eta,bet)
+
+
+ !   IF (iprint == 2) THEN
+ !      IF (inf < 0) THEN
+ !         WRITE (6,FMT='(1X,''Warning: Insufficiently positive'' &
+ !              '' definite matrix detected. '')')
+ !         WRITE (6,FMT='(1X,''Correction added.'')')
+ !        
+ !      ELSE IF (inf > 0) THEN
+ !         WRITE (6,FMT='(1X,''Warning: Indefinite'' &
+ !           '' matrix detected. Correction added.'')')
+ !      END IF
+ !   END IF
+
+    CALL lineq(n,m,iold,a,x,y,ierr)
+!    IF (ierr /= 0) THEN
+!       PRINT*,'hihu'
+!       IF (iprint == 2) THEN
+!          WRITE (6,FMT='(1X,''Warning: Indefinite matrix detected. '')')
+!       END IF
+!    END IF
+
+  ! Variant: Copy x to back to y
+  DO i = 1,m
+     y(i) = x(i)
+  END DO
+
+
+  CONTAINS
+
+    SUBROUTINE mxdpgf(n,a,inf,alf,tau)  ! Factorization A+E=L*D*trans(L) of a dense symmetric positive
+                                        ! definite matrix A+E, where D and E are diagonal positive 
+                                        ! definite matrices and L is a lower triangular matrix. 
+                                        ! If A is sufficiently positive definite then E=0.
+      
+! Array Arguments
+      REAL(KIND=c_double), DIMENSION(:), INTENT(INOUT) :: &
+           a         ! On input: Dense symmetric matrix stored in the packed form. 
+                     ! On output: factorization A+E=L*D*trans(L).
+
+! Scalar Arguments
+      REAL(KIND=c_double), INTENT(INOUT) :: &
+           alf       ! On input a desired tolerance for positive definiteness. 
+                     ! On output the most negative diagonal element used in the factorization
+                     ! process (if inf>0).
+      REAL(KIND=c_double), INTENT(OUT) :: &
+           tau       ! Maximum diagonal element of matrix E.
+
+      INTEGER(KIND=c_int), INTENT(IN) :: &
+           n         ! Order of matrix a.
+      INTEGER(KIND=c_int), INTENT(OUT) :: &
+           inf       ! An information obtained in the factorization process:
+                     !    inf=0  - A is sufficiently positive definite and E=0. 
+                     !    inf<0  - A is not sufficiently positive definite and E>0.
+                     !    inf>0  - A is indefinite and inf is an index of the most negative 
+                     !             diagonal element used in the factorization process.
+
+! Local Scalars
+      REAL(KIND=c_double) :: bet,del,gam,rho,sig,tol
+      INTEGER(KIND=c_int) :: i,ij,ik,j,k,kj,kk,l
+
+! Intrinsic Functions
+      INTRINSIC ABS,MAX
+
+      l = 0
+      inf = 0
+      tol = alf
+      
+
+! Estimation of the matrix norm
+
+      alf = zero
+      bet = zero
+      gam = zero
+      tau = zero
+      kk = 0
+
+      DO k = 1,n
+         kk = kk + k
+         bet = MAX(bet,ABS(a(kk)))
+         kj = kk
+         DO j = k + 1,n
+            kj = kj + j - 1
+            gam = MAX(gam,ABS(a(kj)))
+         END DO
+      END DO
+      bet = MAX(tol,bet,gam/n)
+
+      del = tol*MAX(bet,one)
+      kk = 0
+      DO k = 1,n
+         kk = kk + k
+
+!     Determination of a diagonal correction
+
+         sig = a(kk)
+         IF (alf > sig) THEN
+            alf = sig
+            l = k
+         END IF
+
+         gam = zero
+         kj = kk
+         DO j = k + 1,n
+            kj = kj + j - 1
+            gam = MAX(gam,ABS(a(kj)))
+         END DO
+         gam = gam*gam
+         rho = MAX(ABS(sig),gam/bet,del)
+         IF (tau < rho-sig) THEN
+            tau = rho - sig
+            inf = -1
+         END IF
+         
+! Gaussian elimination
+
+         a(kk) = rho
+         kj = kk
+         DO j = k + 1,n
+            kj = kj + j - 1
+            gam = a(kj)
+            a(kj) = gam/rho
+            ik = kk
+            ij = kj
+            DO i = k + 1,j
+               ik = ik + i - 1
+               ij = ij + 1
+               a(ij) = a(ij) - a(ik)*gam
+            END DO
+         END DO
+      END DO
+      IF (l > 0 .AND. ABS(alf) > del) inf = l
+      
+    END SUBROUTINE mxdpgf
+  END SUBROUTINE calq2
+
+
 END MODULE lmbm_sub
 
 
@@ -9767,9 +9952,11 @@ END SUBROUTINE nmlls
          vdot, &   ! Dot product.
          vneg, &   ! Copying of a vector with change of the sign.
          xdiffy, & ! Difference of two vectors.
+         xdiffy2, &! Difference of two vectors. (Variant)
          xsumy, &  ! Sum of two vectors.
          xsumy2, & ! Sum of two vectors. (Variant)
          scdiff, & ! Difference of the scaled vector and a vector.
+         scdiff2, &! Difference of the scaled vector and a vector. (Variant)
          scsum, &  ! Sum of a vector and the scaled vector.
          scsum2, & ! Sum of a vector and the scaled vector. (Variant)
          vxdiag, & ! Multiplication of a vector and a diagonal matrix.
@@ -10065,7 +10252,8 @@ END SUBROUTINE nmlls
        CALL trlieq(mcnew,mcnew,iold,rm,tmpmc1,smtgp,1,ierr)
        CALL symax(mcnew,mcnew,iold,umtum,tmpmc1,tmpmc3)
        CALL vxdiag(mcnew,cm,tmpmc1,tmpmc2)
-       CALL scsum(mcnew,gamma,tmpmc3,tmpmc2,tmpmc2)
+!       CALL scsum(mcnew,gamma,tmpmc3,tmpmc2,tmpmc2)
+       CALL scsum2(mcnew,gamma,tmpmc3,tmpmc2) ! Variant
        CALL scsum(mcnew,-gamma,umtgp,tmpmc2,tmpmc3)
        CALL trlieq(mcnew,mcnew,iold,rm,tmpmc2,tmpmc3,0,ierr)
 
@@ -10073,7 +10261,8 @@ END SUBROUTINE nmlls
        CALL trlieq(mcnew,mc+1,iold,rm,tmpmc1,smtgp,1,ierr)
        CALL symax(mcnew,mc+1,iold,umtum,tmpmc1,tmpmc3)
        CALL vxdiag(mc+1,cm,tmpmc1,tmpmc2)
-       CALL scsum(mc+1,gamma,tmpmc3,tmpmc2,tmpmc2)
+!       CALL scsum(mc+1,gamma,tmpmc3,tmpmc2,tmpmc2)
+       CALL scsum2(mc+1,gamma,tmpmc3,tmpmc2) ! Variant
        CALL scsum(mc+1,-gamma,umtgp,tmpmc2,tmpmc3)
        CALL trlieq(mcnew,mc+1,iold,rm,tmpmc2,tmpmc3,0,ierr)
 
@@ -10081,7 +10270,8 @@ END SUBROUTINE nmlls
        CALL trlieq(mcnew,mc,iold,rm,tmpmc1,smtgp,1,ierr)
        CALL symax(mcnew,mc,iold,umtum,tmpmc1,tmpmc3)
        CALL vxdiag(mc,cm,tmpmc1,tmpmc2)
-       CALL scsum(mc,gamma,tmpmc3,tmpmc2,tmpmc2)
+!       CALL scsum(mc,gamma,tmpmc3,tmpmc2,tmpmc2)
+       CALL scsum2(mc,gamma,tmpmc3,tmpmc2) ! Variant
        CALL scsum(mc,-gamma,umtgp,tmpmc2,tmpmc3)
        CALL trlieq(mcnew,mc,iold,rm,tmpmc2,tmpmc3,0,ierr)
     END IF
@@ -10091,19 +10281,24 @@ END SUBROUTINE nmlls
 
     IF (iold == 1 .OR. ibfgs == 2) THEN
        CALL cwmaxv(n,mcnew,um,tmpmc1,d)
-       CALL xdiffy(n,d,g,d)
+!       CALL xdiffy(n,d,g,d)
+       CALL xdiffy2(n,d,g) ! Variant
        CALL cwmaxv(n,mcnew,sm,tmpmc2,tmpn1)
-       CALL scdiff(n,gamma,d,tmpn1,d)
+!       CALL scdiff(n,gamma,d,tmpn1,d)
+       CALL scdiff2(n,gamma,d,tmpn1) ! Variant
     ELSE 
        CALL cwmaxv(n,inew-1,um,tmpmc1,d)
        CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc1(iold:),tmpn1)
 !       CALL xsumy(n,d,tmpn1,d)
        CALL xsumy2(n,d,tmpn1)
-       CALL xdiffy(n,d,g,d)
+!       CALL xdiffy(n,d,g,d)
+       CALL xdiffy2(n,d,g)
        CALL cwmaxv(n,inew-1,sm,tmpmc2,tmpn1)
-       CALL scdiff(n,gamma,d,tmpn1,d)
+!       CALL scdiff(n,gamma,d,tmpn1,d)
+       CALL scdiff2(n,gamma,d,tmpn1) ! Variant
        CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc2(iold:),tmpn1)
-       CALL xdiffy(n,d,tmpn1,d)
+!       CALL xdiffy(n,d,tmpn1,d)
+       CALL xdiffy2(n,d,tmpn1)
     END IF
 
   CONTAINS
@@ -10226,9 +10421,11 @@ END SUBROUTINE nmlls
          xsumy, &  ! Sum of two vectors.
          xsumy2, & ! Sum of two vectors. (Variant)
          xdiffy, & ! Difference of two vectors.
+         xdiffy2, &! Difference of two vectors. (Variant)
          scsum, &  ! Sum of a vector and the scaled vector.
          scsum2, & ! Sum of a vector and the scaled vector. (Variant)
          scdiff, & ! Difference of the scaled vector and a vector.
+         scdiff2, &! Difference of the scaled vector and a vector. (Variant)
          symax, &  ! Multiplication of a dense symmetric matrix by a vector.
          cwmaxv, & ! Multiplication of a vector by a dense rectangular matrix.
          rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
@@ -10329,7 +10526,8 @@ END SUBROUTINE nmlls
        CALL trlieq(mcnew,mcnew,iold,rm,tmpmc3,tmpmc1,1,ierr)
        CALL symax(mcnew,mcnew,iold,umtum,tmpmc3,tmpmc5)
        CALL vxdiag(mcnew,cm,tmpmc3,tmpmc4)
-       CALL scsum(mcnew,gamma,tmpmc5,tmpmc4,tmpmc4)
+!       CALL scsum(mcnew,gamma,tmpmc5,tmpmc4,tmpmc4)
+       CALL scsum2(mcnew,gamma,tmpmc5,tmpmc4)
        CALL scsum(mcnew,-gamma,tmpmc2,tmpmc4,tmpmc5)
        CALL trlieq(mcnew,mcnew,iold,rm,tmpmc4,tmpmc5,0,ierr)
 
@@ -10337,14 +10535,16 @@ END SUBROUTINE nmlls
        CALL trlieq(mcnew,mc+1,iold,rm,tmpmc3,tmpmc1,1,ierr)
        CALL symax(mcnew,mc+1,iold,umtum,tmpmc3,tmpmc5)
        CALL vxdiag(mc+1,cm,tmpmc3,tmpmc4)
-       CALL scsum(mc+1,gamma,tmpmc5,tmpmc4,tmpmc4)
+!       CALL scsum(mc+1,gamma,tmpmc5,tmpmc4,tmpmc4)
+       CALL scsum2(mc+1,gamma,tmpmc5,tmpmc4) ! Variant
        CALL scsum(mc+1,-gamma,tmpmc2,tmpmc4,tmpmc5)
        CALL trlieq(mcnew,mc+1,iold,rm,tmpmc4,tmpmc5,0,ierr)
     ELSE
        CALL trlieq(mcnew,mc,iold,rm,tmpmc3,tmpmc1,1,ierr)
        CALL symax(mcnew,mc,iold,umtum,tmpmc3,tmpmc5)
        CALL vxdiag(mc,cm,tmpmc3,tmpmc4)
-       CALL scsum(mc,gamma,tmpmc5,tmpmc4,tmpmc4)
+!       CALL scsum(mc,gamma,tmpmc5,tmpmc4,tmpmc4)
+       CALL scsum2(mc,gamma,tmpmc5,tmpmc4) ! Variant
        CALL scsum(mc,-gamma,tmpmc2,tmpmc4,tmpmc5)
        CALL trlieq(mcnew,mc,iold,rm,tmpmc4,tmpmc5,0,ierr)
     END IF
@@ -10361,16 +10561,20 @@ END SUBROUTINE nmlls
        CALL xsumy2(n,d,tmpn1)
     END IF
 
-    CALL xdiffy(n,d,ga,d)
+!    CALL xdiffy(n,d,ga,d)
+    CALL xdiffy2(n,d,ga) ! Variant
       
     IF (iold == 1) THEN
        CALL cwmaxv(n,mcnew,sm,tmpmc4,tmpn1)
-       CALL scdiff(n,gamma,d,tmpn1,d)
+!       CALL scdiff(n,gamma,d,tmpn1,d)
+       CALL scdiff2(n,gamma,d,tmpn1) ! Variant
     ELSE
        CALL cwmaxv(n,inew-1,sm,tmpmc4,tmpn1)
-       CALL scdiff(n,gamma,d,tmpn1,d)
+!       CALL scdiff(n,gamma,d,tmpn1,d)
+       CALL scdiff2(n,gamma,d,tmpn1) ! Variant
        CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc4(iold:),tmpn1)
-       CALL xdiffy(n,d,tmpn1,d)
+!       CALL xdiffy(n,d,tmpn1,d)
+       CALL xdiffy2(n,d,tmpn1) ! Variant
     END IF
 
   END SUBROUTINE dlskip
@@ -10393,12 +10597,16 @@ END SUBROUTINE nmlls
          vneg, &   ! Copying of a vector with change of the sign.
          scalex, & ! Scaling a vector.
          xdiffy, & ! Difference of two vectors.
+         xdiffy2, &! Difference of two vectors. (Variant)
          scdiff, & ! Difference of the scaled vector and a vector.
+         scdiff2, &! Difference of the scaled vector and a vector. (Variant)
          xsumy, &  ! Sum of two vectors.
+         xsumy2, & ! Sum of two vectors. (Variant)
          cwmaxv, & ! Multiplication of a vector by a dense rectangular matrix.
          rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
                    ! matrices A and B by vectors x and y.
          calq, &   ! Solving x from linear equation A*x=y.
+         calq2, &  ! Solving x from linear equation A*x=y. (Variant)
          copy, &   ! Copying of a vector.
          copy2     ! Copying of two vectors.
     IMPLICIT NONE
@@ -10619,7 +10827,8 @@ END SUBROUTINE nmlls
              CALL cwmaxv(n,mcnew,sm((iold-1)*n+1:),tmpmc4(iold:),tmpn1)
              CALL scdiff(n,-gamma,ga,tmpn1,tmpn2)
              CALL cwmaxv(n,mcnew,um((iold-1)*n+1:),tmpmc3(iold:),tmpn1)
-             CALL xsumy(n,tmpn2,tmpn1,tmpn2)
+!             CALL xsumy(n,tmpn2,tmpn1,tmpn2)
+             CALL xsumy2(n,tmpn2,tmpn1)
              
           ELSE
              CALL scalex(mcc,gamma,tmpmc4,tmpmc3)
@@ -10627,12 +10836,15 @@ END SUBROUTINE nmlls
              CALL scdiff(n,-gamma,ga,tmpn1,tmpn2)
              CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc4(iold:),&
                   tmpn1)
-             CALL xdiffy(n,tmpn2,tmpn1,tmpn2)
+!             CALL xdiffy(n,tmpn2,tmpn1,tmpn2)
+             CALL xdiffy2(n,tmpn2,tmpn1)
              CALL cwmaxv(n,inew-1,um,tmpmc3,tmpn1)
-             CALL xsumy(n,tmpn2,tmpn1,tmpn2)
+!             CALL xsumy(n,tmpn2,tmpn1,tmpn2)
+             CALL xsumy2(n,tmpn2,tmpn1)
              CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc3(iold:),&
                   tmpn1)
-             CALL xsumy(n,tmpn2,tmpn1,tmpn2)
+!             CALL xsumy(n,tmpn2,tmpn1,tmpn2)
+             CALL xsumy2(n,tmpn2,tmpn1) ! Variant
           END IF
           
           a = vdot(n,ga,tmpn2)
@@ -10695,11 +10907,13 @@ END SUBROUTINE nmlls
       
           IF (iflag == 0) THEN
              CALL scdiff(mc+1,gamma,tmpmc2,tmpmc1,tmpmc5)
-             CALL calq(mcnew,mc+1,iold,tmpmat,tmpmc5,tmpmc5,iiprint)
+!             CALL calq(mcnew,mc+1,iold,tmpmat,tmpmc5,tmpmc5,iiprint)
+             CALL calq2(mcnew,mc+1,iold,tmpmat,tmpmc5,iiprint) ! Variant
 
           ELSE
              CALL scdiff(mc,gamma,tmpmc2,tmpmc1,tmpmc5)
-             CALL calq(mcnew,mc,iold,tmpmat,tmpmc5,tmpmc5,iiprint)
+!             CALL calq(mcnew,mc,iold,tmpmat,tmpmc5,tmpmc5,iiprint)
+             CALL calq2(mcnew,mc,iold,tmpmat,tmpmc5,iiprint) ! Variant
           END IF
 
 
@@ -10711,7 +10925,8 @@ END SUBROUTINE nmlls
              CALL cwmaxv(n,mcnew,sm((iold-1)*n+1:),tmpmc5(iold:),tmpn1)
              CALL scdiff(n,-gamma,ga,tmpn1,d)
              CALL cwmaxv(n,mcnew,um((iold-1)*n+1:),tmpmc6(iold:),tmpn1)
-             CALL xsumy(n,d,tmpn1,d)
+!             CALL xsumy(n,d,tmpn1,d)
+             CALL xsumy2(n,d,tmpn1) ! Variant
          
           ELSE
              CALL scalex(mcnew+1,gamma,tmpmc5,tmpmc6)
@@ -10719,12 +10934,15 @@ END SUBROUTINE nmlls
              CALL scdiff(n,-gamma,ga,tmpn1,d)
              CALL cwmaxv(n,mcnew-inew,sm((iold-1)*n+1:),tmpmc5(iold:),&
                   tmpn1)
-             CALL xdiffy(n,d,tmpn1,d)
+!             CALL xdiffy(n,d,tmpn1,d)
+             CALL xdiffy2(n,d,tmpn1) ! Variant
              CALL cwmaxv(n,inew,um,tmpmc6,tmpn1)
-             CALL xsumy(n,d,tmpn1,d)
+!             CALL xsumy(n,d,tmpn1,d)
+             CALL xsumy2(n,d,tmpn1) ! Variant
              CALL cwmaxv(n,mcnew-inew,um((iold-1)*n+1:),tmpmc6(iold:),&
                   tmpn1)
-             CALL xsumy(n,d,tmpn1,d)
+!             CALL xsumy(n,d,tmpn1,d)
+             CALL xsumy2(n,d,tmpn1) ! Variant
           END IF
 
           b = vdot(n,ga,d)
@@ -10790,13 +11008,16 @@ END SUBROUTINE nmlls
 
     IF (iold == 1) THEN
        CALL scdiff(mcnew,gamma,tmpmc2,tmpmc1,tmpmc4)
-       CALL calq(mcnew,mcnew,iold,tmpmat,tmpmc4,tmpmc4,iiprint)
+!       CALL calq(mcnew,mcnew,iold,tmpmat,tmpmc4,tmpmc4,iiprint)
+       CALL calq2(mcnew,mcnew,iold,tmpmat,tmpmc4,iiprint) ! Variant
     ELSE IF (iflag == 0) THEN
        CALL scdiff(mc+1,gamma,tmpmc2,tmpmc1,tmpmc4)
-       CALL calq(mcnew,mc+1,iold,tmpmat,tmpmc4,tmpmc4,iiprint)
+!       CALL calq(mcnew,mc+1,iold,tmpmat,tmpmc4,tmpmc4,iiprint)
+       CALL calq2(mcnew,mc+1,iold,tmpmat,tmpmc4,iiprint) ! Variant
     ELSE
        CALL scdiff(mc,gamma,tmpmc2,tmpmc1,tmpmc4)
-       CALL calq(mcnew,mc,iold,tmpmat,tmpmc4,tmpmc4,iiprint)
+!       CALL calq(mcnew,mc,iold,tmpmat,tmpmc4,tmpmc4,iiprint)
+       CALL calq2(mcnew,mc,iold,tmpmat,tmpmc4,iiprint) ! Variant
     END IF
       
 
@@ -10807,19 +11028,23 @@ END SUBROUTINE nmlls
        CALL cwmaxv(n,mcnew,sm((iold-1)*n+1:),tmpmc4(iold:),tmpn1)
        CALL scdiff(n,-gamma,ga,tmpn1,d)
        CALL cwmaxv(n,mcnew,um((iold-1)*n+1:),tmpmc3(iold:),tmpn1)
-       CALL xsumy(n,d,tmpn1,d)
+!       CALL xsumy(n,d,tmpn1,d)
+       CALL xsumy2(n,d,tmpn1) ! Variant
     ELSE
        CALL scalex(mcc,gamma,tmpmc4,tmpmc3)
        CALL cwmaxv(n,inew-1,sm,tmpmc4,tmpn1)
        CALL scdiff(n,-gamma,ga,tmpn1,d)
        CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc4(iold:),&
             tmpn1)
-       CALL xdiffy(n,d,tmpn1,d)
+!       CALL xdiffy(n,d,tmpn1,d)
+       CALL xdiffy2(n,d,tmpn1) ! Variant
        CALL cwmaxv(n,inew-1,um,tmpmc3,tmpn1)
-       CALL xsumy(n,d,tmpn1,d)
+!       CALL xsumy(n,d,tmpn1,d)
+       CALL xsumy2(n,d,tmpn1) ! Variant
        CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc3(iold:),&
             tmpn1)
-       CALL xsumy(n,d,tmpn1,d)
+!       CALL xsumy(n,d,tmpn1,d)
+       CALL xsumy2(n,d,tmpn1) ! Variant
     END IF
       
   END SUBROUTINE dlsr1
@@ -11126,15 +11351,19 @@ END SUBROUTINE nmlls
          vdot, &   ! Dot product.
          scalex, & ! Scaling a vector.
          xsumy, &  ! Sum of two vectors.
+         xsumy2, & ! Sum of two vectors. (Variant)
          xdiffy, & ! Difference of two vectors.
+         xdiffy2, &! Difference of two vectors. (Variant)
          scsum, &  ! Sum of a vector and the scaled vector.
+         scsum2, & ! Sum of a vector and the scaled vector. (Variant)
          scdiff, & ! Difference of the scaled vector and a vector.
          scdiff2, &! Difference of the scaled vector and a vector. ! Variant with INOUT
          rwaxv2, & ! Multiplication of two rowwise stored dense rectangular 
                    ! matrices A and B by vectors x and y.   
          cwmaxv, & ! Multiplication of a vector by a dense rectangular matrix.
          lineq, &  ! Solver for linear equation.
-         calq      ! Solving x from linear equation A*x=y.
+         calq, &   ! Solving x from linear equation A*x=y.
+         calq2     ! Solving x from linear equation A*x=y. (Variant)
     IMPLICIT NONE
 
 ! Array Arguments
@@ -11233,7 +11462,8 @@ END SUBROUTINE nmlls
           CALL xdiffy(mcnew,umtgp,umtga,tmpmc4)
 !          CALL scdiff(mcnew,gamma,tmpmc4,smtgp,tmpmc4)
           CALL scdiff2(mcnew,gamma,tmpmc4,smtgp) ! Variant with INOUT
-          CALL xsumy(mcnew,tmpmc4,smtga,tmpmc4)
+!          CALL xsumy(mcnew,tmpmc4,smtga,tmpmc4)
+          CALL xsumy2(mcnew,tmpmc4,smtga) ! Variant
           
           CALL calq(mcnew,mcnew,iold,tmpmat,tmpmc3,tmpmc4,0)
           CALL scalex(mcnew,gamma,tmpmc3,tmpmc4)
@@ -11241,13 +11471,15 @@ END SUBROUTINE nmlls
           CALL cwmaxv(n,mcnew,sm,tmpmc3,tmpn4)
           CALL scsum(n,gamma,tmpn2,tmpn4,tmpn3)
           CALL cwmaxv(n,mcnew,um,tmpmc4,tmpn4)
-          CALL xdiffy(n,tmpn3,tmpn4,tmpn3)
+!          CALL xdiffy(n,tmpn3,tmpn4,tmpn3)
+          CALL xdiffy2(n,tmpn3,tmpn4) ! Variant
 
        ELSE
           CALL xdiffy(mcc,umtgp,umtga,tmpmc4)
 !          CALL scdiff(mcc,gamma,tmpmc4,smtgp,tmpmc4)
           CALL scdiff2(mcc,gamma,tmpmc4,smtgp) ! Variant with INOUT
-          CALL xsumy(mcc,tmpmc4,smtga,tmpmc4)
+!          CALL xsumy(mcc,tmpmc4,smtga,tmpmc4)
+          CALL xsumy2(mcc,tmpmc4,smtga) ! Variant
 
           CALL calq(mcnew,mcc,iold,tmpmat,tmpmc3,tmpmc4,0)
           CALL scalex(mcc,gamma,tmpmc3,tmpmc4)
@@ -11256,16 +11488,20 @@ END SUBROUTINE nmlls
           CALL scsum(n,gamma,tmpn2,tmpn4,tmpn3)
           CALL cwmaxv(n,mcnew-inew+1,sm((iold-1)*n+1:),tmpmc3(iold:)&
                ,tmpn4)
-          CALL xsumy(n,tmpn3,tmpn4,tmpn3)
+!          CALL xsumy(n,tmpn3,tmpn4,tmpn3)
+          CALL xsumy2(n,tmpn3,tmpn4) ! Variant
           CALL cwmaxv(n,inew-1,um,tmpmc4,tmpn4)
-          CALL xdiffy(n,tmpn3,tmpn4,tmpn3)
+!          CALL xdiffy(n,tmpn3,tmpn4,tmpn3)
+          CALL xdiffy2(n,tmpn3,tmpn4)
           CALL cwmaxv(n,mcnew-inew+1,um((iold-1)*n+1:),tmpmc4(iold:)&
                ,tmpn4)
-          CALL xdiffy(n,tmpn3,tmpn4,tmpn3)
+!          CALL xdiffy(n,tmpn3,tmpn4,tmpn3)
+          CALL xdiffy2(n,tmpn3,tmpn4)
        END IF
        
        IF (icn == 1) THEN
-          CALL scsum(n,rho,tmpn2,tmpn3,tmpn3)
+!          CALL scsum(n,rho,tmpn2,tmpn3,tmpn3)
+          CALL scsum2(n,rho,tmpn2,tmpn3)
        END IF
          
        pr = vdot(n,tmpn3,tmpn2)
@@ -11297,7 +11533,8 @@ END SUBROUTINE nmlls
 
        IF (iold == 1) THEN
           CALL rwaxv2(n,mcnew,sm,um,tmpn4,tmpn4,tmpmc4,tmpmc3)
-          CALL scsum(mcnew,-gamma,tmpmc3,tmpmc4,tmpmc4)
+!          CALL scsum(mcnew,-gamma,tmpmc3,tmpmc4,tmpmc4)
+          CALL scsum2(mcnew,-gamma,tmpmc3,tmpmc4)
           CALL lineq(mcnew,mcnew,iold,tmpmat,tmpmc3,tmpmc4,ierr)
             
           qr = qr - vdot(mcnew,tmpmc4,tmpmc3) + w
@@ -11306,7 +11543,8 @@ END SUBROUTINE nmlls
           CALL rwaxv2(n,inew-1,sm,um,tmpn4,tmpn4,tmpmc4,tmpmc3)
           CALL rwaxv2(n,mcnew-inew+1,sm((iold-1)*n+1:),&
                um((iold-1)*n+1:),tmpn4,tmpn4,tmpmc4(iold:),tmpmc3(iold:))
-          CALL scsum(mcc,-gamma,tmpmc3,tmpmc4,tmpmc4)
+!          CALL scsum(mcc,-gamma,tmpmc3,tmpmc4,tmpmc4)
+          CALL scsum2(mcc,-gamma,tmpmc3,tmpmc4)
           CALL lineq(mcnew,mcc,iold,tmpmat,tmpmc3,tmpmc4,ierr)
           
           qr = qr - vdot(mcc-inew,tmpmc4(iold:),tmpmc3(iold:)) -&
