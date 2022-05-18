@@ -1,6 +1,6 @@
 ####
 #
-# Visualization functions for blasso-objects and other relevant objects and variables
+# Visualization functions for oscar-objects and other relevant objects and variables
 #
 ####
 
@@ -43,7 +43,11 @@ oscar.visu <- function(
 	main = ""
 ){
 	if(!inherits(fit, "oscar")) stop("'fit' should be of class 'oscar'")
+
+	# Store graphics par
 	opar <- par(no.readonly = TRUE)
+	# On function exit return original par
+	on.exit(par(opar))
 
 	par(las=2,  # All labels orthogonally to axes
 		mar=c(7,4,1,4), # Inner margins
@@ -122,7 +126,6 @@ oscar.visu <- function(
 		mtext(side=2, text=leg[1], las=0, outer=TRUE)
 		if(length(y)>1) mtext(side=4, text=leg[2], las=0, outer=TRUE)
 	}
-	par(opar)
 }
 
 #' @title Visualize bootstrapping of a fit oscar object
@@ -157,7 +160,7 @@ oscar.bs.visu <- function(
 	}
 	
 	# Plot bootstrapped runs
-	# Plot new or add
+	# Plot new or add to an existing plot
 	if(!add){
 		# If not adding to an existing plot, setup the graphics device
 		plot.new()
@@ -316,24 +319,25 @@ oscar.binplot <- function(
 		kmax <- fit@kmax
 	}
 	
+	# Store graphics par
+	opar <- par(no.readonly = TRUE)
+	# On function exit return original par
+	on.exit(par(opar))
+
 	if(!missing(cv)){
-		opar <- par(no.readonly = TRUE)
 		# Extra CV annotation on top
 		par(mar=c(0,4,1,1), las=1)
 		# Set up paneling
 		layout(matrix(c(1,2), nrow=2), heights=heights)
 		oscar::oscar.cv.visu(cv[,1:kmax])
 		axis(1, at=1:kmax)
-		par(opar)
 	}
 
-	opar <- par(no.readonly = TRUE)
 	# Bottom binarized indicator panel
 	par(mar=c(4,4,1,1))
 	bfit <- oscar::oscar.binarize(fit)[,1:kmax]
 	plot.new()
 	plot.window(xlim=c(0.2,0.8), ylim=c(0.2,0.8))
-	par(opar)
 	
 	h <- hamlet::hmap(oscar::oscar.binarize(fit), Colv=NA, Rowv=NA, toplim=0.8, bottomlim=0.2, col=c("lightgrey", "darkgrey"), nbins=2, namerows=FALSE, namecols=FALSE, add=TRUE, ...)
 	#title(ylab="Non-zero coefficients", xlab="Cardinality 'k'")
@@ -382,8 +386,8 @@ oscar.bs.plot <- function(
 	cex.axis = 0.6, # Axis cex, for scaling
 	palet = colorRampPalette(c("orange", "red", "black", "blue", "cyan"))(dim(bs)[3]), # color palette used in the heatmap, by default the number of bootstrapped datasets as separate colors
 	nbins = dim(bs)[3], # Number of color bins
-	Colv=NA, # Sorting of columns
-	Rowv=NA, # Sorting of rows
+	Colv = NA, # Sorting of columns
+	Rowv = NA, # Sorting of rows
 	...
 ){
 	if(!inherits(fit, "oscar")){ 
@@ -392,7 +396,13 @@ oscar.bs.plot <- function(
 	if(missing(kmax)){
 		kmax <- fit@kmax
 	}
+
+	# Store graphics par
 	opar <- par(no.readonly = TRUE)
+	# On function exit return original par
+	on.exit(par(opar))
+
+	# Custom margins
 	par(mar=c(4,4,0,0))
 	# Bootstrapping
 	if(!missing(bs)){
@@ -409,7 +419,6 @@ oscar.bs.plot <- function(
 	axis(1, at=h$coltext$xseq[1:kmax], labels=1:kmax)
 	axis(2, at=h$rowtext$yseq, labels=h$rowtext$rownam, cex.axis=cex.axis, las=1)
 	hamlet::hmap.key(h)
-	par(opar)
 }
 
 #' Visualize oscar model pareto front
@@ -430,9 +439,10 @@ oscar.bs.plot <- function(
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit_cv <- oscar.cv(fit, fold = 10, seed = 123)
-#'   par(mfrow=c(1,2))
+#'   opar <- par(mfrow=c(1,2))
 #'   oscar.pareto.visu(fit=fit) # Model goodness-of-fit
 #'   oscar.pareto.visu(fit=fit, cv=fit_cv) # Model cross-validation performance
+#'   par(opar)
 #'  }
 #' }
 #' @export
