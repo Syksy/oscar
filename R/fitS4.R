@@ -92,12 +92,10 @@ setClass("oscar", # abbreviation
 #'
 #' @details OSCAR utilizes the L0-pseudonorm, also known as the best subset selection, and makes use of a DC-formulation of the discrete feature selection task into a continuous one. Then an appropriate optimization algorithm is utilized to find optima at different cardinalities (k). The S4 model objects 'oscar' can then be passed on to various down-stream functions, such as oscar.pareto, oscar.cv, and oscar.bs, along with their supporting visualization functions.
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit
-#'  }
 #' }
 #' @rdname oscar
 #' @seealso \code{\link{oscar.cv}} \code{\link{oscar.bs}} \code{\link{oscar.pareto}} \code{\link{oscar.visu}} \code{\link{oscar.cv.visu}} \code{\link{oscar.bs.visu}} \code{\link{oscar.pareto.visu}} \code{\link{oscar.binplot}}
@@ -584,10 +582,8 @@ oscar <- function(
 #' @details This function sanity checks and provides reasonable DBDC and LMBM optimization tuning parameters. User may override custom values, though sanity checks will prevent unreasonable values and replace them. The returned list of parameters can be provided for the 'control' parameter when fitting oscar-objects.
 #'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   oscar.control() # Return a list of default parameters
-#'  }
 #' }
 #' @rdname oscar.control
 #' @export 

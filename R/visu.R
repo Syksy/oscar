@@ -17,12 +17,10 @@
 #' @param main Main title
 #'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   oscar.visu(fit, y=c("target", "cost"))
-#'  }
 #' }
 #' @rdname oscar.visu
 #' @export
@@ -137,13 +135,11 @@ oscar.visu <- function(
 #' @param add Should plot be added on top of an existing plot device
 #'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
 #'   oscar.bs.visu(fit_bs)
-#'  }
 #' }
 #' @rdname oscar.bs.visu
 #' @export
@@ -190,13 +186,11 @@ oscar.bs.visu <- function(
 #' @param ... Additional parameters passed on top the CV points
 #'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit_cv <- oscar.cv(fit, fold = 10, seed = 123)
 #'   oscar.cv.visu(fit_cv)
-#'  }
 #' }
 #' @rdname oscar.cv.visu
 #' @export
@@ -237,13 +231,11 @@ oscar.cv.visu <- function(
 #' @param ... Additional parameters passed on to barplot
 #'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
 #'   oscar.bs.boxplot(fit_bs)
-#'  }
 #' }
 #' @rdname oscar.bs.boxplot
 #' @export
@@ -292,13 +284,11 @@ oscar.bs.boxplot <- function(
 #' @param ... Additional parameters passed on to hamlet::hmap
 #'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit_cv <- oscar.cv(fit, fold = 10, seed = 123)
 #'   oscar.binplot(fit=fit, cv=fit_cv)
-#'  }
 #' }
 #' @importFrom hamlet hmap hmap.key
 #' @export
@@ -369,13 +359,11 @@ oscar.binplot <- function(
 #' @details Further heatmap parameters available from ?hmap
 #'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
 #'   oscar.bs.plot(fit, fit_bs)
-#'  }
 #' }
 #' @importFrom hamlet hmap hmap.key
 #' @export
@@ -434,7 +422,6 @@ oscar.bs.plot <- function(
 #' @param ... Additional parameters provided for the plotting functions
 #'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
@@ -443,7 +430,6 @@ oscar.bs.plot <- function(
 #'   oscar.pareto.visu(fit=fit) # Model goodness-of-fit
 #'   oscar.pareto.visu(fit=fit, cv=fit_cv) # Model cross-validation performance
 #'   par(opar)
-#'  }
 #' }
 #' @export
 oscar.pareto.visu <- function(
@@ -482,4 +468,3 @@ oscar.pareto.visu <- function(
 	points(x=paretos[,1], y=paretos[,2], pch=16)
 	points(x=paretos[which(paretos[,3]),1], y=paretos[which(paretos[,3]),2], type="l", col="red", lwd=2, ...)
 }
-

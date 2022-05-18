@@ -21,12 +21,10 @@ Variable estimates (rows) as a function of cardinality (k, columns). Since a mod
 Uses sparseMatrix-class from Matrix-package
 }
 \examples{
-\dontrun{
 if(interactive()){
   data(ex)
   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
   oscar.sparsify(fit, kmax=5)
- }
 }
 
 }

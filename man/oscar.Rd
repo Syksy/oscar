@@ -57,12 +57,10 @@ This function fits an OSCAR model object to the provided training data with the 
 OSCAR utilizes the L0-pseudonorm, also known as the best subset selection, and makes use of a DC-formulation of the discrete feature selection task into a continuous one. Then an appropriate optimization algorithm is utilized to find optima at different cardinalities (k). The S4 model objects 'oscar' can then be passed on to various down-stream functions, such as oscar.pareto, oscar.cv, and oscar.bs, along with their supporting visualization functions.
 }
 \examples{
-\dontrun{
 if(interactive()){
   data(ex)
   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
   fit
- }
 }
 }
 \seealso{

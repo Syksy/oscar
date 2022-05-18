@@ -15,12 +15,10 @@ oscar.bs.boxplot(bs, ...)
 This function plots as barplots as a function of k-cardinality in what proporties certain coefficients were chosen as non-zero over the bootstrap runs.
 }
 \examples{
-\dontrun{
 if(interactive()){
   data(ex)
   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
   fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
   oscar.bs.boxplot(fit_bs)
- }
 }
 }

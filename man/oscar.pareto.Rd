@@ -24,13 +24,11 @@ A data.frame containing points and indices at which pareto optimal points exist
 This function retrieves the set of pareto optimal points for an oscar model fit in n-proportional time as cardinality axis is readily sorted. It is advisable to optimize model generalization (via cross-validation) rather than mere goodness-of-fit.
 }
 \examples{
-\dontrun{
 if(interactive()){
   data(ex)
   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
   fit_cv <- oscar.cv(fit, fold=10)
   oscar.pareto(fit, cv=fit_cv)
- }
 }
 
 }

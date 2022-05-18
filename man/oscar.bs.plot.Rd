@@ -42,12 +42,10 @@ This function neatly plots a colourized proportion of variables chosen as a func
 Further heatmap parameters available from ?hmap
 }
 \examples{
-\dontrun{
 if(interactive()){
   data(ex)
   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
   fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
   oscar.bs.plot(fit, fit_bs)
- }
 }
 }

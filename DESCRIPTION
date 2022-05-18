@@ -24,4 +24,4 @@ Imports: graphics, grDevices, methods, stats, utils, Matrix, survival, hamlet
 Suggests: glmnet, ePCR, pROC, rmarkdown, knitr
 Encoding: UTF-8
 VignetteBuilder: knitr
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0

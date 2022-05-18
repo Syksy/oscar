@@ -27,12 +27,10 @@ This model bootstraps the fitting of a given oscar object (re-fits the model for
 The function provides a fail-safe try-catch in an event of non-convergence of the model fitting procedure. This may occur for example if a bootstrapped data matrix has a column consist of a single value only over all observations.
 }
 \examples{
-\dontrun{
 if(interactive()){
   data(ex)
   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
   fit_bs <- oscar.cv(fit, bootstrap = 20, seed = 123)
   fit_bs
- }
 }
 }

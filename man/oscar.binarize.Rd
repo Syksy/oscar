@@ -21,12 +21,10 @@ Create a sparse matrix with binary indicator 1 indicating that a coefficient was
 The matrix consists of TRUE/FALSE values, and is very similar to the oscar.sparsify, where the function provides estimate values in a sparse matrix format.
 }
 \examples{
-\dontrun{
 if(interactive()){
   data(ex)
   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
   oscar.binarize(fit, kmax=5)
- }
 }
 
 }

@@ -16,7 +16,6 @@ Reformatted data.frame
 The function reformats bootstrapped runs to a single long data.frame, where all bootstrapped runs are covered along with the choices for the variables at each cardinality 'k'.
 }
 \examples{
-\dontrun{
 if(interactive()){
   data(ex)
   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
@@ -24,6 +23,5 @@ if(interactive()){
   ll <- oscar.bs.k(fit_bs)
   head(ll)
   tail(ll)
- }
 }
 }

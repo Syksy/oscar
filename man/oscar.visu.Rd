@@ -33,11 +33,9 @@ oscar.visu(
 Plot oscar S4-object goodness-of-fit, kit costs, and similar performance metrics.
 }
 \examples{
-\dontrun{
 if(interactive()){
   data(ex)
   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
   oscar.visu(fit, y=c("target", "cost"))
- }
 }
 }

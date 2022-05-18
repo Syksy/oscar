@@ -96,9 +96,7 @@ Fine-tuning the parameters available for the DBDC and LMBM optimizers. See oscar
 This function sanity checks and provides reasonable DBDC and LMBM optimization tuning parameters. User may override custom values, though sanity checks will prevent unreasonable values and replace them. The returned list of parameters can be provided for the 'control' parameter when fitting oscar-objects.
 }
 \examples{
-\dontrun{
 if(interactive()){
   oscar.control() # Return a list of default parameters
- }
 }
 }

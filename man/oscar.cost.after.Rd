@@ -13,12 +13,10 @@ oscar.cost.after(object)
 If at least one measurement from a kit is included in the model, the kit cost is added.
 }
 \examples{
-\dontrun{
 if(interactive()){
   data(ex)
   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
   oscar.cost.after(fit)
- }
 }
 
 }

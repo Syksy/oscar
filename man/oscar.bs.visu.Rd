@@ -17,12 +17,10 @@ oscar.bs.visu(bs, intercept = FALSE, add = FALSE)
 This function visualizes bootstrapped model coefficients over multiple bootstrap runs as lines in a graph
 }
 \examples{
-\dontrun{
 if(interactive()){
   data(ex)
   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
   fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
   oscar.bs.visu(fit_bs)
- }
 }
 }

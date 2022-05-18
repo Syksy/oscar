@@ -36,12 +36,10 @@ oscar.binplot(
 This visualization function makes use of the sparsified beta-coefficient matrix form as a function of cardinality. Optionally, user may showcase cross-validation performance alongside at the same cardinality values.
 }
 \examples{
-\dontrun{
 if(interactive()){
   data(ex)
   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
   fit_cv <- oscar.cv(fit, fold = 10, seed = 123)
   oscar.binplot(fit=fit, cv=fit_cv)
- }
 }
 }

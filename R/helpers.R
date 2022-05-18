@@ -15,13 +15,11 @@
 #' @return A matrix with goodness of fit over folds and k-values
 #' @details A k-fold cross-validation is run by mimicking the parameters contained in the original oscar S4-object. This requires the original data at slots @x and @y.
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit_cv <- oscar.cv(fit, fold=10, seed=123)
 #'   fit_cv
-#'  }
 #' }
 #' @rdname oscar.cv
 #' @export 
@@ -194,13 +192,11 @@ oscar.cv <- function(
 #' @return 3-dimensional array with dimensions corresponding to k-steps, beta coefficients, and bootstrap runs
 #' @details The function provides a fail-safe try-catch in an event of non-convergence of the model fitting procedure. This may occur for example if a bootstrapped data matrix has a column consist of a single value only over all observations.
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit_bs <- oscar.cv(fit, bootstrap = 20, seed = 123)
 #'   fit_bs
-#'  }
 #' }
 #' @rdname oscar.bs
 #' @export 
@@ -251,7 +247,6 @@ oscar.bs <- function(
 #' @return Reformatted data.frame
 #'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
@@ -259,7 +254,6 @@ oscar.bs <- function(
 #'   ll <- oscar.bs.k(fit_bs)
 #'   head(ll)
 #'   tail(ll)
-#'  }
 #' }
 #' @rdname oscar.bs.k
 #' @export
@@ -304,12 +298,10 @@ oscar.bs.k <- function(
 #' @return A sparse matrix of variables (rows) as a function of cardinality k (columns), where elements are the beta estimates.
 #' @details Uses sparseMatrix-class from Matrix-package
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   oscar.sparsify(fit, kmax=5)
-#'  }
 #' }
 #'
 #' @rdname oscar.sparsify
@@ -351,12 +343,10 @@ oscar.sparsify <- function(
 #' @return A binary logical indicator matrix of variables (rows) as a function of cardinality k (columns), where elements are binary indicators for 1 as non-zero and 0 as zero.
 #' @details The matrix consists of TRUE/FALSE values, and is very similar to the oscar.sparsify, where the function provides estimate values in a sparse matrix format.
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   oscar.binarize(fit, kmax=5)
-#'  }
 #' }
 #'
 #' @rdname oscar.binarize
@@ -387,13 +377,11 @@ oscar.binarize <- function(
 #' 
 #' @return A data.frame containing points and indices at which pareto optimal points exist
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit_cv <- oscar.cv(fit, fold=10)
 #'   oscar.pareto(fit, cv=fit_cv)
-#'  }
 #' }
 #'
 #' @export
@@ -463,12 +451,10 @@ oscar.pareto <- function(
 #'
 #' @param object Fit oscar S4-object 
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   oscar.cost.after(fit)
-#'  }
 #' }
 #'
 #' @export
