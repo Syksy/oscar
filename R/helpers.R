@@ -5,15 +5,20 @@
 ####
 
 #' @title Cross-validation for oscar-fitted model objects over k-range
+#'
 #' @description Create a cross-validation matrix with the chosen goodness metric with n-folds. Based on the goodness metric, one ought to pick optimal cardinality (parameter 'k').
+#'
 #' @param fit oscar-model object
 #' @param fold Number of cross-validation folds, Default: 10
 #' @param seed Random seed for reproducibility with NULL indicating that it is not set, Default: NULL
 #' @param strata Should stratified cross-validation be used; separate values indicate balanced strata. Default: Unit vector, which will treat all observations equally.
 #' @param verb Level of verbosity with higher integer giving more information, Default: 0
 #' @param ... Additional parameters passed to oscar-function
+#'
 #' @return A matrix with goodness of fit over folds and k-values
+#'
 #' @details A k-fold cross-validation is run by mimicking the parameters contained in the original oscar S4-object. This requires the original data at slots @x and @y.
+#*
 #' @examples 
 #' if(interactive()){
 #'   data(ex)
@@ -183,14 +188,19 @@ oscar.cv <- function(
 }
 
 #' @title Bootstrapping for oscar-fitted model objects
+#'
 #' @description This model bootstraps the fitting of a given oscar object (re-fits the model for data that is equal in size but sampled with replacement). The output objects give insight into robustness of the oscar-coefficient path, as well as relative importance of model objects.
+#'
 #' @param fit oscar-model object
 #' @param bootstrap Number of bootstrapped datasets, Default: 100
 #' @param seed Random seed for reproducibility with NULL indicating that it is not set, Default: NULL
 #' @param verb Level of verbosity with higher integer giving more information, Default: 0
 #' @param ... Additional parameters passed to oscar-function
+#'
 #' @return 3-dimensional array with dimensions corresponding to k-steps, beta coefficients, and bootstrap runs
+#'
 #' @details The function provides a fail-safe try-catch in an event of non-convergence of the model fitting procedure. This may occur for example if a bootstrapped data matrix has a column consist of a single value only over all observations.
+#'
 #' @examples 
 #' if(interactive()){
 #'   data(ex)
@@ -242,8 +252,11 @@ oscar.bs <- function(
 }
 	
 #' @title Reformatting bootstrap output for cardinality k rows
+#'
 #' @description The function reformats bootstrapped runs to a single long data.frame, where all bootstrapped runs are covered along with the choices for the variables at each cardinality 'k'.
+#'
 #' @param bs Bootstrapped list from oscar.bs
+#'
 #' @return Reformatted data.frame
 #'
 #' @examples 
@@ -292,11 +305,16 @@ oscar.bs.k <- function(
 }
 
 #' @title Create a sparse matrix representation of betas as a function of k
+#'
 #' @description Variable estimates (rows) as a function of cardinality (k, columns). Since a model can drop out variables in favor of two better ones as k increases, this sparse representation helps visualize which variables are included at what cardinality.
+#'
 #' @param fit oscar-model object
 #' @param kmax Create matrix until kmax-value; by default same as for fit object, but for high dimensional tasks one may wish to reduce this
+#'
 #' @return A sparse matrix of variables (rows) as a function of cardinality k (columns), where elements are the beta estimates.
+#'
 #' @details Uses sparseMatrix-class from Matrix-package
+#'
 #' @examples 
 #' if(interactive()){
 #'   data(ex)
@@ -337,11 +355,16 @@ oscar.sparsify <- function(
 }
 
 #' @title Binary logical indicator matrix representation of an oscar object's coefficients (zero vs. non-zero, i.e. feature inclusion)
+#'
 #' @description Create a sparse matrix with binary indicator 1 indicating that a coefficient was non-zero, and value 0 (or . in sparse matrix) indicating that a coefficient was zero (i.e. feature not included)
+#'
 #' @param fit Fit oscar-model object
 #' @param kmax Create matrix until kmax-value; by default same as for fit object, but for high dimensional tasks one may wish to reduce this
+#'
 #' @return A binary logical indicator matrix of variables (rows) as a function of cardinality k (columns), where elements are binary indicators for 1 as non-zero and 0 as zero.
+#'
 #' @details The matrix consists of TRUE/FALSE values, and is very similar to the oscar.sparsify, where the function provides estimate values in a sparse matrix format.
+#'
 #' @examples 
 #' if(interactive()){
 #'   data(ex)
@@ -365,9 +388,9 @@ oscar.binarize <- function(
 	binmat[,1:kmax]
 }
 
-#' Retriever a set pareto-optimal points for an oscar-model based on model goodness-of-fit or cross-validation
+#' @title Retrieve a set of pareto-optimal points for an oscar-model based on model goodness-of-fit or cross-validation
 #'
-#' This function retrieves the set of pareto optimal points for an oscar model fit in n-proportional time as cardinality axis is readily sorted. It is advisable to optimize model generalization (via cross-validation) rather than mere goodness-of-fit.
+#' @description This function retrieves the set of pareto optimal points for an oscar model fit in n-proportional time as cardinality axis is readily sorted. It is advisable to optimize model generalization (via cross-validation) rather than mere goodness-of-fit.
 #'
 #' @param fit Fit oscar S4-object
 #' @param cv A cross-validation matrix as produced by oscar.cv; if CV is not provided, then goodness-of-fit from fit object itself is used rather than cross-validation generalization metric
@@ -376,6 +399,7 @@ oscar.binarize <- function(
 #' @param summarize Function that summarizes over cross-validation folds; by default, this is the mean over the k-folds.
 #' 
 #' @return A data.frame containing points and indices at which pareto optimal points exist
+#'
 #' @examples 
 #' if(interactive()){
 #'   data(ex)
@@ -384,6 +408,7 @@ oscar.binarize <- function(
 #'   oscar.pareto(fit, cv=fit_cv)
 #' }
 #'
+#' @rdname oscar.pareto
 #' @export
 oscar.pareto <- function(
 	fit,
@@ -440,16 +465,19 @@ oscar.pareto <- function(
 		res <- do.call("rbind", by(res, INDICES=res[,1], FUN=function(x) { x[which(!x[,2]==max(x[,2])),3]<-FALSE; x }))
 		rownames(res) <- NULL
 	}
-		# Return to original point ordering
+	# Return to original point ordering
 	res <- res[order(res$ord),]
 	res
 }
 
-#' Return total cost of model fits if the cost is not included in the oscar object
+#' @title Return total cost of model fits if the cost is not included in the oscar object
 #'
-#' If at least one measurement from a kit is included in the model, the kit cost is added.
+#' @description If at least one measurement from a kit is included in the model, the kit cost is added.
 #'
 #' @param object Fit oscar S4-object 
+#'
+#' @return A vector for numeric values of total kit costs at different cardinalities.
+#'
 #' @examples 
 #' if(interactive()){
 #'   data(ex)
@@ -457,8 +485,8 @@ oscar.pareto <- function(
 #'   oscar.cost.after(fit)
 #' }
 #'
+#' @rdname oscar.cost.after
 #' @export
-#cost.after <- function(object, kit.matrix, cost.vector){
 oscar.cost.after <- function(object){
 
 	# The values are readily stored in oscar S4-objects

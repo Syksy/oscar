@@ -32,6 +32,9 @@ oscar.binplot(
 
 \item{...}{Additional parameters passed on to hamlet::hmap}
 }
+\value{
+This is a plotting function that does not return anything, but instead draws on a new graphics device.
+}
 \description{
 This visualization function makes use of the sparsified beta-coefficient matrix form as a function of cardinality. Optionally, user may showcase cross-validation performance alongside at the same cardinality values.
 }

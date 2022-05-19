@@ -9,6 +9,9 @@ oscar.cost.after(object)
 \arguments{
 \item{object}{Fit oscar S4-object}
 }
+\value{
+A vector for numeric values of total kit costs at different cardinalities.
+}
 \description{
 If at least one measurement from a kit is included in the model, the kit cost is added.
 }

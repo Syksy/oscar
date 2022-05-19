@@ -35,6 +35,9 @@ oscar.bs.plot(
 
 \item{...}{Additional parameters passed on to the hamlet::hmap function}
 }
+\value{
+This is a plotting function that does not return anything, but instead draws on a new graphics device.
+}
 \description{
 This function neatly plots a colourized proportion of variables chosen as a function of cardinalities over a multitude of bootstrap runs. This helps model diagnostics in assesssing variable importance.
 }

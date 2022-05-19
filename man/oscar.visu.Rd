@@ -29,6 +29,9 @@ oscar.visu(
 
 \item{main}{Main title}
 }
+\value{
+This is a plotting function that does not return anything, but instead draws on an existing or a new graphics device.
+}
 \description{
 Plot oscar S4-object goodness-of-fit, kit costs, and similar performance metrics.
 }

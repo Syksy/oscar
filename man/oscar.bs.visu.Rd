@@ -13,6 +13,9 @@ oscar.bs.visu(bs, intercept = FALSE, add = FALSE)
 
 \item{add}{Should plot be added on top of an existing plot device}
 }
+\value{
+This is a plotting function that does not return anything, but instead draws on an existing or a new graphics device.
+}
 \description{
 This function visualizes bootstrapped model coefficients over multiple bootstrap runs as lines in a graph
 }

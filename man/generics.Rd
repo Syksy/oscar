@@ -9,6 +9,9 @@
 \arguments{
 \item{object}{Fit oscar S4-object}
 }
+\value{
+Outputs raw text describing key characteristics of the oscar-object
+}
 \description{
 Showing oscar-objects
 }

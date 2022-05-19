@@ -2,7 +2,7 @@
 % Please edit documentation in R/helpers.R
 \name{oscar.pareto}
 \alias{oscar.pareto}
-\title{Retriever a set pareto-optimal points for an oscar-model based on model goodness-of-fit or cross-validation}
+\title{Retrieve a set of pareto-optimal points for an oscar-model based on model goodness-of-fit or cross-validation}
 \usage{
 oscar.pareto(fit, cv, xval = "cost", weak = FALSE, summarize = mean)
 }

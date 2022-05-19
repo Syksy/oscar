@@ -37,6 +37,13 @@
 
 \item{...}{Additional parameters passed on to the points-function drawing lines as a function of cardinality}
 }
+\value{
+Vector of model coefficient values at given cardinality 'k'
+
+A vector of coefficient predictions at the specificied cardinality 'k' with a format depending on the supplied 'type' parameter
+
+Override default plot function with no return but instead tailor suitable graphics plotting
+}
 \description{
 Extract coefficients of oscar-objects
 

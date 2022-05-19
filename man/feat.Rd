@@ -16,6 +16,11 @@ feat(object, k)
 
 \item{k}{Cardinality 'k' to extract non-zero features at}
 }
+\value{
+Vector of feature indices at cardinality 'k'
+
+Vector of feature indices at cardinality 'k'
+}
 \description{
 Return named vector of feature indices with a given k that are non-zero
 

@@ -16,6 +16,8 @@
 #' @param add Should plot be added into an existing frame / plot
 #' @param main Main title
 #'
+#' @return This is a plotting function that does not return anything, but instead draws on an existing or a new graphics device.
+#'
 #' @examples 
 #' if(interactive()){
 #'   data(ex)
@@ -134,6 +136,8 @@ oscar.visu <- function(
 #' @param intercept Whether model intercept should be plotted also as a coefficient, Default: FALSE
 #' @param add Should plot be added on top of an existing plot device
 #'
+#' @return This is a plotting function that does not return anything, but instead draws on an existing or a new graphics device.
+#'
 #' @examples 
 #' if(interactive()){
 #'   data(ex)
@@ -185,6 +189,8 @@ oscar.bs.visu <- function(
 #' @param ylab Y-axis label
 #' @param ... Additional parameters passed on top the CV points
 #'
+#' @return This is a plotting function that does not return anything, but instead draws on an existing or a new graphics device.
+#'
 #' @examples 
 #' if(interactive()){
 #'   data(ex)
@@ -229,6 +235,8 @@ oscar.cv.visu <- function(
 #' 
 #' @param bs Bootstrapped 3-dimensional array for an oscar object as produced by oscar.bs
 #' @param ... Additional parameters passed on to barplot
+#'
+#' @return This is a plotting function that does not return anything, but instead draws on a new graphics device.
 #'
 #' @examples 
 #' if(interactive()){
@@ -282,6 +290,8 @@ oscar.bs.boxplot <- function(
 #' @param cex.axis Axis magnification
 #' @param heights Paneling proportions as a numeric vector of length 2
 #' @param ... Additional parameters passed on to hamlet::hmap
+#'
+#' @return This is a plotting function that does not return anything, but instead draws on a new graphics device.
 #'
 #' @examples 
 #' if(interactive()){
@@ -356,6 +366,8 @@ oscar.binplot <- function(
 #' @param Rowv Row re-ordering indices or a readily built dendrogram
 #' @param ... Additional parameters passed on to the hamlet::hmap function
 #'
+#' @return This is a plotting function that does not return anything, but instead draws on a new graphics device.
+#'
 #' @details Further heatmap parameters available from ?hmap
 #'
 #' @examples 
@@ -420,6 +432,8 @@ oscar.bs.plot <- function(
 #' @param summarize Function that summarizes over cross-validation folds; by default, this is the mean over the k-folds.
 #' @param add If the fit should be added on top of an existing plot; in that case leaving out labels etc. By default new plot is called.
 #' @param ... Additional parameters provided for the plotting functions
+#'
+#' @return This is a plotting function that does not return anything, but instead draws on an existing or a new graphics device.
 #'
 #' @examples 
 #' if(interactive()){

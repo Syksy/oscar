@@ -11,6 +11,9 @@ oscar.bs.boxplot(bs, ...)
 
 \item{...}{Additional parameters passed on to barplot}
 }
+\value{
+This is a plotting function that does not return anything, but instead draws on a new graphics device.
+}
 \description{
 This function plots as barplots as a function of k-cardinality in what proporties certain coefficients were chosen as non-zero over the bootstrap runs.
 }

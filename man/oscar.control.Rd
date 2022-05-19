@@ -93,7 +93,7 @@ A list of sanity checked parameter values for the OSCAR optimizers.
 Fine-tuning the parameters available for the DBDC and LMBM optimizers. See oscar documentation for the optimization algorithms for further details.
 }
 \details{
-This function sanity checks and provides reasonable DBDC and LMBM optimization tuning parameters. User may override custom values, though sanity checks will prevent unreasonable values and replace them. The returned list of parameters can be provided for the 'control' parameter when fitting oscar-objects.
+This function sanity checks and provides reasonable DBDC ('Double Bundle method for nonsmooth DC optimization' as described in Joki et al. (2018) <doi:10.1137/16M1115733>) and LMBM ('Limited Memory Bundle Method for large-scale nonsmooth optimization' as presented in Haarala et al. (2004) <doi:10.1080/10556780410001689225>) optimization tuning parameters. User may override custom values, though sanity checks will prevent unreasonable values and replace them. The returned list of parameters can be provided for the 'control' parameter when fitting oscar-objects.
 }
 \examples{
 if(interactive()){

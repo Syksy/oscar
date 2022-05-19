@@ -15,6 +15,8 @@
 #'
 #' @param object Fit oscar S4-object
 #'
+#' @return Outputs raw text describing key characteristics of the oscar-object
+#'
 #' @rdname generics
 #' @export
 setMethod("show", "oscar",
@@ -31,6 +33,8 @@ setMethod("show", "oscar",
 #'
 #' @param object Fit oscar S4-object
 #' @param k Cardinality 'k' to extract coefficients at
+#'
+#' @return Vector of model coefficient values at given cardinality 'k'
 #'
 #' @export
 #' @docType methods
@@ -54,6 +58,8 @@ setMethod("coef", "oscar",
 #' @param k Cardinality 'k' to perform predictions at
 #' @param type Type of prediction; valid values are 'response', 'link', 'nonzero', 'coefficients', or 'label'
 #' @param newdata Data to predict on; if no alternate is supplied, the function uses the original 'x' data matrix used to fit object
+#'
+#' @return A vector of coefficient predictions at the specificied cardinality 'k' with a format depending on the supplied 'type' parameter
 #'
 #' @export
 #' @docType methods
@@ -112,6 +118,8 @@ setMethod("predict", "oscar",
 #' @param intercept Should model intercept be plotted, Default: FALSE
 #' @param ... Additional parameters passed on to the points-function drawing lines as a function of cardinality
 #'
+#' @return Override default plot function with no return but instead tailor suitable graphics plotting
+#'
 #' @export
 #' @docType methods
 #' @rdname oscar-methods
@@ -159,6 +167,8 @@ setMethod("plot", "oscar",
 #' @param object Fit oscar S4-object 
 #' @param k Cardinality 'k' to extract non-zero features at
 #'
+#' @return Vector of feature indices at cardinality 'k'
+#'
 #' @docType methods
 #' @export
 #' @aliases feat,oscar-methods
@@ -172,6 +182,8 @@ setGeneric("feat",
 #'
 #' @param object Fit oscar S4-object 
 #' @param k Cardinality 'k' to extract non-zero features at
+#'
+#' @return Vector of feature indices at cardinality 'k'
 #'
 #' @docType methods
 #' @export
@@ -197,6 +209,8 @@ setMethod("feat", "oscar",
 #' @param object Fit oscar S4-object 
 #' @param k Cardinality 'k' to extract kit indices at
 #'
+#' @return Vector of kit indices at cardinality 'k'
+#'
 #' @docType methods
 #' @export
 #' @aliases kits,oscar-methods
@@ -210,6 +224,8 @@ setGeneric("kits",
 #'
 #' @param object Fit oscar S4-object 
 #' @param k Cardinality 'k' to extract kit indices at
+#'
+#' @return Vector of kit indices at cardinality 'k'
 #'
 #' @docType methods
 #' @export
@@ -241,6 +257,8 @@ setMethod("kits", "oscar",
 #' @param object Fit oscar S4-object 
 #' @param k Cardinality 'k' to compute total feature cost at
 #'
+#' @return Numeric value of total feature/kit cost at cardinality 'k'
+#'
 #' @aliases cost,oscar-methods
 #' @export
 #' @docType methods
@@ -254,6 +272,8 @@ setGeneric("cost",
 #'
 #' @param object Fit oscar S4-object 
 #' @param k Cardinality 'k' to compute total feature cost at
+#'
+#' @return Numeric value of total feature/kit cost at cardinality 'k'
 #'
 #' @aliases cost,oscar-methods
 #' @export
@@ -273,4 +293,3 @@ setMethod("cost", "oscar",
 		sum(object@w[kits])
 	}
 )
-

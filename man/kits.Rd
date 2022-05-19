@@ -16,6 +16,11 @@ kits(object, k)
 
 \item{k}{Cardinality 'k' to extract kit indices at}
 }
+\value{
+Vector of kit indices at cardinality 'k'
+
+Vector of kit indices at cardinality 'k'
+}
 \description{
 Return named vector of indices for kits with a given k that are non-zero
 

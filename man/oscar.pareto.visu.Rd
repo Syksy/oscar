@@ -29,6 +29,9 @@ oscar.pareto.visu(
 
 \item{...}{Additional parameters provided for the plotting functions}
 }
+\value{
+This is a plotting function that does not return anything, but instead draws on an existing or a new graphics device.
+}
 \description{
 Visualization function for showing the pareto front for cardinality 'k' and model goodness metric, either from goodness-of-fit or from cross-validation
 }

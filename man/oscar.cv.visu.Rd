@@ -26,6 +26,9 @@ oscar.cv.visu(
 
 \item{...}{Additional parameters passed on top the CV points}
 }
+\value{
+This is a plotting function that does not return anything, but instead draws on an existing or a new graphics device.
+}
 \description{
 This function plots the model performance as a function of cardinality for k-fold cross-validation. Performance metric depends on user choice and model family (i.e. lower MSE is good, higher C-index is good).
 }

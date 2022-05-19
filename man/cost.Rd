@@ -16,6 +16,11 @@ cost(object, k)
 
 \item{k}{Cardinality 'k' to compute total feature cost at}
 }
+\value{
+Numeric value of total feature/kit cost at cardinality 'k'
+
+Numeric value of total feature/kit cost at cardinality 'k'
+}
 \description{
 Return total cost of model fit based on provided kit/variable costs vector
 
