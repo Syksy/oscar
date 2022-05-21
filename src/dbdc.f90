@@ -12367,6 +12367,7 @@ END MODULE lmbm_mod
             !         * 'in_start' has to be  1, 2, 3 or 4. If it is NOT then DEFAULT value 2 is used.             
             
             !***********************************************************************************
+               !$ USE OMP_LIB
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
@@ -12730,11 +12731,14 @@ END MODULE lmbm_mod
                
                ! Maximum number of possible treads in parallellization
       IF(solver==1) THEN
-     max_threads = omp_get_max_threads()
+        max_threads = 1 ! Failsafe in case openMP is not available
+     !max_threads = omp_get_max_threads()
+     !$ max_threads = OMP_GET_MAX_THREADS()
      IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
-     max_threads=nkits
+       max_threads=nkits
      END IF     
-     CALL omp_set_num_threads(max_threads)
+     !CALL omp_set_num_threads(max_threads)
+     !$ CALL OMP_SET_NUM_THREADS(max_threads)
       END IF
                
 !**
@@ -13491,6 +13495,7 @@ END MODULE lmbm_mod
             !         * 'in_start' has to be 1, 2, 3 or 4. If it is NOT then DEFAULT value 2 is used.             
             
             !***********************************************************************************
+               !$ USE OMP_LIB
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! ! INPUTs
@@ -13853,11 +13858,14 @@ END MODULE lmbm_mod
                
                ! Maximum number of possible treads in parallellization
       IF(solver==1) THEN
-     max_threads = omp_get_max_threads()
+        max_threads = 1 ! Failsafe in case openMP is not available
+     ! max_threads = omp_get_max_threads()
+     !$ max_threads = OMP_GET_MAX_THREADS()
      IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
-     max_threads=nkits
+       max_threads=nkits
      END IF
-     CALL omp_set_num_threads(max_threads)
+     !CALL omp_set_num_threads(max_threads)
+     !$ CALL OMP_SET_NUM_THREADS(max_threads)
       END IF
                
 !**
@@ -14608,6 +14616,7 @@ END MODULE lmbm_mod
             !         * 'in_start' has to be  1, 2, 3 or 4. If it is NOT then DEFAULT value 2 is used.             
             
             !***********************************************************************************
+               !$ USE OMP_LIB
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
@@ -14971,11 +14980,14 @@ END MODULE lmbm_mod
                
              ! Maximum number of possible treads in parallellization
       IF(solver==1) THEN
-     max_threads = omp_get_max_threads()
+        max_threads = 1 ! Failsafe in case openMP is not available
+     !max_threads = omp_get_max_threads()
+     !$ max_threads = OMP_GET_MAX_THREADS()
      IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
-     max_threads=nkits
+       max_threads=nkits
      END IF
-     CALL omp_set_num_threads(max_threads)
+     !CALL omp_set_num_threads(max_threads)
+     !$ CALL OMP_SET_NUM_THREADS(max_threads)
       END IF
                
 !**

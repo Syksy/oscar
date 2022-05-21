@@ -18,4 +18,3 @@ PKG_LIBS = $(SHLIB_OPENMP_FFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 $(SHLIB): $(C_OBJS) $(FT_OBJS)
 
 oscarc.c: dbdc.o
-
