@@ -25,7 +25,7 @@ It comes with two different optimizers for the computationally demanding optimiz
 The R package handles all interaction with Fortran and provides many convenience and visualization functions to assist with L0-penalized regression modelling.
 This includes for example cross-validation, bootstrapping, and other diagnostics used to inspect an OSCAR model and assessing importance of features.
 
-Please see Halkola et al. [1] for citing OSCAR. The primary solver for the DC-decomposition transforming the L0-pseudonorm optimization problem from discrete to continuous non-convex space is done via DBDC, which is described in detail on Joki et al. [2], although an alternate optimization method for larger problems is offered via LMBM.
+Please see Halkola et al. [1] for citing OSCAR. The primary solver for the DC-decomposition transforming the L0-pseudonorm optimization problem from discrete to continuous non-convex space is done via DBDC ('Double Bundle method for nonsmooth DC optimization'), which is described in detail on Joki et al. [2], although an alternate optimization method for larger problems is offered via LMBM ('Limited Memory Bundle Method for large-scale nonsmooth optimization') as described in Haarala et al. [3].
 
 ## Cox regression (simulated TYKS real-world PCa data)
 
@@ -36,7 +36,7 @@ ex_X[1:7,1:7]
 head(ex_Y)
 ```
 
-For further details regarding this dataset and its generation, see reference Laajala et at. [3]
+For further details regarding this dataset and its generation, see reference Laajala et at. [4]
 
 One key feature in OSCAR in addition to its L0 norm penalization is its capability to handle variables as groups, or 'kits'. This grouping of variables causes them to be selected (or omitted) together.
 In many clinical applications this is often reality; for example, curating initial data for variables together can occur in cases such as:
@@ -195,11 +195,13 @@ knitr::include_graphics("images/fig7_swiss_cv.png")
 
 # References
 
-1: Halkola AS, Joki K, Mirtti T, Makela MM, Aittokallio T, Laajala, TD. OSCAR: Optimal subset cardinality regression using the L0-pseudonorm. To be submitted.
+1. Halkola AS, Joki K, Mirtti T, Makela MM, Aittokallio T, Laajala, TD. OSCAR: Optimal subset cardinality regression using the L0-pseudonorm. To be submitted.
 
-2: Joki K, Bagirov AM, Karmitsa N, Makela MM, Taheri S. Double Bundle Method for finding Clarke Stationary Points in Nonsmooth DC Programming. SIAM Journal on Optimization. 2018;28(2):1892–1919. \doi{10.1137/16M1115733}
+2. Joki K, Bagirov AM, Karmitsa N, Makela MM, Taheri S. Double Bundle Method for finding Clarke Stationary Points in Nonsmooth DC Programming. SIAM Journal on Optimization. 2018;28(2):1892-1919. \doi{10.1137/16M1115733}
 
-3: Laajala TD, Murtojarvi M, Virkki A, Aittokallio T. ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to real-world patient cohorts. Bioinformatics. 2018;34(22):3957-3959. \doi{10.1093/bioinformatics/bty477}
+3. Haarala M, Miettinen K, Makela MM. New limited memory bundle method for large-scale nonsmooth optimization. Optimization Methods and Software. 2004;19(6):673-692. \doi{10.1080/10556780410001689225}
+
+4. Laajala TD, Murtojarvi M, Virkki A, Aittokallio T. ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to real-world patient cohorts. Bioinformatics. 2018;34(22):3957-3959. \doi{10.1093/bioinformatics/bty477}
 
 # Session info
 ```{r sesinfo}
