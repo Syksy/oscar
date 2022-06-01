@@ -1,50 +1,84 @@
----
-output: github_document
----
-
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  fig.path = "man/figures/README-",
-  out.width = "100%"
-)
-```
 
 # OSCAR models with R
+
 Optimal Subset CArdinality Regression (OSCAR) models with R
 
-```{r example, warning = FALSE, message = FALSE}
+# Citation
 
-# devtools::install_github("Syksy/oscar")
+Halkola et al. OSCAR: Optimal subset cardinality regression using the
+L0-pseudonorm, with applications to modelling prostate cancer
+biomarkers.
 
-library(oscar) # Load the oscar-package  
+# CRAN
 
-data(ex) # Load example dataset (consists of ex_X, ex_Y, ex_K and ex_c) for Cox regression  
+The `oscar` package is available from the Central R Archive Network
+(CRAN), and can be installed with:
 
-fit <- oscar::oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family="cox") # Test run, notice this uses all the data! Smaller test would be feasible  
+    install.packages("oscar")
 
-fit # Show model results and other attributes  
+Canonical direct CRAN link:
 
-oscar::oscar.visu(fit, y=c("target", "goodness")) # Visualize fit as a function of allowed kits  
+<a href="https://CRAN.R-project.org/package=oscar" class="uri">https://CRAN.R-project.org/package=oscar</a>
 
-# Example of cross-validation based k-selection  
+# GitHub installation
 
-cv <- oscar::oscar.cv(fit, fold=5, seed=123) # 5-fold cross-validation, with fixed seed  
+While the CRAN installation may be most convenient for user
+installation, the latest modifications and package release come through
+GitHub. Therefore there may be a slight lag in delivering the latest
+release to CRAN, and the user may wish to install the latest
+GitHub-version by:
 
-oscar::oscar.cv.visu(cv) # Visualize the cross-validation curve (highest point in c-index in optimal generalizable k-value)  
+    install.packages("devtools")
+    devtools::install_github("Syksy/oscar")
 
-# Naive example using events in logistic regression (placeholder PoC, end-point ought to be time-dependent rather)  
+# Brief examples
 
-fit2 <- oscar::oscar(x=ex_X, y=ex_Y[,2], k=ex_K, w=ex_c, family="logistic")  
+Below are brief examples on `oscar` usage. More elaborate examples can
+be found from within the package in the examples vignette.
 
-oscar::oscar.visu(fit2, y=c("target", "goodness"))  
 
-# Example swiss fertility data  
+    # Load the oscar-package
 
-data(swiss)  
+    library(oscar)
 
-fit_mse <- oscar::oscar(x=swiss[,-1], y=swiss[,1], family="gaussian")  
+    # Load example dataset (consists of ex_X, ex_Y, ex_K and ex_c) for
+    # Cox regression
 
-fit_mse
+    data(ex)
 
-```
+    # Test run, notice this uses all the data! Smaller test would be
+    # feasible
+
+    fit <- oscar::oscar(x = ex_X, y = ex_Y, k = ex_K, w = ex_c, family = "cox")
+
+    # Show model results and other attributes
+
+    fit
+
+    # Visualize fit as a function of allowed kits
+
+    oscar::oscar.visu(fit, y = c("target", "goodness"))
+
+    # Example of cross-validation based k-selection
+
+    cv <- oscar::oscar.cv(fit, fold = 5, seed = 123)  # 5-fold cross-validation, with fixed seed  
+
+    # Visualize the cross-validation curve (highest point in c-index in
+    # optimal generalizable k-value)
+
+    oscar::oscar.cv.visu(cv)
+
+    # Naive example using events in logistic regression (placeholder PoC,
+    # end-point ought to be time-dependent rather)
+
+    fit2 <- oscar::oscar(x = ex_X, y = ex_Y[, 2], k = ex_K, w = ex_c, family = "logistic")
+
+    oscar::oscar.visu(fit2, y = c("target", "goodness"))
+
+    # Example swiss fertility data
+
+    data(swiss)
+
+    fit_mse <- oscar::oscar(x = swiss[, -1], y = swiss[, 1], family = "gaussian")
+
+    fit_mse
