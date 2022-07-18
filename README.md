@@ -3,11 +3,13 @@
 
 Optimal Subset CArdinality Regression (OSCAR) models with R
 
+The R extension package `oscar` offers L0-pseudonorm based cardinality constrained regression models, with a user-friendly R interface tied to Fortran implemented optimizers via C. The R package comes with a suite of useful model building tools, such as visualizations, diagnotics, cross-validation, and bootstrapping functions. 
+
 # Citation
 
-Halkola et al. OSCAR: Optimal subset cardinality regression using the
-L0-pseudonorm, with applications to modelling prostate cancer
-biomarkers.
+Anni S. Halkola, Kaisa Joki, Tuomas Mirtti, Marko M. Mäkelä, Tero Aittokallio, Teemu D. Laajala. OSCAR: Optimal subset cardinality regression using the L0-pseudonorm with applications to prognostic modelling of prostate cancer. bioRxiv 2022.06.29.498064; doi: https://doi.org/10.1101/2022.06.29.498064
+
+<a href="https://www.biorxiv.org/content/10.1101/2022.06.29.498064v1" class="uri">Direct bioarXiv link to the preprint</a>
 
 # CRAN
 
