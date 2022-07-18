@@ -3,7 +3,7 @@
 
 Optimal Subset CArdinality Regression (OSCAR) models with R
 
-The R extension package `oscar` offers L0-pseudonorm based cardinality constrained regression models, with a user-friendly R interface tied to Fortran implemented optimizers via C. The R package comes with a suite of useful model building tools, such as visualizations, diagnotics, cross-validation, and bootstrapping functions. 
+The R extension package `oscar` offers L0-pseudonorm based cardinality constrained regression models, with a user-friendly R interface tied to Fortran implemented optimizers via C. The R package comes with a suite of useful model building tools, such as visualizations, diagnostics, cross-validation, and bootstrapping functions. 
 
 # Citation
 
