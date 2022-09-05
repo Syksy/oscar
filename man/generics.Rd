@@ -2,45 +2,16 @@
 % Please edit documentation in R/funcsS4.R
 \name{show,oscar-method}
 \alias{show,oscar-method}
-\alias{coef,oscar-method}
-\alias{predict,oscar-method}
-\alias{plot,oscar-method}
-\alias{feat}
-\alias{kits}
-\alias{cost}
 \title{Showing oscar-objects}
 \usage{
 \S4method{show}{oscar}(object)
-
-\S4method{coef}{oscar}(object, k)
-
-\S4method{predict}{oscar}(
-  object,
-  k,
-  type = c("response", "link", "nonzero", "coefficients", "label"),
-  newdata = object@x
-)
-
-\S4method{plot}{oscar}(x, y, k = 1:x@kmax, add = FALSE, intercept = FALSE, ...)
-
-feat(object, k)
-
-kits(object, k)
-
-cost(object, k)
+}
+\arguments{
+\item{object}{Fit oscar S4-object}
+}
+\value{
+Outputs raw text describing key characteristics of the oscar-object
 }
 \description{
 Showing oscar-objects
-
-Extract coefficients of oscar-objects
-
-Predicting based on oscar-objects
-
-Plot oscar-coefficients as a function of k and override default plot generic
-
-Return named vector of feature indices with a given k that are non-zero
-
-Return named vector of kits indices with a given k that are non-zero
-
-Return total cost of model fit based on provided kit/variable costs vector
 }

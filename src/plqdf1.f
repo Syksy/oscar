@@ -143,10 +143,13 @@ C     ..
       NRED = 0
       NCYC = 0
       MCYC = MAX(1000,100*(NA+NC))
-      IF (MFP.EQ.3) GO TO 10
-      N = NF
+C     NAA and NAR moved here for debugging      
       NAA = 0
       NAR = 0
+      IF (MFP.EQ.3) GO TO 10
+      N = NF
+C     NAA = 0
+C     NAR = 0
 C      XNORM = -ETA9
       XNORM = -1.0D20
       Q = 2.0D0 * XNORM

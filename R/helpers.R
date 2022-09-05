@@ -5,24 +5,31 @@
 ####
 
 #' @title Cross-validation for oscar-fitted model objects over k-range
+#'
 #' @description Create a cross-validation matrix with the chosen goodness metric with n-folds. Based on the goodness metric, one ought to pick optimal cardinality (parameter 'k').
+#'
 #' @param fit oscar-model object
 #' @param fold Number of cross-validation folds, Default: 10
 #' @param seed Random seed for reproducibility with NULL indicating that it is not set, Default: NULL
+#' @param strata Should stratified cross-validation be used; separate values indicate balanced strata. Default: Unit vector, which will treat all observations equally.
 #' @param verb Level of verbosity with higher integer giving more information, Default: 0
-#' @return A matrix with goodness of fit over folds and k-values
-#' @details TODO
-#' @examples 
-#' \dontrun{
-#' if(interactive()){
-#'  #EXAMPLE1
-#'  }
-#' }
+#' @param ... Additional parameters passed to oscar-function
 #'
-#' @rdname cv
+#' @return A matrix with goodness of fit over folds and k-values
+#'
+#' @details A k-fold cross-validation is run by mimicking the parameters contained in the original oscar S4-object. This requires the original data at slots @x and @y.
+#*
+#' @examples 
+#' if(interactive()){
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_cv <- oscar.cv(fit, fold=10, seed=123)
+#'   fit_cv
+#' }
+#' @rdname oscar.cv
 #' @export 
 #' @importFrom survival coxph Surv
-cv.oscar <- function(
+oscar.cv <- function(
 	# oscar-object
 	fit,
 	# k-fold
@@ -181,22 +188,29 @@ cv.oscar <- function(
 }
 
 #' @title Bootstrapping for oscar-fitted model objects
+#'
 #' @description This model bootstraps the fitting of a given oscar object (re-fits the model for data that is equal in size but sampled with replacement). The output objects give insight into robustness of the oscar-coefficient path, as well as relative importance of model objects.
+#'
 #' @param fit oscar-model object
 #' @param bootstrap Number of bootstrapped datasets, Default: 100
 #' @param seed Random seed for reproducibility with NULL indicating that it is not set, Default: NULL
 #' @param verb Level of verbosity with higher integer giving more information, Default: 0
+#' @param ... Additional parameters passed to oscar-function
+#'
 #' @return 3-dimensional array with dimensions corresponding to k-steps, beta coefficients, and bootstrap runs
-#' @details TODO
+#'
+#' @details The function provides a fail-safe try-catch in an event of non-convergence of the model fitting procedure. This may occur for example if a bootstrapped data matrix has a column consist of a single value only over all observations.
+#'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
-#'  }
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_bs <- oscar.cv(fit, bootstrap = 20, seed = 123)
+#'   fit_bs
 #' }
-#' @rdname bs
+#' @rdname oscar.bs
 #' @export 
-bs.oscar <- function(
+oscar.bs <- function(
 	# oscar-object
 	fit,
 	# How many bootstrapped datasets to generate
@@ -222,7 +236,7 @@ bs.oscar <- function(
 			ftemp <- oscar::oscar(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, kmax = fit@kmax, print = verb, start = fit@start, verb = verb, ...)		
 		})
 		# Return successfully fitted model
-		if(!class(ftemp)=="try-error"){
+		if(!inherits(ftemp,"try-error")){
 			ftemp@bperk # Return bootstrapped beta per ks
 		}else{
 			NA # Model fitting issues, return NA-bperk
@@ -237,29 +251,36 @@ bs.oscar <- function(
 	dat
 }
 	
-#' @title FUNCTION_TITLE
-#' @description FUNCTION_DESCRIPTION
-#' @param bs PARAM_DESCRIPTION
-#' @return OUTPUT_DESCRIPTION
-#' @details DETAILS
+#' @title Reformatting bootstrap output for cardinality k rows
+#'
+#' @description The function reformats bootstrapped runs to a single long data.frame, where all bootstrapped runs are covered along with the choices for the variables at each cardinality 'k'.
+#'
+#' @param bs Bootstrapped list from oscar.bs
+#'
+#' @return Reformatted data.frame
+#'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
-#'  }
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_bs <- oscar.bs(fit, bootstrap = 20, seed = 123)
+#'   ll <- oscar.bs.k(fit_bs)
+#'   head(ll)
+#'   tail(ll)
 #' }
-#' @rdname bs.k
+#' @rdname oscar.bs.k
 #' @export
-bs.k <- function(
-	bs	# Bootstrapped list from bs.oscar
+oscar.bs.k <- function(
+	bs	# Bootstrapped list from oscar.bs
 ){
 	# Omit entries with try-errors
-	if(any(unlist(lapply(bs, FUN=class))=="try-error")){
-		bs <- bs[-which(unlist(lapply(bs, FUN=class))=="try-error")]
+	if(any(unlist(lapply(bs, FUN=function(x) { inherits(x, "try-error") })))){
+		bs <- bs[-which(unlist(lapply(bs, FUN=function(x) { inherits(x, "try-error") })))]
+		warning(paste("try-errors detected in some bootstrap runs; failed bootstrap count:", sum(unlist(lapply(bs, FUN=function(x) { inherits(x, "try-error") })))))
 	}
 	
 	# Choices of variables as a function of k
-	bs <- lapply(bs, FUN=function(z){
+	bs <- apply(bs, MARGIN=3, FUN=function(z){
 		apply(z, MARGIN=1, FUN=function(q){
 			colnames(z)[which(!q==0)]
 		})
@@ -284,26 +305,31 @@ bs.k <- function(
 }
 
 #' @title Create a sparse matrix representation of betas as a function of k
+#'
 #' @description Variable estimates (rows) as a function of cardinality (k, columns). Since a model can drop out variables in favor of two better ones as k increases, this sparse representation helps visualize which variables are included at what cardinality.
+#'
 #' @param fit oscar-model object
 #' @param kmax Create matrix until kmax-value; by default same as for fit object, but for high dimensional tasks one may wish to reduce this
+#'
 #' @return A sparse matrix of variables (rows) as a function of cardinality k (columns), where elements are the beta estimates.
+#'
 #' @details Uses sparseMatrix-class from Matrix-package
+#'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
-#'  }
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   oscar.sparsify(fit, kmax=5)
 #' }
 #'
-#' @rdname sparsify
-#' @export 
+#' @rdname oscar.sparsify
 #' @importFrom Matrix sparseMatrix
-sparsify <- function(
+#' @export 
+oscar.sparsify <- function(
 	fit,
 	kmax = fit@kmax
 ){
-	if(!class(fit) %in% c("oscar")){
+	if(!inherits(fit, "oscar")){
 		stop("'fit' should be a fit oscar object")
 	}
 	
@@ -329,31 +355,169 @@ sparsify <- function(
 }
 
 #' @title Binary logical indicator matrix representation of an oscar object's coefficients (zero vs. non-zero, i.e. feature inclusion)
+#'
 #' @description Create a sparse matrix with binary indicator 1 indicating that a coefficient was non-zero, and value 0 (or . in sparse matrix) indicating that a coefficient was zero (i.e. feature not included)
-#' @param Fit oscar-model object
+#'
+#' @param fit Fit oscar-model object
 #' @param kmax Create matrix until kmax-value; by default same as for fit object, but for high dimensional tasks one may wish to reduce this
+#'
 #' @return A binary logical indicator matrix of variables (rows) as a function of cardinality k (columns), where elements are binary indicators for 1 as non-zero and 0 as zero.
-#' @details TODO
+#'
+#' @details The matrix consists of TRUE/FALSE values, and is very similar to the oscar.sparsify, where the function provides estimate values in a sparse matrix format.
+#'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
-#'  #EXAMPLE1
-#'  }
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   oscar.binarize(fit, kmax=5)
 #' }
 #'
-#' @rdname binarize
+#' @rdname oscar.binarize
 #' @export 
-binarize <- function(
+oscar.binarize <- function(
 	fit, # oscar model object
 	kmax = fit@kmax # limit to kmax
 ){
-	if(!class(fit) %in% c("oscar")){
+	if(!inherits(fit, "oscar")){
 		stop("'fit' should be a fit oscar object")
 	}
 	
 	# Full sparse matrix representation
-	binmat <- apply(oscar::sparsify(fit), MARGIN=2, FUN=function(z) { ifelse(z==0, FALSE, TRUE) })
+	binmat <- apply(oscar::oscar.sparsify(fit), MARGIN=2, FUN=function(z) { ifelse(z==0, FALSE, TRUE) })
 	
 	binmat[,1:kmax]
 }
 
+#' @title Retrieve a set of pareto-optimal points for an oscar-model based on model goodness-of-fit or cross-validation
+#'
+#' @description This function retrieves the set of pareto optimal points for an oscar model fit in n-proportional time as cardinality axis is readily sorted. It is advisable to optimize model generalization (via cross-validation) rather than mere goodness-of-fit.
+#'
+#' @param fit Fit oscar S4-object
+#' @param cv A cross-validation matrix as produced by oscar.cv; if CV is not provided, then goodness-of-fit from fit object itself is used rather than cross-validation generalization metric
+#' @param xval The x-axis to construct pareto front based on; by default 'cost' vector for features/kits, can also be 'cardinality'/'k'
+#' @param weak If weak pareto-optimality is allowed; by default FALSE.
+#' @param summarize Function that summarizes over cross-validation folds; by default, this is the mean over the k-folds.
+#' 
+#' @return A data.frame containing points and indices at which pareto optimal points exist
+#'
+#' @examples 
+#' if(interactive()){
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   fit_cv <- oscar.cv(fit, fold=10)
+#'   oscar.pareto(fit, cv=fit_cv)
+#' }
+#'
+#' @rdname oscar.pareto
+#' @export
+oscar.pareto <- function(
+	fit,
+	cv,
+	xval = "cost",
+	weak = FALSE,
+	summarize = mean
+){
+	# 
+	if(xval == "cost"){
+		xs <- unlist(lapply(1:fit@kmax, FUN=function(k) { oscar::cost(fit, k) }))
+		ord <- order(xs)
+	}else if(xval %in% c("cardinality", "k")){
+		xs <- 1:fit@kmax
+		ord <- 1:fit@kmax
+	}else{
+		stop(paste("Invalid xval value:",xval))
+	}
+	# x-axis is always the cardinality k
+	# y-axis is either the goodness of fit or cross-validation performance. Latter is preferred.
+	# No CV provided
+	if(missing(cv)){
+		ys <- fit@goodness
+	# CV provided
+	}else{
+		# Apply summarization function over columns (the cardinality values), as rows are the folds in CV
+		ys <- apply(cv, MARGIN=2, FUN=summarize)
+	}
+	# For certain metrics, test in the other direction
+	if(fit@metric %in% c("mse")){
+		ys <- -ys
+	}
+	# Loop over the x-values in ascending order; first one is always a pareto point, so we'll store it
+	# Assuming x-axis is cardinality, we want lower cardinality models i.e. conservative in terms of their complexity
+	# xs are actually cardinalities starting from 1, so we can just use integer indices
+	df <- data.frame(y = ys, x = xs, ord = ord)
+	df <- df[ord,]	
+	ymax <- df$y[1]
+	paretos <- 1
+	for(i in 1:nrow(df)){
+		# Always testing for higher values, as the metrics in other direction were already flipped
+		if(df$y[i] > ymax){
+			paretos <- c(paretos, i)
+			ymax <- df$y[i]
+		}
+	}
+	# Result for {x,y,pareto yes/no}
+	res <- data.frame(k = df$x, y = df$y, paretofront = FALSE, ord = ord)
+	# Replace y with the actual model metric
+	names(res)[1:2] <- c(xval, fit@metric)
+	res[paretos,"paretofront"] <- TRUE
+	# If weak pareto-optimal points should be removed as per default
+	if(!weak){
+		res <- do.call("rbind", by(res, INDICES=res[,1], FUN=function(x) { x[which(!x[,2]==max(x[,2])),3]<-FALSE; x }))
+		rownames(res) <- NULL
+	}
+	# Return to original point ordering
+	res <- res[order(res$ord),]
+	res
+}
+
+#' @title Return total cost of model fits if the cost is not included in the oscar object
+#'
+#' @description If at least one measurement from a kit is included in the model, the kit cost is added.
+#'
+#' @param object Fit oscar S4-object 
+#'
+#' @return A vector for numeric values of total kit costs at different cardinalities.
+#'
+#' @examples 
+#' if(interactive()){
+#'   data(ex)
+#'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
+#'   oscar.cost.after(fit)
+#' }
+#'
+#' @rdname oscar.cost.after
+#' @export
+oscar.cost.after <- function(object){
+
+	# The values are readily stored in oscar S4-objects
+	kit.matrix <- object@k
+	cost.vector <- object@w
+
+  # Assume that the features are in the same order in x-matrix of oscar object and kit matrix
+  # Assume that the kits are in the same order in kit.matrix and cost.vector
+  
+  #Sanity checks
+  if(nrow(kit.matrix)!=length(cost.vector)){
+    stop("Number of kits in the kit matrix is different from the length of cost vector.")
+  }
+  if(ncol(kit.matrix)!=ncol(object@x)){
+    stop("Number of predictors in the kit.matrix differs from the number of predictors in x-matrix of oscar object.")
+  }
+  
+  costs <- c()
+  for(i in 1:object@kmax){ # Go through each cardinality
+    cost.tmp <-0
+    nzero <- which(object@bperk[i,]!=0)
+
+    for(j in 1:ncol(kit.matrix)){ #Go through kits
+      if(any(kit.matrix[j,nzero]!=0)){
+        cost.tmp <- cost.tmp+cost.vector[j] # Add kit price if any feature is incl.
+      }
+    }
+    costs<-c(costs,as.numeric(cost.tmp))
+  }
+  return(costs)
+}
+
+
+		

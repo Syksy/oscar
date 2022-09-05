@@ -33,8 +33,8 @@ setClass("oscar", # abbreviation
 		info = "character",	# Additional error messages, warnings or such reported e.g. during model fitting
 		kmax = "integer",	# Number of maximum k tested
 		metric = "character",	# Name of the goodness-of-fit metric used
-		solver = "character",  # Name of the solver used in the optimization (DBDC = 1 or LMBM = 2)
-		call = "call"	# Function call
+		solver = "character",  	# Name of the solver used in the optimization (DBDC = 1 or LMBM = 2)
+		call = "call"		# Function call
 	),	
 	prototype(
 		# Prototype base model object
@@ -76,29 +76,29 @@ setClass("oscar", # abbreviation
 #' @description This function fits an OSCAR model object to the provided training data with the desired model family.
 #' @param x Data matrix 'x'
 #' @param y Response vector/two-column matrix 'y' (see: family); number of rows equal to nrow(x)
-#' @param k Integer (0/1) kit indicator matrix; number of columns equal to ncol(x)
-#' @param w Kit cost weight vector w of length nrow(k)
-#' @param family Model family, should be one of: 'cox', 'mse'/'gaussian', or 'logistic, Default: 'gaussian'
+#' @param k Integer (0/1) kit indicator matrix; number of columns equal to ncol(x), Default: Unit diagonal indicator matrix
+#' @param w Kit cost weight vector w of length nrow(k), Default: Equal cost for all variables
+#' @param family Model family, should be one of: 'cox', 'mse'/'gaussian', or 'logistic, Default: 'cox'
+#' @param metric Goodness metric, Default(s): Concordance index for Cox, MSE for Gaussian, and AUC for logistic regression
 #' @param solver Solver used in the optimization, should be  1/'DBDC' or 2/'LMBM', Default: 1.
 #' @param verb Level of verbosity in R, Default: 1
 #' @param print Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}, Default: 3
-#' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality
-#' @param sanitize Whether input column names should be cleaned of potentially problematic symbols
-#' @param oscar.control Tuning parameters for the optimizers, see function oscar.control()
+#' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality, Default: ncol(x)
+#' @param sanitize Whether input column names should be cleaned of potentially problematic symbols, Default: TRUE
+#' @param control Tuning parameters for the optimizers, see function oscar.control(), Default: see ?oscar.control
 #' @param ... Additional parameters
 #'
 #' @return Fitted oscar-object
 #'
-#' @details DETAILS
+#' @details OSCAR utilizes the L0-pseudonorm, also known as the best subset selection, and makes use of a DC-formulation of the discrete feature selection task into a continuous one. Then an appropriate optimization algorithm is utilized to find optima at different cardinalities (k). The S4 model objects 'oscar' can then be passed on to various down-stream functions, such as oscar.pareto, oscar.cv, and oscar.bs, along with their supporting visualization functions.
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   data(ex)
 #'   fit <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family='cox')
 #'   fit
-#'  }
 #' }
 #' @rdname oscar
+#' @seealso \code{\link{oscar.cv}} \code{\link{oscar.bs}} \code{\link{oscar.pareto}} \code{\link{oscar.visu}} \code{\link{oscar.cv.visu}} \code{\link{oscar.bs.visu}} \code{\link{oscar.pareto.visu}} \code{\link{oscar.binplot}}
 #' @export 
 oscar <- function(
 	# Data matrix x
@@ -166,7 +166,7 @@ oscar <- function(
 	}
 
 	# Flip Cox event/time columns to correct column order
-	if(family == "cox" & any(class(y) %in% c("matrix", "array", "Surv"))){
+	if(family == "cox" & inherits(y, c("matrix", "array", "Surv"))){
 		# For Cox, we expect events to be second column
 		if(all(y[,1] %in% c(0,1))){
 			tmp <- y[,1]
@@ -189,7 +189,7 @@ oscar <- function(
 	# Check that input k is a matrix
 	if(!is.matrix(k)){
 		try(k <- as.matrix(k))
-		if(class(k) == "try-error") stop("Error casting kit matrix 'k' into a matrix; should consist only of indicator values 0 and 1")
+		if(inherits(k, "try-error")) stop("Error casting kit matrix 'k' into a matrix; should consist only of indicator values 0 and 1")
 	}
 	# Check that kit matrix k and predictor matrix x have equal number of columns (features)
 	if(family=="cox" && ncol(k)!=ncol(x)){
@@ -220,9 +220,9 @@ oscar <- function(
 	if(missing(kmax)){
 		kmax <- nrow(k)
 	# Sanity checking for user provided parameter
-	}else if(class(kmax) %in% "numeric"){
+	}else if(inherits(kmax, "numeric")){
 		kmax <- as.integer(kmax)
-	}else if(!any(class(kmax) %in% c("integer", "numeric"))){
+	}else if(!inherits(kmax, c("integer", "numeric"))){
 		stop("Provided kmax parameter ought to be of type 'integer' or 'numeric' cast to an integer")
 	}
 	# If kit weights are missing, assume them to be unit cost
@@ -530,10 +530,14 @@ oscar <- function(
 			# Use correct classification percent as the goodness measure
 			# ROC-AUC
 			if(metric=="auc"){
-			
+				# TODO
+				stop("ROC-AUC yet to be implemented.")
 			# Accuracy
 			}else if(metric=="accuracy"){
 				#obj@goodness <- unlist(lapply(1:kmax, FUN=function(z) { sum(as.numeric(y == (predict.glm(z, type="response")>0.5)))/length(y) }))
+				stop("TODO for the generic case")
+			}else{
+				stop(paste("Invalid goodness-of-fit metric:", metric))
 			}
 		}
 	})
@@ -575,13 +579,11 @@ oscar <- function(
 #'
 #' @return A list of sanity checked parameter values for the OSCAR optimizers.
 #'
-#' @details This function sanity checks and provides reasonable DBDC and LMBM optimization tuning parameters. User may override custom values, though sanity checks will prevent unreasonable values and replace them. The returned list of parameters can be provided for the 'control' parameter when fitting oscar-objects.
+#' @details This function sanity checks and provides reasonable DBDC ('Double Bundle method for nonsmooth DC optimization' as described in Joki et al. (2018) <doi:10.1137/16M1115733>) and LMBM ('Limited Memory Bundle Method for large-scale nonsmooth optimization' as presented in Haarala et al. (2004) <doi:10.1080/10556780410001689225>) optimization tuning parameters. User may override custom values, though sanity checks will prevent unreasonable values and replace them. The returned list of parameters can be provided for the 'control' parameter when fitting oscar-objects.
 #'
 #' @examples 
-#' \dontrun{
 #' if(interactive()){
 #'   oscar.control() # Return a list of default parameters
-#'  }
 #' }
 #' @rdname oscar.control
 #' @export 

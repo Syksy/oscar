@@ -1,9 +1,8 @@
+CXX_STD = CXX11
 RM = rm
 
 C_OBJS = oscarc.o
 FT_OBJS = dbdc.o plqdf1.o
-PKG_FCFLAGS = -fopenmp
-PKG_LIBS = -fopenmp
 
 all:
 	@$(MAKE) $(SHLIB)
@@ -13,9 +12,9 @@ clean:
 	$(RM) *.mod *.o  
 	echo Clean done
 
-PKG_FCFLAGS = -fopenmp
-PKG_LIBS = -fopenmp
-$(SHLIB): $(FT_OBJS) $(C_OBJS)
+USE_FC_TO_LINK =
+PKG_FFLAGS = $(SHLIB_OPENMP_FFLAGS)
+PKG_LIBS = $(SHLIB_OPENMP_FFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+$(SHLIB): $(C_OBJS) $(FT_OBJS)
 
 oscarc.c: dbdc.o
-

@@ -43,7 +43,7 @@ extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	const double inc = asReal(c);
 	const double inrdec = asReal(rdec);
 	const double inrinc = asReal(rinc);
-	const double ineps1 =asReal(eps1);
+	const double ineps1 = asReal(eps1);
 	const double ineps = asReal(eps);
 	const double incrittol = asReal(crittol);
 	const int innKitOnes= asInteger(nKitOnes);
@@ -57,7 +57,7 @@ extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	const double in_tolg2 = asInteger(tolg2);
 	const double in_eta = asInteger(eta);
 	const double in_epsL = asInteger(epsL);
-	
+
 	SEXP beta;
 	SEXP fperk;
 	SEXP betakits;
@@ -115,7 +115,7 @@ extern SEXP c_oscar_mse_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	const double ineps1 =asReal(eps1);
 	const double ineps = asReal(eps);
 	const double incrittol = asReal(crittol);
-	const int innKitOnes= asInteger(nKitOnes);
+	const int innKitOnes = asInteger(nKitOnes);
 	const int solver_id = asInteger(in_solver_id);
 	const int in_na = asInteger(na);
 	const int in_mcu = asInteger(mcu);
@@ -223,7 +223,7 @@ extern SEXP c_oscar_logistic_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, 
 	UNPROTECT(1);
 	UNPROTECT(1);
 	UNPROTECT(1);
-	
+
 	//return(beta);
 	return(res);
 }
