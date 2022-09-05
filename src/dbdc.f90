@@ -13706,6 +13706,7 @@ END MODULE lmbm_mod
                   !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
                   !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
                   !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
+                  !$OMP FIRSTPRIVATE(percentage, s_selection)                &
                   !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC, mc)                &  
                   !$OMP SHARED(points, f_points, mPrNum)               
                   
@@ -15911,7 +15912,6 @@ END MODULE lmbm_mod
                   !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
                   !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
                   !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
-                  !$OMP FIRSTPRIVATE(percentage, s_selection)                &  
                   !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC, mc)                &  
                   !$OMP SHARED(points, f_points, mPrNum)               
                   
