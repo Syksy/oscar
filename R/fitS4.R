@@ -121,6 +121,8 @@ oscar <- function(
 	kmax,    # Maximum tested k-values
 	sanitize = TRUE,	# Whether column (i.e. variable) names are cleaned of potentially hazardous symbols
 	# Tuning parameter generation for the optimizers DBDC and LMBM; default values are generated with oscar.control-function, and can be replaced in the list
+	percentage = 1, # Which percentage of possible starting points is used (1=100%)
+	in_selection = 1, # Which starting point selection strategy is used (1 or 2)
 	control,
 	# Additional parameters, passed on to oscar.control(...)
 	...
@@ -312,7 +314,9 @@ oscar <- function(
 			as.double(control$tolg), # Tolerance for the first termination criterion
 			as.double(control$tolg2), # Tolerance for the second termination criterion
 			as.double(control$eta), # Distance measure parameter
-			as.double(control$epsL) # Line search parameter
+			as.double(control$epsL), # Line search parameter
+			as.double(percentage), # Percentage of starting points used
+			as.integer(in_selection) # Starting point selection method
 		)
 		if(verb>=2){
 			print(res)
