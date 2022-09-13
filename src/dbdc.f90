@@ -2306,6 +2306,10 @@
                   b = 1.0_c_double / (set%nrecord0)
                   a = a * b
                   set%hav(2,i) = SQRT(a)               
+
+                  IF (a < 0.000001_c_double) THEN 
+                       set%hav(2,i) = 1.0_c_double               
+                  END IF 
                   
                END DO       
                
@@ -2819,6 +2823,7 @@
                 REAL(KIND=c_double), DIMENSION(set%nft0) :: mG        ! help variable                        
                 REAL(KIND=c_double) :: sum_r, apu, div                ! help variables
                 REAL(KIND=c_double) :: apu1, apu2                     ! help variables
+                REAL(KIND=c_double) :: apu_largest                    ! help variables
                 REAL(KIND=c_double) :: exp_term                       ! help variables
                 REAL(KIND=c_double) :: largest, reaali                ! help variables
                 INTEGER(KIND=c_int) :: time1, time2                   ! help variables                
@@ -3153,15 +3158,26 @@
                       DO j = 1, set%nft0
                           apu = apu + set%mX(j,1)*y(j)
                       END DO
-                       
+                      apu_largest = apu 
+                      
+                      DO i = 2, set%nrecord0
+                        apu = 0.0_c_double
+                        DO j = 1, set%nft0
+                           apu = apu + set%mX(j,i)*y(j)
+                        END DO                      
+                        IF (apu>=apu_largest) THEN 
+                          apu_largest = apu
+                        END IF
+                      END DO 
+                      
                       a = set%user_a 
-                      IF (ABS(apu)>=set%user_a) THEN 
-                        IF (ABS(apu)<(set%user_a+1.0_c_double)) THEN
+                      IF (ABS(apu_largest)>=set%user_a) THEN 
+                        IF (ABS(apu_largest)<(set%user_a+1.0_c_double)) THEN
                            a = set%user_a + 1.0_c_double
                         END IF
                       END IF    
                          
-                      IF (ABS(apu)>=a) THEN 
+                      IF (ABS(apu_largest)>=a) THEN 
                          use_log = .FALSE.            ! ln-exp-term cannot be used, instead maximum is used
                       END IF 
              
@@ -3513,6 +3529,7 @@
                 REAL(KIND=c_double) :: f                              ! the function value of the DC component f_1 at a point 'y'
                 REAL(KIND=c_double) :: a                              ! help variable
                 REAL(KIND=c_double) :: sum_r, apu, div                ! help variables
+                REAL(KIND=c_double) :: apu_largest                    ! help variables
                 REAL(KIND=c_double) :: largest, reaali                ! help variables
                 INTEGER(KIND=c_int) :: time1, time2                         ! help variables                
                 INTEGER(KIND=c_int) :: i, j, k, ind, d, place               ! help variable
@@ -3781,15 +3798,26 @@
                       DO j = 1, set%nft0
                           apu = apu + set%mX(j,1)*y(j)
                       END DO
-                       
+                      apu_largest = apu 
+                      
+                      DO i = 2, set%nrecord0
+                        apu = 0.0_c_double
+                        DO j = 1, set%nft0
+                           apu = apu + set%mX(j,i)*y(j)
+                        END DO                      
+                        IF (apu>=apu_largest) THEN 
+                          apu_largest = apu
+                        END IF
+                      END DO 
+                      
                       a = set%user_a 
-                      IF (ABS(apu)>=set%user_a) THEN 
-                        IF (ABS(apu)<(set%user_a+1.0_c_double)) THEN
+                      IF (ABS(apu_largest)>=set%user_a) THEN 
+                        IF (ABS(apu_largest)<(set%user_a+1.0_c_double)) THEN
                            a = set%user_a + 1.0_c_double
                         END IF
                       END IF    
                          
-                      IF (ABS(apu)>=a) THEN 
+                      IF (ABS(apu_largest)>=a) THEN 
                          use_log = .FALSE.            ! ln-exp-term cannot be used, instead maximum is used
                       END IF 
                        
@@ -4559,17 +4587,28 @@
                       DO j = 1, set%nft0
                           apu = apu + set%mX(j,1)*y(j)
                       END DO
-                       
+                      apu_largest = apu 
+                      
+                      DO i = 2, set%nrecord0
+                        apu = 0.0_c_double
+                        DO j = 1, set%nft0
+                           apu = apu + set%mX(j,i)*y(j)
+                        END DO                      
+                        IF (apu>=apu_largest) THEN 
+                          apu_largest = apu
+                        END IF
+                      END DO 
+                      
                       a = set%user_a 
-                      IF (ABS(apu)>=set%user_a) THEN 
-                        IF (ABS(apu)<(set%user_a+1.0_c_double)) THEN
+                      IF (ABS(apu_largest)>=set%user_a) THEN 
+                        IF (ABS(apu_largest)<(set%user_a+1.0_c_double)) THEN
                            a = set%user_a + 1.0_c_double
                         END IF
                       END IF    
                          
-                      IF (ABS(apu)>=a) THEN 
+                      IF (ABS(apu_largest)>=a) THEN 
                          use_log = .FALSE.            ! ln-exp-term cannot be used, instead maximum is used
-                      END IF 
+                      END IF  
                     
                       ! ln-exp-term in Cox model                      
                       IF (use_log) THEN
@@ -13317,6 +13356,7 @@ END MODULE lmbm_mod
                      max_threads=nkits
                  END IF     
                  !$ CALL OMP_SET_NUM_THREADS(max_threads)
+				 max_threads = 1 
                END IF
                
 !**
@@ -13601,25 +13641,25 @@ END MODULE lmbm_mod
               CALL set_k(info, nkits)           ! All kits can be used
 
 !**                      
-              IF (solver == 1) THEN   
-                  CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
-                            & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            & agg_used, stepsize_used, iprint_DBDC, 3_c_int, 3_c_int, user_n, &
-                            & info)            
-              ELSE IF (solver == 2) THEN 
+              ! IF (solver == 1) THEN   
+                  ! CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
+                            ! & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
+                            ! & agg_used, stepsize_used, iprint_DBDC, 3_c_int, 3_c_int, user_n, &
+                            ! & info)            
+              ! ELSE IF (solver == 2) THEN 
      
-                  CALL allocate_xn(user_n) 
-                  CALL init_LMBMinfo(problem1, info) 
-                  CALL init_x_var(x_0)          
-                  CALL set_rho_LMBM(0.0_c_double)                 
-                  CALL set_lambda_LMBM(0.0_c_double)  
-                  CALL cpu_time(LMBMstart)   ! Start CPU timining
-                  CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
-                  CALL copy_x_var(x_koe)
-                  CALL deallocate_LMBMinfo_cox()
-                  CALL deallocate_x_var() 
+                  ! CALL allocate_xn(user_n) 
+                  ! CALL init_LMBMinfo(problem1, info) 
+                  ! CALL init_x_var(x_0)          
+                  ! CALL set_rho_LMBM(0.0_c_double)                 
+                  ! CALL set_lambda_LMBM(0.0_c_double)  
+                  ! CALL cpu_time(LMBMstart)   ! Start CPU timining
+                  ! CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
+                  ! CALL copy_x_var(x_koe)
+                  ! CALL deallocate_LMBMinfo_cox()
+                  ! CALL deallocate_x_var() 
                        
-              END IF     
+              ! END IF     
 !**
 
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
@@ -13633,8 +13673,8 @@ END MODULE lmbm_mod
                
                IF ((iprint > 0) .OR. (iprint == -1)) THEN
                  WRITE(*,*) 
-                 WRITE(*,*) 'Value of Cox proportional hazard model without regularization:', f_solution_DBDC
-                 WRITE(*,*) 
+                ! WRITE(*,*) 'Value of Cox proportional hazard model without regularization:', f_solution_DBDC
+                ! WRITE(*,*) 
                END IF 
                
                IF (iprint==1) THEN
@@ -13706,7 +13746,7 @@ END MODULE lmbm_mod
                   !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
                   !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
                   !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
-                  !$OMP FIRSTPRIVATE(percentage, s_selection)                &
+                  !$OMP FIRSTPRIVATE(percentage, s_selection)                &  
                   !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC, mc)                &  
                   !$OMP SHARED(points, f_points, mPrNum)               
                   
@@ -18608,8 +18648,4 @@ END MODULE lmbm_mod
   
 
   END MODULE oscar
-
-
-
-
 
