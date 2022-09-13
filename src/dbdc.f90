@@ -4276,6 +4276,7 @@
                 REAL(KIND=c_double), DIMENSION(set%nft0) :: mG            ! help variable                        
                 REAL(KIND=c_double) :: sum_r, apu, div                ! help variables
                 REAL(KIND=c_double) :: exp_term                       ! help variables
+		REAL(KIND=c_double) :: apu_largest                    ! help variables
                 REAL(KIND=c_double) :: largest                        ! help variables
                 INTEGER(KIND=c_int) :: time1, time2                   ! help variables                
                 INTEGER(KIND=c_int) :: i, j, k, ind, d, place         ! help variable
