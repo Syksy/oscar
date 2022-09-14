@@ -1,0 +1,32 @@
+---
+title: "OSCAR benchmarking for various p and optimizer settings"
+output: rmarkdown::html_vignette
+date: "`r Sys.Date()`"
+vignette: >
+  %\VignetteIndexEntry{OSCAR benchmarking for various p and optimizer settings}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+\newcommand{\vertiii}[1]{{\left\vert\kern-0.25ex\left\vert\kern-0.25ex\left\vert #1 
+    \right\vert\kern-0.25ex\right\vert\kern-0.25ex\right\vert}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}      # vector \beta bolded
+\newcommand{\bg}{{\boldsymbol{g}}}           # vector g bolded
+\newcommand{\bW}{{\boldsymbol{W}}}           # vector W bolded
+\newcommand{\x}{{\boldsymbol{x}}}            # vector x bolded
+
+```{r, echo=FALSE}
+# For OSCAR methodology; 
+library(oscar)
+# For 'omics data from prostate cancer;
+library(curatedPCaData)
+```
+
+# OSCAR benchmarking
+
+
+# Session info
+
+```{r session}
+sessionInfo()
+```
+

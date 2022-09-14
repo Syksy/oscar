@@ -4,11 +4,11 @@
 #
 ###
 
-library(casso)
+library(oscar)
 data(ex)
 
 # Cox model fit for example data
-tmp <- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family="cox")
+tmp <- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, family="cox")
 
 png("tmp_visu.png", width=700, height=700)
 visu(tmp)
@@ -24,7 +24,7 @@ dev.off()
 
 # Bootstrapping
 
-bs.tmp <- bs.casso(tmp, bootstrap=10, seed=0)
+bs.tmp <- bs.oscar(tmp, bootstrap=10, seed=0)
 
 png("tmp_bs_visu.png", width=700, height=700)
 bs.visu(bs.tmp)
@@ -32,7 +32,7 @@ dev.off()
 
 # kmax
 
-tmp.kmax10<- casso(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, kmax=10, family="cox")
+tmp.kmax10<- oscar(x=ex_X, y=ex_Y, k=ex_K, w=ex_c, kmax=10, family="cox")
 
 png("tmp_kmax10_visu.png")
 visu(tmp.kmax10)
