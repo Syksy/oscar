@@ -1626,8 +1626,7 @@
           INTEGER(KIND=c_int) :: nk0               ! the k-norm used
 
           REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE :: mX          ! predictor matrix (column is an observation)
-          REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE :: mX_subp     ! predictor matrix in subproblem (column is an observation)
-          REAL(KIND=c_double), DIMENSION(:), ALLOCATABLE :: mC            ! kit costs
+          REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE :: mX_subp     ! predictor matrix in subproblem/reduced problem (column is an observation)
 
           INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: mY          ! observed times and labels matrix (column is an observation) in Cox's proportional hazard model  
           INTEGER(KIND=c_int), DIMENSION(:), ALLOCATABLE :: mY_log        ! vector of outputs in the logistic regression model
@@ -1642,10 +1641,13 @@
           INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: mUnique     ! The matrix containing first index for each failure time and the number of failures at that time
          
           REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE :: hav         ! The matrix containing means and standard deviations for features
+
+          REAL(KIND=c_double), DIMENSION(:), ALLOCATABLE :: mC            ! kit costs
         
           REAL(KIND=c_double) :: user_rho                              ! the penalization parameter in L0-norm     
           REAL(KIND=c_double) :: user_lambda                           ! the penalization parameter in L1-norm     
-          REAL(KIND=c_double) :: user_a                                ! the penalization parameter        
+          REAL(KIND=c_double) :: user_a                                ! the penalization parameter
+          
           INTEGER(KIND=c_int) :: nfail                                 ! The number of failures
           INTEGER(KIND=c_int) :: nfailunique                           ! The number of unique failures
 
@@ -1766,7 +1768,7 @@
            SUBROUTINE allocate_parameters_subp(set, in_b1, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
                                            & in_b, in_m_clarke, in_eps, in_crit_tol)
                !
-               ! Allocates the parameters used in DBDC method (SUBPROBLEM)
+               ! Allocates the parameters used in DBDC method (starting point SUBPROBLEM)
                !       
                !
                IMPLICIT NONE
@@ -1804,7 +1806,26 @@
            END SUBROUTINE allocate_parameters_subp
            !------------------------------------------------------------------------------------------    
            
-        
+           
+           !------------------------------------------------------------------------------------------
+           SUBROUTINE allocate_b2_reduced(set, in_b2)
+               !
+               ! Allocates the bundle B2 size used in DBDC method (REDUCED PROBLEM)
+               !       
+               !
+               IMPLICIT NONE
+               !**************************** NEEDED FROM USER *************************************
+               TYPE(set_info), INTENT(INOUT) :: set          ! The set of information 
+               
+               INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2               
+               !**************************** OTHER VARIABLES **************************************
+               
+               set%user_size_b2 = in_b2
+           
+           END SUBROUTINE allocate_b2_reduced
+           !------------------------------------------------------------------------------------------   
+
+ 
            !------------------------------------------------------------------------------------------
            SUBROUTINE allocate_data_cox(set, nft, nrecord, nkits, nk)
                !
@@ -1842,7 +1863,7 @@
            SUBROUTINE allocate_mY_cox_subp(set, in_mY, nrecord)
                !
                ! Allocates the SUBPROBLEM data matrice mY in Cox's proportiona hazard model
-               ! 
+               ! (Same in the starting point subproblem and reduced problem) 
                ! 
                ! NOTICE: * 'nft' is the number predictors in the considered subproblem linked to the kit 
                !         * 'nft' >= 1  
@@ -1879,7 +1900,7 @@
            !------------------------------------------------------------------------------------------
            SUBROUTINE allocate_mX_cox_subp(set, in_mX_subp, nrecord, nft)
                !
-               ! Allocates the SUBPROBLEM data matrice mX in Cox's proportiona hazard model
+               ! Allocates the starting point SUBPROBLEM data matrice mX in Cox's proportiona hazard model
                ! 
                ! 
                ! NOTICE: * 'nft' is the number predictors in the considered subproblem linked to the kit 
@@ -1912,6 +1933,56 @@
            END SUBROUTINE allocate_mX_cox_subp
            !------------------------------------------------------------------------------------------         
            
+
+           !------------------------------------------------------------------------------------------
+           SUBROUTINE allocate_mX_cox_reduced(set, in_mX_subp, in_mK_subp, nrecord, nft, nkits, nk)
+               !
+               ! Allocates the REDUCED PROBLEM data matrice mX in Cox's proportiona hazard model
+               ! 
+               ! 
+               ! NOTICE: * 'nft' is the number predictors in the considered subproblem linked to the kit 
+               !         * 'nft' >= 'nk' > 0
+               !         * 'nrecord' > 0  
+               !         * 'nkits' > 0               
+               !
+               IMPLICIT NONE
+               !**************************** NEEDED FROM USER *************************************
+               TYPE(set_info), INTENT(INOUT) :: set                       ! The set of information        
+
+               INTEGER(KIND=c_int), INTENT(IN) :: nft                     ! the dimension of the problem = the number of features in a predictor
+               INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
+                INTEGER(KIND=c_int), INTENT(IN) :: nkits                  ! the number of kits
+               INTEGER(KIND=c_int), INTENT(IN) :: nk                      ! defines the k-norm used
+               
+               REAL(KIND=c_double), DIMENSION(nft,nrecord) :: in_mX_subp  ! predictor matrix (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(nkits,nft) :: in_mK_subp    ! The kit marix (row is a kit)
+
+               !**************************** OTHER VARIABLES **************************************           
+               INTEGER :: i, j               
+               
+               set%nft0 = nft
+               set%nrecord0 = nrecord
+               set%nkits0 = nkits
+               set%nk0 = nk
+               
+               ALLOCATE(set%mX_subp(nft,nrecord),set%mK(nft,nkits), & 
+                        & set%k_norm_ind_k(nkits))  
+              
+               DO j = 1, nrecord
+                 DO i = 1, nft
+                     set%mX_subp(i,j) = in_mX_subp(i,j)
+                 END DO
+               END DO
+
+               DO i = 1, nkits
+                 DO j = 1, nft
+                    set%mK(j,i) = in_mK_subp(i,j)
+                 END DO
+               END DO   
+                                         
+           END SUBROUTINE allocate_mX_cox_reduced
+           !------------------------------------------------------------------------------------------   
+
 
            !------------------------------------------------------------------------------------------
            SUBROUTINE allocate_data_mse(set, nft, nrecord, nkits, nk)
@@ -1978,7 +2049,6 @@
            END SUBROUTINE allocate_data_log
            !------------------------------------------------------------------------------------------  
 
-
  
             !------------------------------------------------------------------------------------------
            SUBROUTINE allocate_matrices_cox(set, in_mX, in_mY, in_mK, in_mC,  & 
@@ -2036,8 +2106,7 @@
            
            END SUBROUTINE allocate_matrices_cox
            !------------------------------------------------------------------------------------------
-         
-           
+               
            
            !------------------------------------------------------------------------------------------
            SUBROUTINE allocate_matrices_mse(set, in_mX, in_mY, in_mK, in_mC,  & 
@@ -2090,7 +2159,6 @@
            
            END SUBROUTINE allocate_matrices_mse
            !------------------------------------------------------------------------------------------
- 
  
  
             !------------------------------------------------------------------------------------------
@@ -2146,7 +2214,6 @@
            !------------------------------------------------------------------------------------------
  
 
- 
            !------------------------------------------------------------------------------------------
            SUBROUTINE set_k(set, nk)
                !
@@ -2187,7 +2254,7 @@
            !------------------------------------------------------------------------------------------
            SUBROUTINE deallocate_data_sub_cox(set)
                !
-               ! Deallocates the data matrices for the Cox's proportional hazard model.           
+               ! Deallocates the data matrices for the starting point subproblem.           
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
@@ -2199,11 +2266,26 @@
            END SUBROUTINE deallocate_data_sub_cox
            !------------------------------------------------------------------------------------------
  
+ 
+           !------------------------------------------------------------------------------------------
+           SUBROUTINE deallocate_data_reduced_cox(set)
+               !
+               ! Deallocates the data matrices for the reduced problem 
+               IMPLICIT NONE
+               !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
+               !**************************** OTHER VARIABLES **************************************
+               
+               DEALLOCATE(set%mX_subp,set%mY,set%mFail,set%mUnique,set%mK,set%k_norm_ind_k)
+           
+           END SUBROUTINE deallocate_data_reduced_cox
+           !------------------------------------------------------------------------------------------
+
 
            !------------------------------------------------------------------------------------------
            SUBROUTINE deallocate_mY_cox_subp(set)
                !
-               ! Deallocates the data matrices for the Cox's proportional hazard model.           
+               ! Deallocates the data matrices related to mY in the SUBPROBLEM.           
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
@@ -2219,7 +2301,7 @@
            !------------------------------------------------------------------------------------------
            SUBROUTINE deallocate_mX_cox_subp(set)
                !
-               ! Deallocates the data matrices for the Cox's proportional hazard model.           
+               ! Deallocates the data matrices mX for the starting point subproblem    
                !
                IMPLICIT NONE
                !**************************** NEEDED FROM USER *************************************
@@ -2231,7 +2313,23 @@
            END SUBROUTINE deallocate_mX_cox_subp
            !------------------------------------------------------------------------------------------
            
-                    
+ 
+           !------------------------------------------------------------------------------------------
+           SUBROUTINE deallocate_mX_cox_reduced(set)
+               !
+               ! Deallocates the data matrices mX, mK and k_norm_ind_k for the reduced problem.           
+               !
+               IMPLICIT NONE
+               !**************************** NEEDED FROM USER *************************************
+                TYPE(set_info), INTENT(INOUT) :: set          ! The set of information              
+               !**************************** OTHER VARIABLES **************************************
+               
+               DEALLOCATE(set%mX_subp,set%mK,set%k_norm_ind_k)
+           
+           END SUBROUTINE deallocate_mX_cox_reduced
+           !------------------------------------------------------------------------------------------
+ 
+ 
            !------------------------------------------------------------------------------------------
            SUBROUTINE deallocate_data_mse(set)
                !
@@ -2296,7 +2394,7 @@
                   set%hav(1,i) = a * b
                
                END DO
-               
+                            
                ! deviaition input
                DO i = 1, set%nft0
                   a = 0.0_c_double
@@ -2306,12 +2404,14 @@
                   b = 1.0_c_double / (set%nrecord0)
                   a = a * b
                   set%hav(2,i) = SQRT(a)               
-
+                  
                   IF (a < 0.000001_c_double) THEN 
                        set%hav(2,i) = 1.0_c_double               
-                  END IF 
+                  END IF                  
                   
-               END DO       
+
+               END DO     
+            
                
                ! Scaling of input
                DO i = 1, set%nft0
@@ -2319,6 +2419,7 @@
                       set%mX(i,j) = (set%mX(i,j)-set%hav(1,i))/set%hav(2,i)
                   END DO
                END DO
+               
                
            END SUBROUTINE scaling_cox   
            !------------------------------------------------------------------------------------------        
@@ -2822,8 +2923,8 @@
                 REAL(KIND=c_double) :: a                              ! help variable
                 REAL(KIND=c_double), DIMENSION(set%nft0) :: mG        ! help variable                        
                 REAL(KIND=c_double) :: sum_r, apu, div                ! help variables
-                REAL(KIND=c_double) :: apu1, apu2                     ! help variables
                 REAL(KIND=c_double) :: apu_largest                    ! help variables
+                REAL(KIND=c_double) :: apu1, apu2                     ! help variables
                 REAL(KIND=c_double) :: exp_term                       ! help variables
                 REAL(KIND=c_double) :: largest, reaali                ! help variables
                 INTEGER(KIND=c_int) :: time1, time2                   ! help variables                
@@ -3177,7 +3278,7 @@
                         END IF
                       END IF    
                          
-                      IF (ABS(apu_largest)>=a) THEN 
+                      IF (ABS(apu)>=a) THEN 
                          use_log = .FALSE.            ! ln-exp-term cannot be used, instead maximum is used
                       END IF 
              
@@ -3497,7 +3598,147 @@
                      grad = grad * div
                       
                    !------------------------------------- 
- 
+
+                   !-------------------------------------
+                   !  REDUCED PROBLEM for Problem 3 (i.e. COX)
+                   !
+                   !               Problem 32                 
+                   !-------------------------------------
+                   CASE(32)  
+                      f = 0.0_c_double
+                      grad = 0.0_c_double
+                      
+                      ! linear term in Cox model
+                      ind = 1                       ! Position of the first failure at time t_1 in mFail
+                      DO i = 1, set%nfailunique
+                         d = set%mFail(2,ind)           ! the number of failures at time t_ind
+                         DO j = ind, ind+d-1
+                            place = set%mFail(1,j)      ! Position of the failure in mX_subp
+                            DO k = 1, set%nft0
+                               f = f - set%mX_subp(k,place)*y(k)
+                               grad(k) = grad(k) - set%mX_subp(k,place)
+                            END DO                          
+                         END DO
+                         ind = ind + d
+                      END DO
+                                          
+                      use_log = .TRUE.   
+                      apu = 0.0_c_double
+                      DO j = 1, set%nft0
+                          apu = apu + set%mX_subp(j,1)*y(j)
+                      END DO
+                      apu_largest = apu 
+                      
+                      DO i = 2, set%nrecord0
+                        apu = 0.0_c_double
+                        DO j = 1, set%nft0
+                           apu = apu + set%mX_subp(j,i)*y(j)
+                        END DO                      
+                        IF (apu>=apu_largest) THEN 
+                          apu_largest = apu
+                        END IF
+                      END DO 
+                      
+                      a = set%user_a 
+                      IF (ABS(apu_largest)>=set%user_a) THEN 
+                        IF (ABS(apu_largest)<(set%user_a+1.0_c_double)) THEN
+                           a = set%user_a + 1.0_c_double
+                        END IF
+                      END IF    
+                         
+                      IF (ABS(apu)>=a) THEN 
+                         use_log = .FALSE.            ! ln-exp-term cannot be used, instead maximum is used
+                      END IF 
+             
+                    ! ln-exp-term in Cox model                      
+                      IF (use_log) THEN
+
+       ! ------------------------------------------------------
+       ! Update: the way to calculate ln-exp-term is rewritten. 
+       ! This also seems to make calculations faster.
+                      
+                        mG = 0.0_c_double
+                        sum_r = 0.0_c_double 
+                      
+                        time2 = set%nrecord0
+       
+                        DO k = set%nfailunique, 1, -1         ! Unique fail times are looked through
+                        time1 = set%mUnique(1,k)              ! The index of first observation at the k:th failure time 
+                        d = set%mUnique(2,k)                  ! The number of failures for the k:th failure time  
+                        
+                        DO i = time1, time2
+                        apu = 0.0_c_double
+                        DO j = 1, set%nft0
+                          apu = apu + set%mX_subp(j,i)*y(j) 
+                        END DO     
+                        
+                        apu = Exp(apu)                  
+                        sum_r = sum_r + apu
+                   
+                        DO j = 1, set%nft0
+                           mG(j) = mG(j) + set%mX_subp(j,i) * apu                    
+                        END DO   
+                  
+                        END DO
+                        
+                        f = f + d * Log(sum_r)   
+                              
+                        div = 1.0_c_double / sum_r
+                        DO j = 1, set%nft0
+                          grad(j) = grad(j) + d * mG(j) * div
+                        END DO  
+
+                        time2 = time1-1       
+
+                        END DO 
+       ! ------------------------------------------------------
+
+             
+                      ELSE
+                      ! maximum term is used instead of ln-exp-term
+                      
+                      ind2 = set%nrecord0
+                      largest = -(10.0_c_double)**10
+                      DO k = set%nfailunique, 1, -1
+                         ind1 = set%mUnique(1,k)               ! The first failure at time t_k 
+                         d = set%mUnique(2,k)                  ! The number of failures for time t_k
+                         DO i = ind1, ind2
+                            apu = 0.0_c_double
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX_subp(j,i)*y(j) 
+                            END DO  
+                            IF (apu > largest) THEN         
+                                largest = apu
+                                DO j = 1, set%nft0
+                                 mG(j) =  set%mX_subp(j,i)                
+                                END DO      
+                            END IF                          
+                         END DO
+                 
+                         reaali = 1.0_c_double * set%nft0                                     
+                         f = f + d * largest + Log(reaali)
+                         DO j = 1, set%nft0
+                            grad(j) = grad(j) + d * mG(j) 
+                         END DO
+                        
+                         ind2 = ind1-1
+                     END DO
+                      
+                     END IF
+                      
+                     div = 2.0_c_double/set%nrecord0
+                     f = f * div
+                     grad = grad * div
+                      
+                     DO i = 1, set%nft0
+                       IF (y(i)>=0.0_c_double) THEN 
+                         f = f + set%user_rho * y(i)
+                         grad(i) = grad(i) + set%user_rho
+                       ELSE
+                         f = f - set%user_rho * y(i)
+                         grad(i) = grad(i) - set%user_rho
+                      END IF
+                     END DO 
  
                 END SELECT
                 
@@ -3531,9 +3772,9 @@
                 REAL(KIND=c_double) :: sum_r, apu, div                ! help variables
                 REAL(KIND=c_double) :: apu_largest                    ! help variables
                 REAL(KIND=c_double) :: largest, reaali                ! help variables
-                INTEGER(KIND=c_int) :: time1, time2                         ! help variables                
-                INTEGER(KIND=c_int) :: i, j, k, ind, d, place               ! help variable
-                INTEGER(KIND=c_int) :: ind1, ind2                           ! help variable
+                INTEGER(KIND=c_int) :: time1, time2                   ! help variables                
+                INTEGER(KIND=c_int) :: i, j, k, ind, d, place         ! help variable
+                INTEGER(KIND=c_int) :: ind1, ind2                     ! help variable
                 LOGICAL :: use_log
                 f = 0.0_c_double
                 SELECT CASE(problem1)
@@ -3792,7 +4033,7 @@
                          ind = ind + d
                                                  
                       END DO
-  
+                  
                       use_log = .TRUE.   
                       apu = 0.0_c_double
                       DO j = 1, set%nft0
@@ -3820,7 +4061,7 @@
                       IF (ABS(apu_largest)>=a) THEN 
                          use_log = .FALSE.            ! ln-exp-term cannot be used, instead maximum is used
                       END IF 
-                       
+ 
                       ! ln-exp-term in Cox model                      
                       IF (use_log) THEN
                       
@@ -3833,23 +4074,25 @@
                         sum_r = 0.0_c_double
        
                         DO k = set%nfailunique, 1, -1                ! Unique fail times are looked through
-                        time1 = set%mUnique(1,k)              ! The index of first observation at the k:th failure time 
-                        d = set%mUnique(2,k)                  ! The number of failures for the k:th failure time 
+                                                  
+                          time1 = set%mUnique(1,k)              ! The index of first observation at the k:th failure time 
+                          d = set%mUnique(2,k)                  ! The number of failures for the k:th failure time 
                         
-                        DO i = time1, time2 
-                        apu = 0.0_c_double
-                        DO j = 1, set%nft0
-                          apu = apu + set%mX(j,i)*y(j) 
-                        END DO     
-                        
-                        apu = Exp(apu)                  
-                        sum_r = sum_r + apu
-                       
-                        END DO
-                        
-                        f = f + d * Log(sum_r) 
+                          DO i = time1, time2 
+                           apu = 0.0_c_double
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX(j,i)*y(j) 
+                            END DO     
+                            
+                            apu = Exp(apu)                  
+                            
+                            sum_r = sum_r + apu
+                      
+                          END DO
+    
+                          f = f + d * Log(sum_r) 
 
-                        time2 = time1-1       
+                          time2 = time1-1       
 
                         END DO        
 
@@ -3872,7 +4115,7 @@
                                 largest = apu
                             END IF                          
                          END DO
-                                                        
+                                                                                
                          reaali = 1.0_c_double * set%nft0                                     
                          f = f + d * largest + Log(reaali)
                         
@@ -3880,7 +4123,7 @@
                      END DO
                       
                      END IF
-                      
+                                          
                      div = 2.0_c_double/set%nrecord0
                      f = f * div
                       
@@ -4072,6 +4315,131 @@
                      f = f * div
                         
                    !-------------------------------------     
+ 
+                   !-------------------------------------
+                   !  REDUCED PROBLEM for Problem 3 (i.e. COX)
+                   !
+                   !               Problem 32
+                   !-------------------------------------
+                    CASE(32)  
+                      f = 0.0_c_double
+                      
+                      ! linear term in Cox model
+                      ind = 1                       ! Position of the first failure at time t_1 in mFail
+                      DO i = 1, set%nfailunique
+                         d = set%mFail(2,ind)           ! the number of failures at time t_ind
+                         DO j = ind, ind+d-1
+                            place = set%mFail(1,j)      ! Position of the failure in mX_subp
+                            DO k = 1, set%nft0
+                               f = f - set%mX_subp(k,place)*y(k)
+                            END DO                          
+                         END DO
+                         ind = ind + d
+                                                 
+                      END DO
+                  
+                      use_log = .TRUE.   
+                      apu = 0.0_c_double
+                      DO j = 1, set%nft0
+                          apu = apu + set%mX_subp(j,1)*y(j)
+                      END DO
+                      apu_largest = apu 
+                      
+                      DO i = 2, set%nrecord0
+                        apu = 0.0_c_double
+                        DO j = 1, set%nft0
+                           apu = apu + set%mX_subp(j,i)*y(j)
+                        END DO                      
+                        IF (apu>=apu_largest) THEN 
+                          apu_largest = apu
+                        END IF
+                      END DO 
+                      
+                      a = set%user_a 
+                      IF (ABS(apu_largest)>=set%user_a) THEN 
+                        IF (ABS(apu_largest)<(set%user_a+1.0_c_double)) THEN
+                           a = set%user_a + 1.0_c_double
+                        END IF
+                      END IF    
+                         
+                      IF (ABS(apu_largest)>=a) THEN 
+                         use_log = .FALSE.            ! ln-exp-term cannot be used, instead maximum is used
+                      END IF 
+ 
+                      ! ln-exp-term in Cox model                      
+                      IF (use_log) THEN
+                      
+               ! ------------------------------------------------------
+               ! Update: the way to calculate ln-exp-term is rewritten. 
+               ! This also seems to make calculations faster.
+                             
+                        time2 = set%nrecord0
+       
+                        sum_r = 0.0_c_double
+       
+                        DO k = set%nfailunique, 1, -1                ! Unique fail times are looked through
+                                                  
+                          time1 = set%mUnique(1,k)              ! The index of first observation at the k:th failure time 
+                          d = set%mUnique(2,k)                  ! The number of failures for the k:th failure time 
+                        
+                          DO i = time1, time2 
+                           apu = 0.0_c_double
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX_subp(j,i)*y(j) 
+                            END DO     
+                            
+                            apu = Exp(apu)                  
+                            
+                            sum_r = sum_r + apu
+                      
+                          END DO
+    
+                          f = f + d * Log(sum_r) 
+
+                          time2 = time1-1       
+
+                        END DO        
+
+               ! ------------------------------------------------------
+
+                      ELSE
+                      ! maximum term is used instead of ln-exp-term
+                      
+                      ind2 = set%nrecord0
+                      largest = -(10.0_c_double)**10
+                      DO k = set%nfailunique, 1, -1
+                         ind1 = set%mUnique(1,k)               ! The first failure at time t_k 
+                         d = set%mUnique(2,k)                  ! The number of failures for time t_k
+                         DO i = ind1, ind2
+                            apu = 0.0_c_double
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX_subp(j,i)*y(j) 
+                            END DO  
+                            IF (apu > largest) THEN         
+                                largest = apu
+                            END IF                          
+                         END DO
+                                                                                
+                         reaali = 1.0_c_double * set%nft0                                     
+                         f = f + d * largest + Log(reaali)
+                        
+                         ind2 = ind1-1
+                     END DO
+                      
+                     END IF
+                                          
+                     div = 2.0_c_double/set%nrecord0
+                     f = f * div
+                      
+                     DO i = 1, set%nft0
+                       IF (y(i)>=0.0_c_double) THEN 
+                         f = f + set%user_rho * y(i)
+                       ELSE
+                         f = f - set%user_rho * y(i)
+                      END IF
+                     END DO 
+                                
+                   !-------------------------------------  
                    
                 END SELECT              
             
@@ -4238,8 +4606,34 @@
                       f = 0.0_c_double
                                          
                    !-------------------------------------   
-                   
-                
+
+
+                   !-------------------------------------
+                   !  REDUCED PROBLEM for Problem 3 (i.e. COX)
+                   !
+                   !               Problem 32
+                   !-------------------------------------                   
+                    CASE(32)  
+                      f = 0.0_c_double
+                      absterm_k = 0.0_c_double
+                      
+                      DO i = 1, set%nkits0
+                        DO j = 1, set%nft0
+                          absterm_k(i) = absterm_k(i) + set%mK(j,i) * ABS(y(j))
+                        END DO  
+                        absind_k(i) = i
+                      END DO
+                      
+                      CALL heapsort_k(absterm_k,absind_k,set%nk0)
+                      
+                      DO i = set%nkits0-set%nk0+1, set%nkits0
+                        f = f + absterm_k(i)
+                      END DO
+                      f = f * set%user_rho
+                      
+                      ! the indices of the k largest absolute values of beta for kit structure
+                      set%k_norm_ind_k = absind_k
+                      
                 END SELECT              
             
 
@@ -4275,8 +4669,8 @@
                 REAL(KIND=c_double) :: a                              ! help variable
                 REAL(KIND=c_double), DIMENSION(set%nft0) :: mG            ! help variable                        
                 REAL(KIND=c_double) :: sum_r, apu, div                ! help variables
+                REAL(KIND=c_double) :: apu_largest                    ! help variables
                 REAL(KIND=c_double) :: exp_term                       ! help variables
-		REAL(KIND=c_double) :: apu_largest                    ! help variables
                 REAL(KIND=c_double) :: largest                        ! help variables
                 INTEGER(KIND=c_int) :: time1, time2                   ! help variables                
                 INTEGER(KIND=c_int) :: i, j, k, ind, d, place         ! help variable
@@ -4609,7 +5003,7 @@
                          
                       IF (ABS(apu_largest)>=a) THEN 
                          use_log = .FALSE.            ! ln-exp-term cannot be used, instead maximum is used
-                      END IF  
+                      END IF 
                     
                       ! ln-exp-term in Cox model                      
                       IF (use_log) THEN
@@ -4893,7 +5287,143 @@
                      grad = grad * div
                                      
                    !-------------------------------------   
-                                          
+ 
+
+                   !-------------------------------------
+                   !  REDUCED PROBLEM for Problem 3 (i.e. COX)
+                   !
+                   !               Problem 32
+                   !------------------------------------- 
+                   CASE(32)              
+                      grad = 0.0_c_double
+                      
+                      ! linear term in Cox model
+                      ind = 1                       ! Position of the first failure at time t_1 in mFail
+                      DO i = 1, set%nfailunique
+                         d = set%mFail(2,ind)           ! the number of failures at time t_ind
+                         DO j = ind, ind+d-1
+                            place = set%mFail(1,j)      ! Position of the failure in mX_subp
+                            DO k = 1, set%nft0
+                               grad(k) = grad(k) - set%mX_subp(k,place)
+                            END DO                          
+                         END DO
+                         ind = ind + d
+                      END DO
+                      
+                      use_log = .TRUE.   
+                      apu = 0.0_c_double
+                      DO j = 1, set%nft0
+                          apu = apu + set%mX_subp(j,1)*y(j)
+                      END DO
+                      apu_largest = apu 
+                      
+                      DO i = 2, set%nrecord0
+                        apu = 0.0_c_double
+                        DO j = 1, set%nft0
+                           apu = apu + set%mX_subp(j,i)*y(j)
+                        END DO                      
+                        IF (apu>=apu_largest) THEN 
+                          apu_largest = apu
+                        END IF
+                      END DO 
+                      
+                      a = set%user_a 
+                      IF (ABS(apu_largest)>=set%user_a) THEN 
+                        IF (ABS(apu_largest)<(set%user_a+1.0_c_double)) THEN
+                           a = set%user_a + 1.0_c_double
+                        END IF
+                      END IF    
+                         
+                      IF (ABS(apu_largest)>=a) THEN 
+                         use_log = .FALSE.            ! ln-exp-term cannot be used, instead maximum is used
+                      END IF 
+                    
+                      ! ln-exp-term in Cox model                      
+                      IF (use_log) THEN
+                      
+                   ! ------------------------------------------------------
+                   ! Update: the way to calculate ln-exp-term is rewritten. 
+                   ! This also seems to make calculations faster.
+
+                        time2 = set%nrecord0
+                        
+                        mG = 0.0_c_double
+                        sum_r = 0.0_c_double 
+                        
+                        DO k = set%nfailunique, 1, -1            ! Unique fail times are looked through
+                        time1 = set%mUnique(1,k)              ! The index of first observation at the k:th failure time 
+                        d = set%mUnique(2,k)                  ! The number of failures for the k:th failure time  
+                        
+                        DO i = time1, time2
+                        apu = 0.0_c_double
+                        DO j = 1, set%nft0
+                          apu = apu + set%mX_subp(j,i)*y(j) 
+                        END DO     
+                        
+                        apu = Exp(apu)                  
+                        sum_r = sum_r + apu
+                   
+                        DO j = 1, set%nft0
+                           mG(j) = mG(j) + set%mX_subp(j,i) * apu                    
+                        END DO   
+                  
+                        END DO
+                               
+                        div = 1.0_c_double / sum_r
+                        DO j = 1, set%nft0
+                          grad(j) = grad(j) + d * mG(j) * div
+                        END DO       
+
+                        time2 = time1-1
+
+                        END DO         
+
+                   ! ------------------------------------------------------
+
+                      ELSE
+                      ! maximum term is used instead of ln-exp-term
+                      
+                      ind2 = set%nrecord0
+                      largest = -(10.0_c_double)**10
+                      DO k = set%nfailunique, 1, -1
+                         ind1 = set%mUnique(1,k)               ! The first failure at time t_k 
+                         d = set%mUnique(2,k)                  ! The number of failures for time t_k
+                         DO i = ind1, ind2
+                            apu = 0.0_c_double
+                            DO j = 1, set%nft0
+                              apu = apu + set%mX_subp(j,i)*y(j) 
+                            END DO  
+                            IF (apu > largest) THEN         
+                                largest = apu
+                                DO j = 1, set%nft0
+                                 mG(j) =  set%mX_subp(j,i)                
+                                END DO      
+                            END IF                          
+                         END DO
+                       
+                         DO j = 1, set%nft0
+                            grad(j) = grad(j) + d * mG(j) 
+                         END DO
+                        
+                         ind2 = ind1-1
+                     END DO
+                      
+                     END IF
+                      
+                     div = 2.0_c_double/set%nrecord0
+                     grad = grad * div
+                      
+                     DO i = 1, set%nft0
+                       IF (y(i)>=0.0_c_double) THEN 
+                         grad(i) = grad(i) + set%user_rho
+                       ELSE
+                         grad(i) = grad(i) - set%user_rho
+                      END IF
+                     END DO 
+               
+                   !-------------------------------------  
+
+                   
                 END SELECT                      
                 
            END FUNCTION subgradient_f1      
@@ -5032,7 +5562,29 @@
                       grad = 0.0_c_double
                                          
                    !-------------------------------------  
-                   
+ 
+                   !-------------------------------------
+                   !  REDUCED PROBLEM for Problem 3 (i.e. COX)
+                   !
+                   !               Problem 32
+                   !------------------------------------- 
+                    CASE(32)  
+                      grad = 0.0_c_double    
+
+                      DO i = set%nkits0-set%nk0+1, set%nkits0
+                        ind = set%k_norm_ind_k(i)
+                        DO j = 1, set%nft0
+                          IF(set%mK(j,ind)==1) THEN
+                            IF (y(j)>=0.0_c_double) THEN 
+                               grad(j) = grad(j) + set%user_rho
+                            ELSE
+                               grad(j) = grad(j) - set%user_rho                     
+                            END IF                            
+                          END IF  
+                        END DO
+                      END DO
+                      
+                      
                 END SELECT  
 
            END FUNCTION subgradient_f2
@@ -5228,9 +5780,11 @@
                 TYPE(set_info), INTENT(INOUT) :: set                  ! The set of information                  
                 !**************************** OTHER VARIABLES **************************************
                 REAL(KIND=c_double) :: fv1, fv2                       ! Function values of f1 and f2 at y
+                            
+                 fv1 = f1(set, y, nproblem, user_n) 
                  
-                 fv1 = f1(set, y, nproblem, user_n)    
                  fv2 = f2(set, y, nproblem, user_n)
+
                  f = fv1 - fv2
                                
            END SUBROUTINE func   
@@ -8409,7 +8963,7 @@ MODULE initializat  ! Initialization of parameters and x_var for LDGBM and LMBM
         !xmax  =    10.0_c_double     ! Maximum stepsize, 1 < XMAX (default = 1.5).
         xmax  =    100.0_c_double     ! Maximum stepsize, 1 < XMAX (default = 1.5).
 
-    INTEGER(KIND=c_int), SAVE :: n        ! The direction
+    INTEGER(KIND=c_int), SAVE :: n        ! The dimension
 
     INTEGER(KIND=c_int), SAVE :: nproblem ! The solved problem 
 
@@ -8550,6 +9104,20 @@ CONTAINS
         CALL deallocate_data_sub_cox(LMBM_set)
    
     END SUBROUTINE deallocate_LMBMinfo_subp_cox
+!-------------------------------------------------------------------------------------------
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
+
+!/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/   
+!------------------------------------------------------------------------------------------- 
+    SUBROUTINE deallocate_LMBMinfo_reduced_cox()  ! User supplied subroutine to deallocate data from LMBM_set
+
+        IMPLICIT NONE
+           
+        !***********************************************************************************
+   
+        CALL deallocate_data_reduced_cox(LMBM_set)
+   
+    END SUBROUTINE deallocate_LMBMinfo_reduced_cox
 !-------------------------------------------------------------------------------------------
 !/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/  
 
@@ -9226,6 +9794,7 @@ CONTAINS
 
           p = vdot(n,ga,d)
        END IF
+       
 
    
 ! Test on descent direction
@@ -9255,7 +9824,8 @@ CONTAINS
           EXIT iteration
        END IF
        
-       
+ 
+ 
 ! Stopping criterion
 
        nit = nit + 1
@@ -9280,6 +9850,7 @@ CONTAINS
              iflag = 1
           END IF
        END IF
+
 
 
        IF (nfe >= mfe) THEN
@@ -9321,7 +9892,7 @@ CONTAINS
 
 
 ! Correction
-    
+
        IF (-p < rho*gnorm .OR. icn == 1) THEN
 
           xnorm = xnorm + rho*gnorm
@@ -9387,7 +9958,8 @@ CONTAINS
           iterm = -1
           EXIT iteration
        END IF
-      
+ 
+ 
 
 ! Initial step size
 
@@ -9401,9 +9973,10 @@ CONTAINS
 
        theta = one
        IF (dnorm > lengthd) THEN
-          theta=lengthd/dnorm
+           theta=lengthd/dnorm
        END IF
-    
+       
+
        IF (inma == 2) THEN! Line search with directional derivatives which allows null steps
                  ! With this the global convergence can be guaranteed.
       
@@ -9418,7 +9991,7 @@ CONTAINS
             END IF
           
        IF (iterm /= 0) EXIT iteration
-       
+ 
        IF (tolf2 >= 0) THEN
           IF (ABS(fo-f) <= tolf2*small*MAX(ABS(f),ABS(fo),one) &
                .AND. iters == 1) THEN
@@ -10430,7 +11003,7 @@ SUBROUTINE nmlls(n,x,g,d,xo,t,fo,f,fold,p,alfn,tmin,dnorm,wk,theta,epsl,epsr,&
         CALL myf(n,x,f,iterm,nproblem)
         nfe = nfe + 1
         IF (iterm /= 0) RETURN
-
+        
 
         ! Null/descent step test (ITERS=0/1)
 
@@ -12865,15 +13438,15 @@ END MODULE lmbm_mod
           !--------------------------------------------------------------------------            
           ! ^^^^ START: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------    
-          ! SUBROUTINE oscar_cox(infileX, infileY, infileK, infileC,  &
-                              ! & nrow, ncol, nkits, &
-                              ! & beta, fperk, in_print, in_start, in_k_max, &
-                              ! & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-                              ! & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, & 
-                              ! & nKitOnes, betakits, solver_id, & 
-                              ! & in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
-                              ! & in_tolg, in_tolg2, in_eta, in_epsL, &
-                              ! & in_percentage, in_s_selection)    
+          !SUBROUTINE oscar_cox(infileX, infileY, infileK,  &
+          !                    & nrow, ncol, nkits, &
+          !                    & beta, fperk, in_print, in_start, in_k_max, &
+          !                    & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+          !                    & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, & 
+          !                    & nKitOnes, betakits, solver_id, & 
+          !                    & in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
+          !                    & in_tolg, in_tolg2, in_eta, in_epsL, &
+          !                    & in_percentage, in_s_selection)    
           !--------------------------------------------------------------------------            
           ! ^^^^ END: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------   
@@ -12984,7 +13557,7 @@ END MODULE lmbm_mod
             !--------------------------------------------------------------------------            
             ! ^^^^ START: If Fortran code is used without R-C-interface ^^^^
             !-------------------------------------------------------------------------- 
-             ! ! ** Inputs for OSCAR and DBDC **                   
+             ! ** Inputs for OSCAR and DBDC **                   
                ! INTEGER(KIND = c_int), INTENT(IN) :: nrow                  ! Number of rows in x (i.e. records)
                ! INTEGER(KIND = c_int), INTENT(IN) :: ncol                  ! Number of cols in x (i.e. features)
                ! INTEGER(KIND = c_int), INTENT(IN) :: nkits                 ! Number of kits for features
@@ -13035,7 +13608,6 @@ END MODULE lmbm_mod
              ! ! ** DATA **            
                ! CHARACTER(LEN=80), INTENT(IN) :: infileX         ! The name of "predictor matrix" file 
                ! CHARACTER(LEN=80), INTENT(IN) :: infileY         ! The name of "observed time and label" file 
-               ! CHARACTER(LEN=80), INTENT(IN) :: infileC         ! The name of "kit costs" file 
                ! CHARACTER(LEN=80), INTENT(IN) :: infileK         ! The name of "predictor matrix" file                  
             !--------------------------------------------------------------------------
             ! ^^^^ END: IF Fortran code is used without R-C-interface ^^^^          
@@ -13106,9 +13678,9 @@ END MODULE lmbm_mod
             
             ! ** OUTPUTs **
             
-               REAL(KIND = c_double), INTENT(OUT), DIMENSION(ncol*nkits)   :: beta       !Output variable for beta coefficients per k
-               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nkits)        :: fperk      !Output variable target function value per k     
-               INTEGER(KIND = c_int), INTENT(OUT), DIMENSION(nkits*nkits)  :: betakits   !!Output variable telling kits in beta coefficients per k     
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(ncol*in_k_max)   :: beta       !Output variable for beta coefficients per k
+               REAL(KIND = c_double), INTENT(OUT), DIMENSION(in_k_max)        :: fperk      !Output variable target function value per k     
+               INTEGER(KIND = c_int), INTENT(OUT), DIMENSION(nkits*in_k_max)  :: betakits   !!Output variable telling kits in beta coefficients per k   
            
            !***************************** LOCAL VARIABLES ************************************      
            
@@ -13126,7 +13698,7 @@ END MODULE lmbm_mod
                REAL(KIND=c_double), DIMENSION(nKitOnes) :: beta_solution    ! the solution vector beta obtained for the problem
 
                REAL(KIND=c_double), DIMENSION(nKitOnes,nkits) :: points     ! the beta_solutions for problem 3 for fixed k ('nkits' different starting points) 
-               REAL(KIND=c_double), DIMENSION(nkits) ::      f_points       ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
+               REAL(KIND=c_double), DIMENSION(nkits) ::        f_points     ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
                REAL(KIND=c_double), DIMENSION(nKitOnes) ::       x_koe      ! The solution to Cox's proportional hazard model without regularization
                REAL(KIND=c_double), DIMENSION(nKitOnes) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
                
@@ -13134,14 +13706,22 @@ END MODULE lmbm_mod
                REAL(KIND=c_double), DIMENSION(nkits) :: f_solution             ! the objective function valuse at the solution 'x_solution'
                REAL(KIND=c_double) :: f_solution_DBDC                          ! the f_solution obtained from DBDC method
                
-               REAL(KIND=c_double), DIMENSION(nrow,ncol) :: in_mX          ! predictor matrix (row is an observation)
-               INTEGER(KIND=c_int), DIMENSION(nrow,2) :: in_mY             ! observed times and labels matrix (row is an observation)  
-               INTEGER(KIND=c_int), DIMENSION(nkits,ncol) :: in_mK         ! kit matrix (row is a kit)
-               REAL(KIND=c_double), DIMENSION(nkits) :: in_mC              ! kit costs          
+               REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE :: in_mX               ! predictor matrix (row is an observation)
+               INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: in_mY               ! observed times and labels matrix (row is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: in_mK               ! kit matrix (row is a kit)
+               REAL(KIND=c_double), DIMENSION(:), ALLOCATABLE   :: in_mC               ! kit costs    
+               !REAL(KIND=c_double), DIMENSION(nrow,ncol) :: in_mX          ! predictor matrix (row is an observation)
+               !INTEGER(KIND=c_int), DIMENSION(nrow,2) :: in_mY             ! observed times and labels matrix (row is an observation)  
+               !INTEGER(KIND=c_int), DIMENSION(nkits,ncol) :: in_mK         ! kit matrix (row is a kit)
+               !REAL(KIND=c_double), DIMENSION(nkits) :: in_mC              ! kit costs          
        
-               REAL(KIND=c_double), DIMENSION(nKitOnes,nrow) :: mXt        ! predictor matrix (column is an observation)
-               INTEGER(KIND=c_int), DIMENSION(2,nrow) :: mYt               ! observed times and labels matrix (column is an observation)  
-               INTEGER(KIND=c_int), DIMENSION(nkits,nKitOnes) :: mK        ! Modified kit matrix (There is only one value one in each column)  
+               REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE :: mXt      ! predictor matrix (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: mYt      ! observed times and labels matrix (column is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: mK       ! Modified kit matrix (There is only one value one in each column)                 
+               !REAL(KIND=c_double), DIMENSION(nKitOnes,nrow) :: mXt        ! predictor matrix (column is an observation)
+               !INTEGER(KIND=c_int), DIMENSION(2,nrow) :: mYt               ! observed times and labels matrix (column is an observation)  
+               !INTEGER(KIND=c_int), DIMENSION(nkits,nKitOnes) :: mK        ! Modified kit matrix (There is only one value one in each column) 
+               
                REAL(KIND = c_double), DIMENSION(nKitOnes*nkits)  :: beta_nft   !Output variable for beta coefficients per k
 
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed       ! indices of kits in the previous solution 'x_ed'
@@ -13232,9 +13812,7 @@ END MODULE lmbm_mod
                LOGICAL :: scale_in_use          ! If .TRUE. data is scaled
                
                LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
- 
-               LOGICAL :: ed_sol_in_pen         ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
- 
+
                REAL(KIND=c_double) :: cost            ! The cost of solution beta
                REAL(KIND=c_double) :: small           ! The cost of solution beta
                
@@ -13246,8 +13824,8 @@ END MODULE lmbm_mod
 
                REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
               
-               REAL(KIND=c_double) :: percentage            ! Percentage of the used starting points 
-               INTEGER(KIND=c_int) :: s_selection           ! Starting point selection                               
+               REAL(KIND=c_double) :: percentage              ! Percentage of the used starting points 
+               INTEGER(KIND=c_int) :: s_selection             ! Starting point selection                               
                
                INTEGER(KIND=c_int) :: problem1              ! The DC component f1 
                INTEGER(KIND=c_int) :: problem2              ! The DC component f2 
@@ -13268,15 +13846,7 @@ END MODULE lmbm_mod
                INTEGER(KIND=c_int) :: help_counter
                INTEGER(KIND=c_int) :: kit_num_ed   ! The number of kits in the current and previous solutions
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2
-               INTEGER(KIND=c_int) :: l, l2
-               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
-
-               
-               INTEGER(KIND=c_int), DIMENSION(nkits) :: mPrNum   ! The number of problems for threads
-               INTEGER(KIND=c_int) :: tread_num                  ! The number of thread
-               INTEGER(KIND=c_int) :: jaannos                    ! The residue in division
-               INTEGER(KIND=c_int) :: kokoosa                    ! The integer obtained in division
-               INTEGER(KIND=c_int) :: startind, j3               ! Help variables
+               INTEGER(KIND=c_int) :: l, l2, j3
 
                REAL(KIND=c_double) :: elapsed_time                  ! elapsed 'clock' time in seconds
                INTEGER(KIND=c_int) :: clock_start, clock_end, clock_rate  ! start and finish 'clock' time 
@@ -13317,80 +13887,70 @@ END MODULE lmbm_mod
                CALL SYSTEM_CLOCK(COUNT_RATE=clock_rate) ! Find the rate
                CALL SYSTEM_CLOCK(COUNT=clock_start)     ! Start timing 'clock' time     
 
-
+               
+              !------------------------------------
+              ! Initialization of outputs
+              beta = 0.0_c_double
+              fperk = 0.0_c_double
+              betakits = 0
+              
+              !-----------------------------------
               ! The solver is defined/selected
+              !-----------------------------------            
                IF (solver_id == 1) THEN
                    solver = 1 !DBDC
                ELSE IF (solver_id == 2) THEN
                    solver = 2 !LMBM
-               ! Initial maximum number of stored corrections
+                  !Initial maximum number of stored corrections
                    IF (in_mcinit > 0) THEN
                        mc = in_mcinit
                    ELSE
                        mc = 0
                    END IF       
                ELSE 
-                   solver = 1 !DBDC              
-               END IF
-
-               s_selection = in_s_selection
-               IF (s_selection > 2) THEN 
-                  s_selection = 1 
-               ELSE IF (s_selection < 1) THEN
-                  s_selection = 1 
+                   solver = 2 !LMBM              
                END IF
                
+              !-----------------------------------
+              ! The starting point selection procedure
+              !-----------------------------------            
+               s_selection = in_s_selection
+               IF (s_selection > 4) THEN 
+                  s_selection = 3 
+               ELSE IF (s_selection < 0) THEN
+                  s_selection = 3 
+               END IF
+
+              !-----------------------------------                             
+              !The used percentage of starting points
+              !-----------------------------------            
                percentage = in_percentage              
                IF (percentage > 1) THEN 
                   percentage = 1.0_c_double 
-               ELSE IF (s_selection <= 0) THEN
-                  percentage = 0.01_c_double 
+               ELSE IF (percentage <= 0) THEN
+                  percentage = 0.001_c_double 
                END IF       
 
-               ! --- --- --- Needed in OpenMP when we use PARALLELLIZATION --- --- ---   
-               
-               ! Maximum number of possible treads in parallellization
-               IF(solver==1) THEN
-                  max_threads = 1 ! Failsafe in case openMP is not available
-                 !$ max_threads = OMP_GET_MAX_THREADS()
-                 IF(max_threads > nkits) THEN    ! If more threads available, use only a necessary number of threads
-                     max_threads=nkits
-                 END IF     
-                 !$ CALL OMP_SET_NUM_THREADS(max_threads)
-				 max_threads = 1 
-               END IF
-               
-!**
-               IF (solver == 2) THEN  !No parallellization with LMBM can be used
-                  max_threads = 1
-               END If    
-!**                            
-               tread_num = max_threads
-      
-
-!               WRITE(*,*) 'The number of threads', max_threads             
-               ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
-
+                    
                ! The initialization of parametrs used in DBDC methods
                CALL allocate_parameters(info, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
                                            & in_b, in_m_clarke, in_eps, in_crit_tol)
 
-!**                                          
+                                         
                ! The initialization of parameters used in LMBM method
                CALL init_par(in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, in_tolg, &
                                 & in_tolg2, in_eta, in_epsL)
-!**
-               info%user_rho = 0.0_c_double
+
+
+               info%user_rho = 0.0_c_double     
       
-      
-               ! Set the number of rows and columns inside Fortran  + kits           
+               ! Set the number of rows and columns inside Fortran + kits           
                nrecord = nrow
                nft = nKitOnes
                nk = nkits
             
                ! The maximum number of kits in the loop
-               nk_max = min(nk,in_k_max)         ! Cannot be greater than nk
-               nk_max = max(1,nk_max)            ! Cannot be smaller than 1               
+               nk_max = in_k_max                                
               
                start = in_start       ! Starting point generation procedure
                iprint = in_print      ! Print option
@@ -13404,7 +13964,11 @@ END MODULE lmbm_mod
                IF ((start> 4) .OR. (start <= 0)) THEN
                   start = 2_c_int
                END IF              
-               
+ 
+               IF (s_selection > 0) THEN 
+                   start = 2_c_int
+               END IF
+ 
                ! If start = 5 then start_max is the number of starting points in each L0-norm problem
                start_max = 5_c_int
                
@@ -13427,6 +13991,7 @@ END MODULE lmbm_mod
                IF (solver==2) THEN  !LMBM  
                    mrho = (/0.5_c_double, 1.0_c_double, 2.0_c_double, &
                          & 5.0_c_double, 10.0_c_double, 20.0_c_double, 50.0_c_double, 100.0_c_double /) 
+                  
                END IF
 !**
 
@@ -13434,33 +13999,10 @@ END MODULE lmbm_mod
                 problem1 = 3_c_int
                 problem2 = 3_c_int                
                
-                user_n = nft   ! The dimension of the problem
-
-                ed_sol_in_pen = .FALSE.
-               !ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem      
+                user_n = nft   ! The dimension of the problem   
 
                 tol_zero = (10.0_c_double)**(-6)               
-                
-       
-!               IF ( (iprint > 0) .OR. (iprint == -1) ) THEN 
-!                 IF (ed_sol_in_pen) THEN 
-!                  WRITE(*,*) 'When the penalized problems is solved we utilize&
-!                              & the previous solution as a starting point.'
-!                 ELSE
-!                  WRITE(*,*) 'When the penalized problems is solved we do NOT utilize&
-!                              & the previous solution as a starting point.'
-!                 END IF
-!                
-!                 IF ( start > 0 ) THEN 
-!                  WRITE(*,*) 'Problems are solved from smallest to largest.'
-!                 ELSE   
-!                  WRITE(*,*) 'Problems are solved from largest to smallest.'
-!                 END IF
-!               
-!                 WRITE(*,*) 'Starting points are generated with the procedure', start 
-!                 WRITE(*,*) 'The rho values in the penalized problem:', mrho
-!               
-!               END IF                 
+                       
                
               !--------------------------------------------------------------------------------------         
           
@@ -13468,6 +14010,9 @@ END MODULE lmbm_mod
         
                   x_0 = 0.0_c_double
                  
+               ! Allocation of temporary data matrices   
+                 ALLOCATE(in_mX(nrow,ncol),in_mY(nrow,2),in_mK(nkits,ncol),in_mC(nkits))
+             
               !---------------------------------------------------------------------------
               !                       POPULATING DATA MATRICES
               !---------------------------------------------------------------------------
@@ -13477,7 +14022,7 @@ END MODULE lmbm_mod
               !---------------------------------------------------------------------------
               !                       READING DATA MATRICES
               !---------------------------------------------------------------------------
-          
+  
                 ! OPEN(78,file=infileX,status='old',form='formatted')
                 ! DO i=1,nrecord
                    ! READ(78,*) (in_mX(i,j),j=1,ncol)
@@ -13495,12 +14040,9 @@ END MODULE lmbm_mod
                    ! READ(78,*) (in_mK(i,j),j=1,ncol)
                 ! END DO
                 ! CLOSE(78)
-            
-                ! OPEN(78,file=infileC,status='old',form='formatted')
-                ! DO i=1,nkits
-                   ! READ(78,*) in_mC(i)
-                ! END DO
-                ! CLOSE(78)  
+                           
+                ! in_mC = 1.0_c_double
+
                 
               !--------------------------------------------------------------------------
               ! ^^^^ END: IF Fortran code is used without R-C-interface ^^^^
@@ -13572,9 +14114,14 @@ END MODULE lmbm_mod
                    mTimesInd(i) = i
                END DO        
             
-               CALL heapsort_ind(mTimes,mTimesInd)      
+               CALL heapsort_ind(mTimes,mTimesInd)   
 
-               
+!****
+!                WRITE(*,*) 'osa02'
+
+             ! Allocation of temporary data matrices     
+               ALLOCATE(mXt(nKitOnes,nrow),mYt(2,nrow),mK(nkits,nKitOnes))
+              
                !Transpose of matrix mX
                DO i = 1, nrecord
                  ind = mTimesInd(i)
@@ -13586,6 +14133,8 @@ END MODULE lmbm_mod
                    END DO   
                  END DO
                END DO
+               
+!                WRITE(*,*) 'osa03'
             
                !Transpose of matrix mY          
                DO i = 1, nrecord
@@ -13594,10 +14143,15 @@ END MODULE lmbm_mod
                     mYt(j,i) = in_mY(ind,j)
                  END DO
                END DO    
+               
+!                WRITE(*,*) 'osa04'
 
                ! Alters the kit matrix
                mK = 0_c_int
                l2 = 1_c_int
+               
+!                WRITE(*,*) 'osa041'
+               
                DO j = 1, ncol 
                   DO i = 1, nk
                      IF (in_mK(i,j)==1_c_int) THEN  
@@ -13606,8 +14160,13 @@ END MODULE lmbm_mod
                      END IF
                   END DO               
                END DO 
+                     
+!              WRITE(*,*) 'osa0'
                
-      
+             ! The deallocation of the temporary data  
+               DEALLOCATE(in_mX, in_mY, in_mK)
+
+         
                ! Allocation of sizes of matrices in function.f95
                CALL allocate_data_cox(info,nft,nrecord,nk,user_n)   
                            
@@ -13627,11 +14186,9 @@ END MODULE lmbm_mod
                   CALL scaling_matrix_cox(info, mXt)
                   
               END IF  
-
               
               ! The initialization of beta vector
               beta_nft = 0.0_c_double
-              beta = 0.0_c_double
               
               ! The print in DBDC method is supressed
               iprint_DBDC = 0
@@ -13640,44 +14197,43 @@ END MODULE lmbm_mod
               ! The best beta_solution for Cox's proportional hazard model without regularization/penalization                    
                       
               CALL set_k(info, nkits)           ! All kits can be used
-
-!**                      
-              ! IF (solver == 1) THEN   
-                  ! CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
-                            ! & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
-                            ! & agg_used, stepsize_used, iprint_DBDC, 3_c_int, 3_c_int, user_n, &
-                            ! & info)            
-              ! ELSE IF (solver == 2) THEN 
-     
-                  ! CALL allocate_xn(user_n) 
-                  ! CALL init_LMBMinfo(problem1, info) 
-                  ! CALL init_x_var(x_0)          
-                  ! CALL set_rho_LMBM(0.0_c_double)                 
-                  ! CALL set_lambda_LMBM(0.0_c_double)  
-                  ! CALL cpu_time(LMBMstart)   ! Start CPU timining
-                  ! CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
-                  ! CALL copy_x_var(x_koe)
-                  ! CALL deallocate_LMBMinfo_cox()
-                  ! CALL deallocate_x_var() 
-                       
-              ! END IF     
-!**
+              
+              
+              !--------------------------------------------------------------------------------------------------
+              ! The solution to the COX's proportional hazards model with all kits, i.e. without regularization
+              ! Used only when s_selection = 0 (i.e., corresponds the only option in the previous version of OSCAR)
+              IF (s_selection == 0) THEN      
+              
+                  IF (solver == 1) THEN  ! DBDC 
+                      CALL DBDC_algorithm( f_solution_DBDC, x_koe, x_0, 0.0_c_double, 0.0_c_double, &
+                                & mit, mrounds, mrounds_clarke, termination, counter, CPUtime,  &
+                                & agg_used, stepsize_used, iprint_DBDC, 3_c_int, 3_c_int, user_n, &
+                                & info)      
+                                
+                  ELSE IF (solver == 2) THEN  ! LMBM
+         
+                      CALL allocate_xn(user_n)                
+                      CALL init_LMBMinfo(problem1, info)                  
+                      CALL init_x_var(x_0)          
+                      CALL set_rho_LMBM(0.0_c_double)                 
+                      CALL set_lambda_LMBM(0.0_c_double)     
+                      CALL cpu_time(LMBMstart)   ! Start CPU timining                 
+                      CALL lmbm(mc,f_solution_DBDC,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
+                      CALL copy_x_var(x_koe)
+                      CALL deallocate_LMBMinfo_cox()
+                      CALL deallocate_x_var() 
+                           
+                  END IF     
+              END IF              
 
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
-              !         * x_koe is utilized in formation of starting points 
+              !         * x_koe is utilized in formation of starting points in strategy s_selection=0
 
               !-------------------------------------------------------------------------------------------------              
               
-              !!!!x_ed = 0.01_c_double    ! We initialize the previous solution, since we do not have a value for it 
                x_ed = 0.0_c_double    ! We initialize the previous solution, since we do not have a value for it 
                
-               
-               IF ((iprint > 0) .OR. (iprint == -1)) THEN
-                 WRITE(*,*) 
-                ! WRITE(*,*) 'Value of Cox proportional hazard model without regularization:', f_solution_DBDC
-                ! WRITE(*,*) 
-               END IF 
-               
+                           
                IF (iprint==1) THEN
                  WRITE(*,*) '------------------------------------------------------------------------------------------'
                  WRITE(*,*)  '  f  ', '  zero_elements  ', '  nonzero_elements  ', '  cost  ', '  num_kits  ', 'kits'   ! Prints the solution to the file 'ratkaisu.txt'
@@ -13712,75 +14268,47 @@ END MODULE lmbm_mod
                  !---------------------------------------------------------------------------------------------
                  ! Solves in a loop all L0-norm problems with the fixed number of k=1,..., nk_max of kits    
                  !---------------------------------------------------------------------------------------------
-                 DO k = 1, nk_max              ! In this loop we calculate the solution for problem 3 wiht L0-norm such that the number of kits varies from 1 to nk_max
+                 DO k = 1, nk_max                  ! In this loop we calculate the solution for problem 3 with L0-norm such that the number of kits varies from 1 to nk_max
+                                   
+                    CALL set_k(info, k)            ! The number of nonzero kits is fixed 
                   
-                 IF (iprint>=2 .OR. iprint == -1) THEN
-                      WRITE(*,*) '-------------------------------------' 
-                      WRITE(*,*) 'PROBLEM with', k, 'kits' 
-                      
-                 END IF
+                  !-------------------------------------------------------------------------------------------------------
+                  ! Starting points for the problem with fixed number of k kits all looked through in the next subroutine
+                  !-------------------------------------------------------------------------------------------------------
+              
+!******                  
+!                  WRITE(*,*) 'osa1'
                   
-                  CALL set_k(info, k)            ! The number of nonzero kits is fixed 
-                  
-                  jaannos = MOD(nk,tread_num)    ! The residue in the division
-                  kokoosa = nk/tread_num         ! The integer part obtained from the division
-                  
-                  mPrNum = kokoosa               ! The initialization of the number of problems for threads
-    
-                  IF(jaannos > 0) THEN
-                     DO i = 1, jaannos              ! We increase the number of problems with one for specific threads
-                       mPrNum(i) = mPrNum(i)+1                  
-                     END DO
-                  END IF
-
-                  !----------------------------------------------------------
-                  ! Starting points for problem with fixed number of k kits 
-                  !----------------------------------------------------------
-                  
-                  !$OMP PARALLEL DO PRIVATE(x_solution, f_solution, i) & 
-                  !$OMP FIRSTPRIVATE(x_ed, x_koe, kits_beta_ed, kit_num_ed)  &             
-                  !$OMP FIRSTPRIVATE(small, k, iprint, mrho)                 &  
-                  !$OMP FIRSTPRIVATE(mit, mrounds, mrounds_clarke)           &    
-                  !$OMP FIRSTPRIVATE(agg_used, stepsize_used)                &
-                  !$OMP FIRSTPRIVATE(problem1, problem2)                     &  
-                  !$OMP FIRSTPRIVATE(in_b1, in_b2, in_m, in_c, in_r_dec)     &  
-                  !$OMP FIRSTPRIVATE(in_r_inc, in_eps1, in_b, in_m_clarke)   &  
-                  !$OMP FIRSTPRIVATE(in_eps, in_crit_tol)                    &  
-                  !$OMP FIRSTPRIVATE(nft, nrecord, nk, user_n)               &  
-                  !$OMP FIRSTPRIVATE(percentage, s_selection)                &  
-                  !$OMP FIRSTPRIVATE(mXt, mYt, mK, in_mC, mc)                &  
-                  !$OMP SHARED(points, f_points, mPrNum)               
-                  
-                   DO i = 1, tread_num              ! Different starting points in threads are looked through to solve the problem 3 with fixed number of nonzero kits                   
-                    
-                      CALL solution_with_k_kits_cox_v2(x_solution, f_solution, k, i, small, &
-                                               & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
-                                               & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
-                                               & agg_used, stepsize_used, user_n, problem1, problem2, &
-                                               & mXt, mYt, mK, in_mC, nrecord,  & 
-                                               & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, mc, solver, & 
-                                               & percentage, s_selection)
-                    
-                    ! Storing of the obtained solutions and the corresponding objective values
-                     !$OMP CRITICAL 
-                     startind = 1
-                     IF (i > 1) THEN    
-                       DO j3 = 1, i-1
-                          startind = startind + mPrNum(j3)
-                       END DO   
-                     END IF                        
-                        
-                     DO j3 = 1, mPrNum(i)   
-                        DO j = 1, user_n
-                            points(j,startind+(j3-1)) = x_solution(j,startind+(j3-1))
-                        END DO                            
-                         f_points(startind+j3-1) = f_solution(startind+j3-1)
-                     END DO  
-                     !$OMP END CRITICAL                  
+                    IF (s_selection > 0) THEN  
                    
-                   END DO          
-                  !$OMP END PARALLEL DO   
+                     CALL solution_with_k_kits_cox_v2(x_solution, f_solution, k, small, &
+                                               & x_ed, kit_num_ed, kits_beta_ed, &
+                                               & nk, iprint, mrho, mit, mrounds, mrounds_clarke, &
+                                               & agg_used, stepsize_used, user_n, problem1, problem2, &
+                                               & info, mXt, mYt, mK, nrecord,  & 
+                                               & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                               & in_b, in_m_clarke, in_eps, in_crit_tol, mc, solver, & 
+                                               & percentage, s_selection)                                                
+                    
+                    ELSE ! The only option used in the previous version of OSCAR (s_selection = 0)
+
+                   !  CALL solution_with_k_kits_cox(x_solution, f_solution, k, small, &
+                   !                            & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
+                   !                            & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
+                   !                            & agg_used, stepsize_used, user_n, problem1, problem2, &
+                   !                            & info, mc, solver)                                              
+                    
+                    END IF
+                    
+                    ! Storing of the obtained solutions and the corresponding objective values                               
+                     DO j3 = 1, nk   
+                        DO j = 1, user_n
+                            points(j,j3) = x_solution(j,j3)
+                        END DO                            
+                         f_points(j3) = f_solution(j3)
+                     END DO  
+  
+!                   WRITE(*,*) 'osa2'
                    
                    min_ind = 0
                    IF (start == 1) THEN 
@@ -13840,7 +14368,7 @@ END MODULE lmbm_mod
                        END IF
                      END DO
                      IF (kit_in_use) THEN              ! Executed if kit j1 is in the previous solution
-                       cost = cost + info%mC(j1)            ! The cost of kit j1 is taken into account
+                       cost = cost + info%mC(j1)       ! The cost of kit j1 is taken into account
                        kit_num_ed = kit_num_ed + 1     ! The number of kits is updated
                        kits_beta_ed(kit_num_ed) = j1   ! The index of kit j1 is updated to table kits_beta                 
                      END IF 
@@ -13890,12 +14418,18 @@ END MODULE lmbm_mod
               !---------------------------------------------------------------------------                
 
               IF (scale_in_use) THEN  ! Rescaling
+
+!*****              
+!                 WRITE(*,*) 'rescaling'
                  
                  CALL set_k(info, nk)               
                  info%user_lambda = 0.0_c_double
                  CALL rescaling_cox(info)        ! the rescaling of data 
                  
-                 DO k = 1, nk         ! Each solution is rescaled
+!*****
+ !                WRITE(*,*) 'valistep'
+                 
+                 DO k = 1, nk_max         ! Each solution generated is rescaled
                    ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
@@ -13905,7 +14439,6 @@ END MODULE lmbm_mod
                    f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value 
                    f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value
                    fperk(k) = f1_current-f2_current               ! The objective function value for problem 3 with k nonzero kits 
-!                    WRITE(*,*) 'f',k,':', fperk(k)
                     
                    l2 = 1   
                    ind = (k-1)*ncol
@@ -13918,11 +14451,14 @@ END MODULE lmbm_mod
                    
                  END DO 
                  
+!******              
+!                 WRITE(*,*) 'rescaling done'
+
               ELSE   
                   CALL set_k(info, nk)               
                   info%user_lambda = 0.0_c_double
                  
-                 DO k = 1, nk         
+                 DO k = 1, nk_max         
                    ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
@@ -13931,7 +14467,6 @@ END MODULE lmbm_mod
                    f1_current = f1(info,beta_solution,problem1,user_n) ! The f_1 value 
                    f2_current = f2(info,beta_solution,problem1,user_n) ! The f_2 value
                    fperk(k) = f1_current-f2_current               ! The objective function value for problem 3 with k nonzero kits 
-!                    WRITE(*,*) 'f',k,':', fperk(k)
                     
                    l2 = 1   
                    ind = (k-1)*ncol
@@ -13963,6 +14498,7 @@ END MODULE lmbm_mod
             END IF
        
              CALL deallocate_data_cox(info) 
+             DEALLOCATE(mXt,mYt,mK,in_mC)
 
 
          END SUBROUTINE oscar_cox       
@@ -14005,14 +14541,14 @@ END MODULE lmbm_mod
           !--------------------------------------------------------------------------            
           ! ^^^^ START: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------    
-          ! SUBROUTINE oscar_mse(infileX, infileY, infileK, infileC,  &
-                              ! & nrow, ncol, nkits, &
-                              ! & beta, fperk, in_print, in_start, in_k_max, &
-                              ! & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-                              ! & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &
-                              ! & nKitOnes, betakits, solver_id, & 
-                              ! & in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
-                              ! & in_tolg, in_tolg2, in_eta, in_epsL)     
+          !SUBROUTINE oscar_mse(infileX, infileY, infileK, infileC,  &
+          !                    & nrow, ncol, nkits, &
+          !                    & beta, fperk, in_print, in_start, in_k_max, &
+          !                    & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+          !                    & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &
+          !                    & nKitOnes, betakits, solver_id, & 
+          !                    & in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
+          !                    & in_tolg, in_tolg2, in_eta, in_epsL)     
           !--------------------------------------------------------------------------            
           ! ^^^^ END: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------   
@@ -14374,13 +14910,9 @@ END MODULE lmbm_mod
                LOGICAL :: scale_in_use          ! If .TRUE. data is scaled
                
                LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
-!               LOGICAL :: run_stop              ! If .TRUE. run is stopped for selected k
-!               LOGICAL :: mukana                ! If .TRUE. specific kit is in the solution
                
                LOGICAL :: ed_sol_in_pen         ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
-!               LOGICAL :: new_start             ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
        
-!               REAL(KIND=c_double) :: rho             ! The parameter rho used in L0-norm
                REAL(KIND=c_double) :: cost            ! The cost of solution beta
                REAL(KIND=c_double) :: small           ! The cost of solution beta
                
@@ -14392,19 +14924,11 @@ END MODULE lmbm_mod
                
                REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
                
-!               REAL(KIND=c_double) :: random_num                     ! Random number
-!               REAL(KIND=c_double), DIMENSION(nkits) :: mRand        ! Random number matrix
-!               INTEGER(KIND=c_int), DIMENSION(nkits) :: mRandInd     ! Original indices of random numbers in matrix
-               
                INTEGER(KIND=c_int) :: problem1              ! The DC component f1 
                INTEGER(KIND=c_int) :: problem2              ! The DC component f2 
         
                INTEGER(KIND=c_int) :: help_counter
-!               INTEGER(KIND=c_int) :: num_rho
-!               INTEGER(KIND=c_int) :: nremoved
-!               INTEGER(KIND=c_int) :: kit_num, kit_num_ed   ! The number of kits in the current and previous solutions
                INTEGER(KIND=c_int) :: kit_num_ed   ! The number of kits in the current and previous solutions
-!               INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2
                INTEGER(KIND=c_int) :: l, l2
                INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
@@ -15120,15 +15644,15 @@ END MODULE lmbm_mod
 
           !--------------------------------------------------------------------------            
           ! ^^^^ START: If Fortran code is used without R-C-interface ^^^^
-          ! !--------------------------------------------------------------------------    
-          ! SUBROUTINE oscar_logistic(infileX, infileY, infileK, infileC,  &
-                              ! & nrow, ncol, nkits, &
-                              ! & beta, fperk, in_print, in_start, in_k_max, &
-                              ! & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-                              ! & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &                                
-                              ! & nKitOnes, betakits, solver_id, & 
-                              ! & in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
-                              ! & in_tolg, in_tolg2, in_eta, in_epsL)    
+          !--------------------------------------------------------------------------    
+          !SUBROUTINE oscar_logistic(infileX, infileY, infileK, infileC,  &
+          !                    & nrow, ncol, nkits, &
+          !                    & beta, fperk, in_print, in_start, in_k_max, &
+          !                    & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+          !                    & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &                                
+          !                    & nKitOnes, betakits, solver_id, & 
+          !                    & in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
+          !                    & in_tolg, in_tolg2, in_eta, in_epsL)    
           !--------------------------------------------------------------------------            
           ! ^^^^ END: If Fortran code is used without R-C-interface ^^^^
           !--------------------------------------------------------------------------   
@@ -15359,7 +15883,7 @@ END MODULE lmbm_mod
            
            !***************************** LOCAL VARIABLES ************************************      
 
-               TYPE(set_info) :: info           ! The set of information                     
+               TYPE(set_info) :: info                         ! The set of information                     
  
                REAL(KIND=c_double) :: CPUtime                 ! the CPU time (in seconds)
 
@@ -15373,7 +15897,7 @@ END MODULE lmbm_mod
                REAL(KIND=c_double), DIMENSION(nKitOnes+1) :: beta_solution    ! the solution vector beta obtained for the problem
 
                REAL(KIND=c_double), DIMENSION(nKitOnes+1,nkits) :: points     ! the beta_solutions for problem 3 for fixed k ('nkits' different starting points) 
-               REAL(KIND=c_double), DIMENSION(nkits) ::      f_points     ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
+               REAL(KIND=c_double), DIMENSION(nkits) ::            f_points   ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
                REAL(KIND=c_double), DIMENSION(nKitOnes+1) ::       x_koe      ! The solution to Cox's proportional hazard model without regularization
                REAL(KIND=c_double), DIMENSION(nKitOnes+1) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
 
@@ -15393,7 +15917,6 @@ END MODULE lmbm_mod
 
                INTEGER(KIND=c_int), DIMENSION(ncol) :: KitOnes        ! The number of kits where each variables is located. If kits do not intersect then each variable is only in one kit!
                 
-!               INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta     ! indices of kits in the solution 'beta_solution'
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
 
                REAL(KIND=c_double), DIMENSION(nKitOnes+1) :: x_0          ! the starting point
@@ -15490,13 +16013,9 @@ END MODULE lmbm_mod
                LOGICAL :: scale_in_use          ! If .TRUE. data is scaled
                
                LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
-!               LOGICAL :: run_stop              ! If .TRUE. run is stopped for selected k
-!               LOGICAL :: mukana                ! If .TRUE. specific kit is in the solution
                
                LOGICAL :: ed_sol_in_pen         ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
-!               LOGICAL :: new_start             ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
        
-!               REAL(KIND=c_double) :: rho             ! The parameter rho used in L0-norm
                REAL(KIND=c_double) :: cost            ! The cost of solution beta
                REAL(KIND=c_double) :: small           ! The cost of solution beta
                
@@ -15507,20 +16026,12 @@ END MODULE lmbm_mod
                REAL(KIND=c_double) :: f2_current      ! The value of f2
                
                REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
-              
-!               REAL(KIND=c_double) :: random_num                     ! Random number
-!               REAL(KIND=c_double), DIMENSION(nkits) :: mRand        ! Random number matrix
-!               INTEGER(KIND=c_int), DIMENSION(nkits) :: mRandInd     ! Original indices of random numbers in matrix
                
                INTEGER(KIND=c_int) :: problem1              ! The DC component f1 
                INTEGER(KIND=c_int) :: problem2              ! The DC component f2 
         
                INTEGER(KIND=c_int) :: help_counter
-!               INTEGER(KIND=c_int) :: num_rho
-!               INTEGER(KIND=c_int) :: nremoved
-!               INTEGER(KIND=c_int) :: kit_num, kit_num_ed   ! The number of kits in the current and previous solutions
                INTEGER(KIND=c_int) :: kit_num_ed   ! The number of kits in the current and previous solutions
-!               INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2, ii, i2, iii
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2
                INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
 
@@ -15608,7 +16119,6 @@ END MODULE lmbm_mod
  
                tread_num = max_threads
       
-!               WRITE(*,*) 'The number of threads', max_threads              
                ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
 
                ! The initialization of parametrs used in DBDC methods
@@ -16193,13 +16703,11 @@ END MODULE lmbm_mod
         !  |                                                                                |  |        
         !  ----------------------------------------------------------------------------------  |
         !***************************************************************************************
-         SUBROUTINE solution_with_k_kits_cox( x_solution, f_solution, k, i, f_prev, & 
+         SUBROUTINE solution_with_k_kits_cox( x_solution, f_solution, k, f_prev, & 
                                     & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
                                     & nk, start, iprint, mrho, mit, mrounds, mrounds_esc, &
                                     & agg_used, stepsize_used, nft, problem1, problem2,  &      
-                                    & in_mX, in_mY, in_mK, in_mC, nrecord, & 
-                                    & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, mc, solver) 
+                                    & info, mc, solver) 
             !_____________________________________________________________________________________
             ! 
             !           
@@ -16214,7 +16722,6 @@ END MODULE lmbm_mod
             !         * 'nrecord'       : the number of observations, INTEGER
             !
             !         * 'k'             : the number of kits in the problem, INTEGER
-            !         * 'i'             : the number of thread, INTEGER
             !
             !         * 'x_ed'          : the beta solution for the previous problem where the number of nonzero kits was one smaller (INTEGER)
             !         * 'x_koe'         : The solution to Cox's proportional hazard model without regularization
@@ -16230,9 +16737,8 @@ END MODULE lmbm_mod
             !         * 'problem2'      : Defines the DC component f2 of the objective
             !
             !         * 'in_mX', 'in_mY', 'in_mK', 'in_mC'    : Are the data matrices 
-            !         * 'mPrNum'        : the information about starting points for the thread
             !         
-            !         * 'solver'   : defines the solver used (1=DBDC, 2=LMBM)
+            !         * 'solver'        : defines the solver used (1=DBDC, 2=LMBM)
             !         
             !         PARAMETERS in DBDC method:
             !
@@ -16274,9 +16780,11 @@ END MODULE lmbm_mod
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
+               TYPE(set_info), INTENT(INOUT) :: info                                     ! The set of information                     
+
                INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (also the dimension of the problem)
                INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
-               INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
+             !  INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
                
                REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_koe    ! The solution to Cox's proportional hazard model without regularization
                REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_ed     ! the beta solution for the previous problem where the number of nonzero kits was one smaller   
@@ -16285,7 +16793,6 @@ END MODULE lmbm_mod
                
                INTEGER(KIND=c_int), INTENT(IN) :: kit_num_ed                   ! The number of kits in the previous solution
                INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
-               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: mPrNum        ! the starting points for the thread
 
                REAL(KIND=c_double), DIMENSION(8), INTENT(IN) :: mrho      ! Vector containing the values of rho parameter used in the method 
             
@@ -16295,7 +16802,6 @@ END MODULE lmbm_mod
                INTEGER(KIND = c_int), INTENT(IN) :: solver                ! the solver used
                
                INTEGER(KIND = c_int), INTENT(IN) :: k                     ! The number of kits in the problem 
-               INTEGER(KIND = c_int), INTENT(IN) :: i                     ! The number of the thread
                
                INTEGER(KIND = c_int), INTENT(IN) :: problem1              ! The DC component f1 of the objective               
                INTEGER(KIND = c_int), INTENT(IN) :: problem2              ! The DC component f2 of the objective               
@@ -16313,24 +16819,24 @@ END MODULE lmbm_mod
                LOGICAL, INTENT(IN) :: stepsize_used                       ! .TRUE. if Simple stepsize determination is not used
                
               ! Parameters in DBDC method
-               INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
-               INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
-               INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
+              ! INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
+              ! INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
+              ! INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
                
-               REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
-               REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
-               REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
-               REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
-               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+              ! REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
+              ! REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
+              ! REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
+              ! REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
+              ! REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
+              ! REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
+              ! REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
+              ! REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
 
               ! The data matrices
-               REAL(KIND=c_double), DIMENSION(nft,nrecord) :: in_mX       ! predictor matrix (column is an observation)
-               INTEGER(KIND=c_int), DIMENSION(2,nrecord) :: in_mY         ! observed times and labels matrix (column is an observation)  
-               INTEGER(KIND=c_int), DIMENSION(nk,nft) :: in_mK            ! kit matrix (row is a kit)
-               REAL(KIND=c_double), DIMENSION(nk) :: in_mC                ! kit costs          
+              ! REAL(KIND=c_double), DIMENSION(nft,nrecord) :: in_mX       ! predictor matrix (column is an observation)
+              ! INTEGER(KIND=c_int), DIMENSION(2,nrecord) :: in_mY         ! observed times and labels matrix (column is an observation)  
+              ! INTEGER(KIND=c_int), DIMENSION(nk,nft) :: in_mK            ! kit matrix (row is a kit)
+              ! REAL(KIND=c_double), DIMENSION(nk) :: in_mC                ! kit costs          
                      
             ! OUTPUTs
                REAL(KIND = c_double), INTENT(OUT), DIMENSION(nft,nk)  :: x_solution   !Output variable for beta coefficients with k kits and starting points for the thread i
@@ -16342,8 +16848,8 @@ END MODULE lmbm_mod
            
            !***************************** LOCAL VARIABLES ************************************      
  
-               TYPE(set_info) :: set1                                   ! The set of information                     
-               TYPE(set_info) :: set                                    ! The set of information                     
+              ! TYPE(set_info) :: set1                                   ! The set of information                     
+              ! TYPE(set_info) :: set                                    ! The set of information                     
 
                REAL(KIND=c_double) :: CPUtime                           ! the CPU time (in seconds)
                REAL(KIND=c_double) :: f_solution_DBDC                   ! the f_solution obtained from DBDC method
@@ -16411,10 +16917,10 @@ END MODULE lmbm_mod
                INTEGER(KIND=c_int) :: kit_num               ! The number of kits in the current solution
 !               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2, ui
                INTEGER(KIND=c_int) :: j, j1, j2, ii, i2
-!               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization         
+!               INTEGER(KIND=c_int) :: max_threads          ! the maximum number of threads that can be used in parallellization         
 
-               INTEGER(KIND=c_int) :: startind, j3, kk      ! the start index for starting point    
- 
+               INTEGER(KIND=c_int) ::  kk                   ! the start index for starting point    
+                
 !**
                ! Scalars in LMBM
                REAL(KIND=c_double) :: LMBMstart  ! The starting time
@@ -16458,54 +16964,46 @@ END MODULE lmbm_mod
 
                     tol_zero = (10.0_c_double)**(-6)
  
-                   ! The initialization of parametrs used in DBDC methods
-                   CALL allocate_parameters(set, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                           & in_b, in_m_clarke, in_eps, in_crit_tol)
+                   ! ! The initialization of parametrs used in DBDC methods
+                   ! CALL allocate_parameters(set, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
+                                           ! & in_b, in_m_clarke, in_eps, in_crit_tol)
   
-                   ! Allocation of sizes od data matrices in function.f95
-                    CALL allocate_data_cox(set, nft, nrecord, nk, k)   
+                   ! ! Allocation of sizes od data matrices in function.f95
+                    ! CALL allocate_data_cox(set, nft, nrecord, nk, k)   
                     
-                   ! Allocation of data matrices    
-                    CALL allocate_matrices_cox(set, in_mX, in_mY, in_mK, in_mC,  & 
-                                      & nrecord, nft, nk)
+                   ! ! Allocation of data matrices    
+                    ! CALL allocate_matrices_cox(set, in_mX, in_mY, in_mK, in_mC,  & 
+                                      ! & nrecord, nft, nk)
            
-                    set%user_rho = 0.0_c_double
+                    ! set%user_rho = 0.0_c_double
                     
-                    CALL  set_k(set, k)                        ! The number of nonzero kits is fixed
+                    CALL  set_k(info, k)                        ! The number of nonzero kits is fixed
  
 !** 
                     IF (solver == 2) THEN
 
-                       CALL allocate_xn(user_n)
+                        CALL allocate_xn(user_n)
      
-                     ! The initialization of parametrs used in DBDC methods
-                       CALL allocate_parameters(set1, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, &
-                                           & in_eps1, in_b, in_m_clarke, in_eps, in_crit_tol)
+                     ! ! The initialization of parametrs used in DBDC methods
+                       ! CALL allocate_parameters(set1, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, &
+                                           ! & in_eps1, in_b, in_m_clarke, in_eps, in_crit_tol)
   
-                       ! Allocation of sizes od data matrices in function.f95
-                       CALL allocate_data_cox(set1, nft, nrecord, nk, k)   
+                       ! ! Allocation of sizes od data matrices in function.f95
+                       ! CALL allocate_data_cox(set1, nft, nrecord, nk, k)   
                     
-                       ! Allocation of data matrices    
-                       CALL allocate_matrices_cox(set1, in_mX, in_mY, in_mK, in_mC,  & 
-                                      & nrecord, nft, nk)
+                       ! ! Allocation of data matrices    
+                       ! CALL allocate_matrices_cox(set1, in_mX, in_mY, in_mK, in_mC,  & 
+                                      ! & nrecord, nft, nk)
                     
-                       CALL  set_k(set1, k)                        ! The number of nonzero kits is fixed
+                       ! CALL  set_k(set1, k)                        ! The number of nonzero kits is fixed
      
-                       CALL init_LMBMinfo(problem1, set1)   
-                       CALL set_lambda_LMBM(0.0_c_double)              
+                        CALL init_LMBMinfo(problem1, info)   
+                       ! CALL set_lambda_LMBM(0.0_c_double)              
      
-                    END IF
-!**
-                     ! Determination of the first starting point for the thread i                    
-                    startind = 1
-                    IF (i > 1) THEN 
-                       DO j3 = 1, i-1
-                          startind = startind + mPrNum(j3)
-                       END DO   
                     END IF
 
-                    ! The starting points for the thread are looked through
-                    DO kk = startind, startind + mPrNum(i) - 1 
+                    ! The starting points for are looked through
+                    DO kk = 1, nk 
                         !--------------------------------------------
                         !    THE GENERATION OF THE STARTING POINT
                         !--------------------------------------------
@@ -16535,7 +17033,7 @@ END MODULE lmbm_mod
                         
                         IF ((start == 2) .OR. (start == 3)) THEN 
                           DO ii = 1, nft               ! the features are looke
-                            IF (set%mK(ii,kk)==1) THEN
+                            IF (info%mK(ii,kk)==1) THEN
                                x_0(ii) = x_koe(ii)    ! In starting poitnt x_0, we initialize features in kit kk with values from solution x_koe
                             END IF   
                           END DO
@@ -16551,7 +17049,7 @@ END MODULE lmbm_mod
                            CALL heapsort_ind(mRand,mRandInd)                    
                            DO ii = 1, k
                               DO i2 = 1, nft 
-                                IF (set%mK(i2,mRandInd(ii))==1) THEN
+                                IF (info%mK(i2,mRandInd(ii))==1) THEN
                                   x_0(i2) = x_koe(i2)    ! In starting point x_0, we initialize features in kit i with values from solution x_koe
                                 END IF   
                               END DO     
@@ -16605,7 +17103,7 @@ END MODULE lmbm_mod
                             CALL DBDC_algorithm( f_solution_DBDC, beta_solution, x_0, rho, 0.0_c_double, &
                                 & mit, mrounds, mrounds_esc, termination, counter, CPUtime,  &
                                 & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, nft, &
-                                & set) 
+                                & info) 
         
                         ELSE IF (solver == 2) THEN
                            
@@ -16614,7 +17112,7 @@ END MODULE lmbm_mod
                            CALL cpu_time(LMBMstart)   ! Start CPU timining
                            CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
                            CALL copy_x_var(beta_solution)
-                           set%user_rho = rho
+                           info%user_rho = rho
  
                         END IF
 !**      
@@ -16630,13 +17128,7 @@ END MODULE lmbm_mod
                             beta_solution(j) = 0.0_c_double
                           END IF
                         END DO
-                  
-                          !WRITE(*,*) 'beta'
-                          !DO ui = 1, user_n
-                          ! WRITE(*,*) beta_solution(ui)
-                          !END DO
-                          !WRITE(*,*)
-      
+                       
                         cost = 0.0_c_double      ! The initialization of the cost of 'beta_solution'
                         kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
                         kits_beta = 0            ! The initialization of kits in 'beta_solution'
@@ -16645,14 +17137,14 @@ END MODULE lmbm_mod
                         DO j1 = 1, nk        ! Each kit is looked through
                           kit_in_use = .FALSE.  
                           DO j2 = 1, nft
-                            IF (set%mK(j2,j1)==1) THEN 
+                            IF (info%mK(j2,j1)==1) THEN 
                               IF ( ABS(beta_solution(j2)) >= tol_zero) THEN    ! If the condition is satisfied the kit j1 is in solution 'beta_solution'
                                  kit_in_use = .TRUE.                                  
                               END IF
                             END IF
                           END DO
                           IF (kit_in_use) THEN       ! Executed if kit j1 is in solution 'beta_solution'
-                            cost = cost + set%mC(j1)     ! The cost of kit j1 is taken into account
+                            cost = cost + info%mC(j1)     ! The cost of kit j1 is taken into account
                             kit_num = kit_num + 1    ! The number of kits is updated
                             kits_beta(kit_num) = j1  ! The index of kit j1 is updated to table kits_beta                      
                           END IF 
@@ -16668,13 +17160,13 @@ END MODULE lmbm_mod
                              x_solution(j,kk) = beta_solution(j)        ! We store the solution to x_solution
                            END DO       
                            
-                           f1_current = f1(set,beta_solution,problem1,user_n)
-                           f2_current = f2(set,beta_solution,problem2,user_n)
+                           f1_current = f1(info,beta_solution,problem1,user_n)
+                           f2_current = f2(info,beta_solution,problem2,user_n)
                            f_solution(kk) = f1_current-f2_current       ! We store the objective funtion value without penalization to f_solution
                         END IF               
                        
-                        f1_current = f1(set,beta_solution,problem1,user_n) 
-                        f2_current = f2(set,beta_solution,problem2,user_n)
+                        f1_current = f1(info,beta_solution,problem1,user_n) 
+                        f2_current = f2(info,beta_solution,problem2,user_n)
         
                         IF (iprint > 2) THEN
                              WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
@@ -16707,12 +17199,12 @@ END MODULE lmbm_mod
                    
                    END DO
                    
-                   CALL deallocate_data_cox(set) 
+                   !CALL deallocate_data_cox(set) 
 
 !**       
                    IF (solver == 2) THEN
                       CALL deallocate_LMBMinfo_cox()
-                      CALL deallocate_data_cox(set1)    
+                      !CALL deallocate_data_cox(set1)    
                       CALL deallocate_x_var()                 
                    END IF
 !**         
@@ -16723,7 +17215,6 @@ END MODULE lmbm_mod
         !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |        
         !** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** 
         !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
-
 
 
 
@@ -16739,13 +17230,13 @@ END MODULE lmbm_mod
         !  |                                                                                |  |        
         !  ----------------------------------------------------------------------------------  |
         !***************************************************************************************
-         SUBROUTINE solution_with_k_kits_cox_v2( x_solution, f_solution, k, i, f_prev, & 
-                                    & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
-                                    & nk, start, iprint, mrho, mit, mrounds, mrounds_esc, &
+         SUBROUTINE solution_with_k_kits_cox_v2( x_solution, f_solution, k, f_prev, & 
+                                    & x_ed, kit_num_ed, kits_beta_ed, &
+                                    & nk, iprint, mrho, mit, mrounds, mrounds_esc, &
                                     & agg_used, stepsize_used, nft, problem1, problem2,  &      
-                                    & in_mX, in_mY, in_mK, in_mC, nrecord, & 
+                                    & info, in_mX, in_mY, in_mK, nrecord, & 
                                     & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mPrNum, mc, solver, &
+                                    & in_b, in_m_clarke, in_eps, in_crit_tol, mc, solver, &
                                     & percentage, s_selection) 
             !_____________________________________________________________________________________
             ! 
@@ -16761,7 +17252,6 @@ END MODULE lmbm_mod
             !         * 'nrecord'       : the number of observations, INTEGER
             !
             !         * 'k'             : the number of kits in the problem, INTEGER
-            !         * 'i'             : the number of thread, INTEGER
             !
             !         * 'x_ed'          : the beta solution for the previous problem where the number of nonzero kits was one smaller (INTEGER)
             !         * 'x_koe'         : The solution to Cox's proportional hazard model without regularization
@@ -16777,7 +17267,6 @@ END MODULE lmbm_mod
             !         * 'problem2'      : Defines the DC component f2 of the objective
             !
             !         * 'in_mX', 'in_mY', 'in_mK', 'in_mC'    : Are the data matrices 
-            !         * 'mPrNum'        : the information about starting points for the thread
             !         
             !         * 'solver'        : defines the solver used (1=DBDC, 2=LMBM)
             !
@@ -16824,31 +17313,36 @@ END MODULE lmbm_mod
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
+            
+              ! The data matrices
+               REAL(KIND=c_double), DIMENSION(nft,nrecord), INTENT(IN) :: in_mX  ! predictor matrix (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(2,nrecord), INTENT(IN) :: in_mY    ! observed times and labels matrix (column is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(nk,nft), INTENT(IN) :: in_mK       ! kit matrix (row is a kit)
+
+               TYPE(set_info),INTENT(INOUT) :: info                              ! The set of information           
+            
+              ! Other data
+               REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_ed         ! the beta solution for the previous problem where the number of nonzero kits was one smaller   
+               
+               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
+               REAL(KIND=c_double), DIMENSION(8), INTENT(IN) :: mrho           ! Vector containing the values of rho parameter used in the method 
+              
+
                INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (also the dimension of the problem)
                INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
                INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
-               
-               REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_koe    ! The solution to Cox's proportional hazard model without regularization
-               REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_ed     ! the beta solution for the previous problem where the number of nonzero kits was one smaller   
-               
-               REAL(KIND=c_double), INTENT(IN) :: f_prev                   ! The objective value for the previous problem where the number of nonzero kits was one smaller       
-               
-               INTEGER(KIND=c_int), INTENT(IN) :: kit_num_ed                   ! The number of kits in the previous solution
-               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
-               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: mPrNum        ! the starting points for the thread
-
-               REAL(KIND=c_double), DIMENSION(8), INTENT(IN) :: mrho      ! Vector containing the values of rho parameter used in the method 
+                              
+               REAL(KIND=c_double), INTENT(IN) :: f_prev                  ! The objective value for the previous problem where the number of nonzero kits was one smaller                      
+               INTEGER(KIND=c_int), INTENT(IN) :: kit_num_ed              ! The number of kits in the previous solution
                
                REAL(KIND=c_double), INTENT(IN) :: percentage              ! Percentage of the used starting points 
-               INTEGER(KIND=c_int), INTENT(IN) :: s_selection             ! Starting point selection strategy     
+               INTEGER(KIND=c_int), INTENT(IN) :: s_selection             ! Starting point selection strategy
                
-               INTEGER(KIND = c_int), INTENT(IN) :: start                 ! Starting point procedure used
                INTEGER(KIND = c_int), INTENT(IN) :: iprint                ! Print used
 
                INTEGER(KIND = c_int), INTENT(IN) :: solver                ! the solver used
                
                INTEGER(KIND = c_int), INTENT(IN) :: k                     ! The number of kits in the problem 
-               INTEGER(KIND = c_int), INTENT(IN) :: i                     ! The number of the thread
                
                INTEGER(KIND = c_int), INTENT(IN) :: problem1              ! The DC component f1 of the objective               
                INTEGER(KIND = c_int), INTENT(IN) :: problem2              ! The DC component f2 of the objective
@@ -16877,26 +17371,18 @@ END MODULE lmbm_mod
                REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
                REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
                REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
-               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
+               REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance                    
 
-              ! The data matrices
-               REAL(KIND=c_double), DIMENSION(nft,nrecord) :: in_mX       ! predictor matrix (column is an observation)
-               INTEGER(KIND=c_int), DIMENSION(2,nrecord) :: in_mY         ! observed times and labels matrix (column is an observation)  
-               INTEGER(KIND=c_int), DIMENSION(nk,nft) :: in_mK            ! kit matrix (row is a kit)
-               REAL(KIND=c_double), DIMENSION(nk) :: in_mC                ! kit costs          
-                     
+            ! Scalar in LMBM          
+               INTEGER(KIND=c_int), INTENT(INOUT) :: mc           ! Initial maximum number of stored corrections.
+                                   
             ! OUTPUTs
                REAL(KIND = c_double), INTENT(OUT), DIMENSION(nft,nk)  :: x_solution   !Output variable for beta coefficients with k kits and starting points for the thread i
                REAL(KIND = c_double), DIMENSION(nk), INTENT(OUT)      :: f_solution   !Output variable target function value with k kits and starting points for the thread i
-             
-            ! Scalar in LMBM          
-               INTEGER(KIND=c_int), INTENT(INOUT) :: mc           ! Initial maximum number of stored corrections.
                
            
            !***************************** LOCAL VARIABLES ************************************      
  
-               TYPE(set_info) :: setLMBM                                ! The set of information for LMBM                    
-               TYPE(set_info) :: set                                    ! The set of information for DBDC                    
                TYPE(set_info) :: set_subp                               ! The set of information for SUBPROBLEMS                   
 
                REAL(KIND=c_double) :: CPUtime                           ! the CPU time (in seconds)
@@ -16916,6 +17402,7 @@ END MODULE lmbm_mod
                INTEGER(KIND=c_int), DIMENSION(nk) :: kits_beta          ! indices of kits in the solution 'beta_solution'
 
                REAL(KIND=c_double), DIMENSION(nft) :: x_0               ! the starting point
+               REAL(KIND=c_double), DIMENSION(nft) :: x_help            ! the help point
                
                INTEGER(KIND=c_int) :: termination         ! The reason for termination in DBDC method
                                                           ! 1 - the stopping condition is satisfied (i.e. Clarke stationarity)
@@ -16965,25 +17452,23 @@ END MODULE lmbm_mod
                REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
               
                INTEGER(KIND=c_int) :: s_end           ! The index of the last possible startin point
-               
-               REAL(KIND=c_double) :: random_num                  ! Random number
-               REAL(KIND=c_double), DIMENSION(nk) :: mRand        ! Random number matrix
-               INTEGER(KIND=c_int), DIMENSION(nk) :: mRandInd     ! Original indices of random numbers in matrix
-        
+                      
                INTEGER(KIND=c_int) :: help_counter
                INTEGER(KIND=c_int) :: num_rho
                INTEGER(KIND=c_int) :: kit_num               ! The number of kits in the current solution
-!               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2, ui
-               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2
-!               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization         
+               INTEGER(KIND=c_int) :: j, j1, j2, ii
 
-               INTEGER(KIND=c_int) :: startind, j3, kk     ! the start index for starting point    
+               INTEGER(KIND=c_int) :: kk                    ! the start index for starting point    
                INTEGER(KIND=c_int) :: ind_start, s_ind      ! the start index for starting point    
                INTEGER(KIND=c_int) :: floor_size, ceil_size, gap    ! the variabls used to determine the used starting points  
                
-               INTEGER(KIND=c_int) :: nft_subp                      ! The number of features in SUBPROBLEM
-               INTEGER(KIND=c_int), DIMENSION(nft) :: kits_subp     ! The indices of features in SUBPROBLEM        
- 
+               INTEGER(KIND=c_int) :: nft_subp                      ! The number of features in SUBPROBLEM/ALTERED PROBLEM
+               INTEGER(KIND=c_int), DIMENSION(nft) :: kits_subp     ! The indices of features in SUBPROBLEM/ALTERED PROBLEM        
+               INTEGER(KIND=c_int), DIMENSION(nft) :: fea_table     ! The indices of features in SUBPROBLEM/ALTERED PROBLEM 
+               INTEGER(KIND=c_int)  :: nkits_subp                   ! The indices of features in SUBPROBLEM/ALTERED PROBLEM 
+               
+               LOGICAL :: first_visit                               ! .TRUE. if reduced problem is visited first time during this iteration
+
 !**
                ! Scalars in LMBM
                REAL(KIND=c_double) :: LMBMstart  ! The starting time
@@ -17014,6 +17499,7 @@ END MODULE lmbm_mod
                                                  !                    accuracy.
                                                  !              -5  - Invalid input parameters.
                                                  !              -6  - Unspecified error.
+                                                 
  !** 
                     !--------------------------------------------        
                     !                INITIALIZATION
@@ -17024,49 +17510,14 @@ END MODULE lmbm_mod
                     user_n = nft              ! The dimension of the original problem
                     iprint_DBDC = 0_c_int     ! The print is supressed 
                   
-                    ed_sol_in_pen = .FALSE.
-                    !ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem  
-
-                    tol_zero = (10.0_c_double)**(-6)
-                                       
-                   ! **** DATA ALLOCATION STARTS for ORIGIANL PROBLEM ****
- 
-                   ! The initialization of parametrs used in DBDC methods (original problem)
-                   CALL allocate_parameters(set, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                           & in_b, in_m_clarke, in_eps, in_crit_tol)
-   
-                   ! Allocation of sizes of data matrices in function.f95 (original problem)
-                    CALL allocate_data_cox(set, nft, nrecord, nk, k)   
+                    ed_sol_in_pen = .FALSE.   ! the previous solution is NOT utilized during the solution of the penalized problem 
                     
-                   ! Allocation of data matrices (original problem)
-                    CALL allocate_matrices_cox(set, in_mX, in_mY, in_mK, in_mC,  & 
-                                      & nrecord, nft, nk)
-           
-                    set%user_rho = 0.0_c_double
-                    
-                    CALL  set_k(set, k)                        ! The number of nonzero kits is fixed (original problem)
- 
-!** 
-                    IF (solver == 2) THEN   ! LMBM Data initialization (original problem)
-     
-                     ! The initialization of parametrs used in DBDC methods (original problem, only one initialized parameter is used in LMBM)
-                       CALL allocate_parameters(setLMBM, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, &
-                                           & in_eps1, in_b, in_m_clarke, in_eps, in_crit_tol)
-  
-                       ! Allocation of sizes of data matrices in setLMBM (original problem)
-                       CALL allocate_data_cox(setLMBM, nft, nrecord, nk, k)   
-                    
-                       ! Allocation of data matrices in setLMBM (original problem)    
-                       CALL allocate_matrices_cox(setLMBM, in_mX, in_mY, in_mK, in_mC,  & 
-                                      & nrecord, nft, nk)
-                    
-                       CALL  set_k(setLMBM, k)                 ! The number of nonzero kits is fixed (original problem)
-              
-     
+                    IF (s_selection==3) THEN
+                        ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem  
                     END IF
-                                
-!**
-                   ! **** DATA ALLOCATION STARTS for SUBPROBLEM ****
+                    tol_zero = (10.0_c_double)**(-6)
+                                                                                        
+                   ! **** DATA ALLOCATION STARTS for SUBPROBLEM / REDUCED PROBLEM ****
 
                    ! The initialization of parametrs used in DBDC methods (SUBPROBLEM)
                     CALL allocate_parameters_subp(set_subp, in_b1, in_m, in_c, in_r_dec, in_r_inc, &
@@ -17074,20 +17525,10 @@ END MODULE lmbm_mod
                                    
                    ! Allocation of data matrice mY (SUBPROBLEM)
                     CALL allocate_mY_cox_subp(set_subp, in_mY, nrecord)
-
-                                      
-                   !! !Determination of the first starting point for the thread i                    
-                   !! !startind = 1
-                   !! IF (i > 1) THEN 
-                   !!    DO j3 = 1, i-1
-                   !!       startind = startind + mPrNum(j3)
-                   !!    END DO   
-                   !! END IF
-
-                    !! ! The starting points for the thread are looked through
-                    !! DO kk = startind, startind + mPrNum(i) - 1 
-                    
-                    ! The starting points are generated 
+                   
+                   !-----------------------------------------------                
+                   ! The starting points are generated 
+                   !-----------------------------------------------
                     n_starts = 0_c_int     ! The number of starting points so far is 0
                     starts = 0.0_c_double
                     kit_starts = 0_c_int
@@ -17115,26 +17556,27 @@ END MODULE lmbm_mod
                             kit_starts(n_starts) = kk ! The Kit used to generate a starting point
 
                             nft_subp = 0_c_int       ! Initialization of the number of features in the used kit kk
-                            kits_subp = 0_c_int      ! Initialization of the table containinf indices of features in kit kk
+                            kits_subp = 0_c_int      ! Initialization of the table containing indices of features in kit kk
                         
                             DO ii = 1, nft               ! the features are looked throuh
-                              IF (set%mK(ii,kk)==1) THEN
+                              IF (info%mK(ii,kk)==1) THEN
                                 nft_subp = nft_subp + 1
                                 kits_subp(nft_subp) = ii
                               END IF   
                            END DO
                           
-                           CALL generate_startpoint(set_subp, set, x_ed, x_0, f_0, nft, nft_subp, nrecord, & 
-                                       & kits_subp, kk, in_mX, solver)
+                           CALL generate_startpoint(set_subp, x_ed, x_0, f_0, nft, nft_subp, nrecord, & 
+                                       & kits_subp, in_mX, solver)
                              
                            DO j = 1, nft                     
-                             starts(j,n_starts) = x_0(j)     ! Saving the new start point and its objective value
+                             starts(j,n_starts) = x_0(j)        ! Saving the new start point and its objective value
                            END DO 
                            starts(nft+1,n_starts) = f_0         ! Saving the corresponding objective value
                         
                         END IF                       
                                       
                     END DO 
+                    !---------- starting points generated ------------
                     
                     f_list = 0.0_c_double
                     f_ind = 0_c_int
@@ -17164,22 +17606,61 @@ END MODULE lmbm_mod
                     ELSE
                       floor_size = FLOOR(REAL(percentage*n_starts))
                       ceil_size = CEILING(REAL(percentage*n_starts))
+                      s_end = n_starts                    
                       IF (floor_size < 1) THEN 
                          floor_size = 1
                       END IF
                       gap = FLOOR(REAL(n_starts)/REAL(floor_size))
-                      IF (s_selection==1) THEN 
+                      IF (s_selection /= 2 ) THEN 
                          gap = 1
-                         s_end = ceil_size
+                         s_end = ceil_size                     
                       ELSE IF(s_selection==2) THEN
                          s_end = n_starts
                       END IF
                     END IF
-
-                    IF (solver == 2) THEN !Initialization needed in LMBM 
-                       CALL allocate_xn(user_n)               ! The dimension of the original problem
-                       CALL init_LMBMinfo(problem1, setLMBM)  ! The data                    
+                    
+                    
+                    !-------------------------------------------------------
+                    !      The SIZE and FEATURES in the REDUCED PROBLEM
+                    ! Reduced problem can be used only when s_selection=1
+                    !--------------------------------------------------------
+                    IF (s_selection > 2) THEN 
+                    ! Determination of what features are used in the selected starting points.
+                    ! These are the ones selected to the reduced problem.
+                      nkits_subp = k-1         ! The number of kits in the previous problem 
+                      x_help = 0.0_c_double    ! Initialization
+                      DO ii = 1, s_end, gap    ! Startin points are looked through
+                         nkits_subp =  nkits_subp + 1   ! One more kit added to the reduced problem 
+                         ind_start = f_ind(s_ind+ii)    ! The place for the starting point in 'starts'-table
+                         DO j = 1, nft
+                           x_help(j) = x_help(j) + starts(j,ind_start)
+                         END DO                             
+                      END DO            
+                     
+                    !Determination of what features are in use at 'x_help' 
+                     nft_subp = 0_c_int       ! Initialization of the number of features in the reduced problem
+                     fea_table = 0_c_int      ! Initialization of the table containing indices of features in the reduced problem                    
+                     DO j = 1, nft
+                        IF (ABS(x_help(j)) > (10.0_c_double)**(-9)) THEN  ! If .TRUE. then the feature is in use
+                           nft_subp = nft_subp + 1
+                           fea_table(nft_subp) = j
+                        END IF
+                     END DO 
+                     
+                     first_visit = .TRUE.   ! .TRUE. since reduced problem is not yet visited. Thus the next visit is the first one.
                     END IF
+                    !--------------------------------------------------------
+
+                    ! The bundle B2 size for reduced problem is placed 
+                    CALL allocate_b2_reduced(set_subp, in_b2)
+
+                    IF ((solver == 2) .AND. (s_selection < 3)) THEN !Initialization needed in LMBM 
+                       CALL allocate_xn(user_n)               ! The dimension of the original problem
+                       CALL init_LMBMinfo(problem1, info)     ! The data                    
+                    END IF
+                    
+
+                    WRITE(*,*) 'Starting points are generated'
 
                     DO ii = 1, s_end, gap              ! Starting points are looked through 
                          
@@ -17229,27 +17710,45 @@ END MODULE lmbm_mod
                               run_stop = .TRUE.         ! Forced stop in optimization
                               END IF 
                             END IF
+                            
+                          !-----------------------------------      
+                          ! The REDUCED PROBLEM
+                          !-----------------------------------
+                            IF (s_selection > 2) THEN 
+                            
+                               CALL reduced_problem(set_subp, x_0, beta_solution, f_solution_DBDC, nft, nft_subp,  & 
+                                       & nrecord, fea_table, nkits_subp, nk, k, first_visit, rho, in_mX, in_mK, solver)                         
+    
+                               info%user_rho = rho              ! Update the rho value to the data set.
+                               first_visit = .FALSE.           ! Now first visit to the reduced problem is done.
+                        
+                         
+                          !-----------------------------------
+                          ! The ORIGINAL PROBLEM 
+                          !-----------------------------------
+                            ELSE                                                    
                         
                             ! The optimization problem is solved fot the current rho and x_0
     !**      
-                            IF (solver==1) THEN  ! DBDC
+                              IF (solver==1) THEN  ! DBDC
              
                                 CALL DBDC_algorithm( f_solution_DBDC, beta_solution, x_0, rho, 0.0_c_double, &
                                     & mit, mrounds, mrounds_esc, termination, counter, CPUtime,  &
                                     & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, nft, &
-                                    & set) 
+                                    & info) 
             
-                            ELSE IF (solver == 2) THEN !LMBM
+                              ELSE IF (solver == 2) THEN !LMBM
                                   
                                CALL init_x_var(x_0)       ! Initialization of starting point in LMBM
                                CALL set_rho_LMBM(rho)     ! Initilaization of rho in LMBM
                                CALL cpu_time(LMBMstart)   ! Start CPU timining
                                CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
                                CALL copy_x_var(beta_solution)  ! Copying the obtained solution 
-                               set%user_rho = rho              ! Update the rho value to the data set 
+                               info%user_rho = rho              ! Update the rho value to the data set 
                  
+                              END IF 
+!**                        
                             END IF
-!**      
                           ELSE !with one kit (i.e. k=1) the subproblem solution is directly the solution of the original problem
                              beta_solution = x_0                      
                           END IF
@@ -17265,13 +17764,7 @@ END MODULE lmbm_mod
                               beta_solution(j) = 0.0_c_double
                             END IF
                           END DO
-                  
-                          !WRITE(*,*) 'beta'
-                          !DO ui = 1, user_n
-                          ! WRITE(*,*) beta_solution(ui)
-                          !END DO
-                          !WRITE(*,*)
-      
+                      
                           cost = 0.0_c_double      ! The initialization of the cost of 'beta_solution'
                           kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
                           kits_beta = 0            ! The initialization of kits in 'beta_solution'
@@ -17280,14 +17773,14 @@ END MODULE lmbm_mod
                           DO j1 = 1, nk        ! Each kit is looked through
                             kit_in_use = .FALSE.  
                             DO j2 = 1, nft
-                              IF (set%mK(j2,j1)==1) THEN 
+                              IF (info%mK(j2,j1)==1) THEN 
                                 IF ( ABS(beta_solution(j2)) >= tol_zero) THEN    ! If the condition is satisfied the kit j1 is in solution 'beta_solution'
                                   kit_in_use = .TRUE.                                  
                                 END IF
                               END IF
                             END DO
                             IF (kit_in_use) THEN       ! Executed if kit j1 is in solution 'beta_solution'
-                              cost = cost + set%mC(j1)     ! The cost of kit j1 is taken into account
+                              cost = cost + info%mC(j1)     ! The cost of kit j1 is taken into account
                               kit_num = kit_num + 1    ! The number of kits is updated
                               kits_beta(kit_num) = j1  ! The index of kit j1 is updated to table kits_beta                      
                             END IF 
@@ -17304,8 +17797,8 @@ END MODULE lmbm_mod
                                x_solution(j,kit_starts(ind_start)) = beta_solution(j)        ! We store the solution to x_solution
                              END DO       
                              
-                             f1_current = f1(set,beta_solution,problem1,user_n)
-                             f2_current = f2(set,beta_solution,problem2,user_n)
+                             f1_current = f1(info,beta_solution,problem1,user_n)
+                             f2_current = f2(info,beta_solution,problem2,user_n)
                              f_solution(kit_starts(ind_start)) = f1_current-f2_current       ! We store the objective funtion value without penalization to f_solution
 
                              IF (kk==1) THEN  ! The best starting point is cheched vs. the solution obtained from it
@@ -17321,21 +17814,17 @@ END MODULE lmbm_mod
                              
                           END IF               
                          
-                          f1_current = f1(set,beta_solution,problem1,user_n) 
-                          f2_current = f2(set,beta_solution,problem2,user_n)
+                          f1_current = f1(info,beta_solution,problem1,user_n) 
+                          f2_current = f2(info,beta_solution,problem2,user_n)
         
                           IF (iprint > 2) THEN
                              WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-!**                         ! WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-!                             WRITE(*,*) 'rho', rho, 'f1',f1_current, 'f2',f2_current, 'kits', kit_num
                           END IF
                         
                           IF (run_stop) THEN
                             IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
                               WRITE(*,*)
                               WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                            ! WRITE(*,*) 'x=', beta_solution
-                            ! WRITE(*,*) 
                             END IF  
                             IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
                               WRITE(*,*)
@@ -17347,16 +17836,21 @@ END MODULE lmbm_mod
                            
                    
                    END DO
-                   
-                   CALL deallocate_data_cox(set) 
+ 
+
+                    WRITE(*,*) 'Starting points have been looked through'
+ 
                    CALL deallocate_mY_cox_subp(set_subp)
-!**       
-                   IF (solver == 2) THEN
-                      CALL deallocate_data_cox(setLMBM) 
+                   
+                   IF ((s_selection > 2) .AND. (k>1)) THEN
+                      CALL deallocate_mX_cox_reduced(set_subp) 			  
+                   END IF
+                                      
+                   IF ((solver == 2) .AND. (s_selection < 3)) THEN
                       CALL deallocate_LMBMinfo_cox()
                       CALL deallocate_x_var()                     
                    END IF
-!**         
+         
          END SUBROUTINE  solution_with_k_kits_cox_v2
         !.......................................................................................
         ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>        
@@ -17364,7 +17858,6 @@ END MODULE lmbm_mod
         !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |        
         !** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** 
         !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
-
 
 
        ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
@@ -17379,8 +17872,285 @@ END MODULE lmbm_mod
         !  |                                                                                |  |        
         !  ----------------------------------------------------------------------------------  |
         !***************************************************************************************
-         SUBROUTINE generate_startpoint(set, set_original, x_ed, x_0, f_0, nft, nft_subp, nrecord, & 
-                                       & kits_table, kit, in_mX, solver) 
+         SUBROUTINE reduced_problem(set, x_0, beta_solution, f_solution, nft, nft_subp, nrecord, & 
+                                       & kits_table, nkits_subp, nk, k, first_visit, rho, in_mX, in_mK, solver) 
+            !_____________________________________________________________________________________
+            ! 
+            !
+            !   Generates a starting point using the SUBPROBLEM
+            !                                                 
+            !
+            ! INPUT:  * 'x_0 '          : the starting point for the original problem
+            !
+            !         * 'nft'           : the dimension of the original problem, INTEGER
+            !         * 'nrecord'       : the number of observations, INTEGER
+            !         * 'nft_subp'      : the dimension of the SUBPROBLEM, INTEGER
+            !         * 'nkits_subp'    : the maximum number of kits in the reduced problem, INTEGER
+            !
+            !         * 'kits_table'    : the indices of features in the reduced problem, INTEGER-table
+            !         * 'nk'            : The maximum number of kits in the original problem, INTEGER
+            !         * 'k'             : The number of kits we want to be in use in the solution of the reduced problem, INTEGER
+            !
+            !         * 'firt_visit'    : .TRUE. if reduced problem is visited first time during this iteration, LOGICAL
+            !
+            !         * 'rho'           : The parameter rho used in L0-norm, REAL
+            !
+            !         * 'in_mX'         : The original observed data
+            !         * 'in_mK'         : The original kit matrix
+            !         
+            !         * 'solver'        : defines the solver used (1=DBDC, 2=LMBM)
+            !         
+            !
+            !
+            ! INOUT:   * 'set'           : The data set used as a base in the generation of starting point
+            !          * 'beta_solution' : the solution for the original problem
+            !          * 'f_solution'    : the function value at the solution 'beta_solution'
+            !
+            !
+            ! NOTICE: * The dimension of vectors 'x_0' and 'beta_solution' has to be 'nft' ('nft' is the dimension of the original problem)
+            !             
+            
+            !***********************************************************************************
+               IMPLICIT NONE
+            !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
+            ! INPUTs
+               INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! The dimension of the original problem
+               INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! The number of observations 
+               
+               INTEGER(KIND = c_int), INTENT(IN) :: nft_subp              ! The dimension of the reduced problem (i.e. number of features in the reduced problem)
+               INTEGER(KIND = c_int), INTENT(IN) :: nkits_subp            ! The maximum number of kits in the reduced problem (i.e. the number of features in the reduced problem)
+               INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! The maximum number of kits in the original problem
+               INTEGER(KIND = c_int), INTENT(IN) :: k                     ! The number of kits we want to be in use in the solution of the reduced problem
+ 
+               LOGICAL, INTENT(IN) :: first_visit                         ! .TRUE. if reduced problem is visited first time during this iteration
+ 
+               REAL(KIND=c_double), INTENT(IN) :: rho                     ! The parameter rho used in L0-norm
+               
+               REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_0     ! The starting point 
+                           
+               INTEGER(KIND=c_int), DIMENSION(nft), INTENT(IN) :: kits_table   ! the indices of features in the considered reduced problem, INTEGER-table
+
+               INTEGER(KIND = c_int), INTENT(IN) :: solver                ! the solver used
+
+               REAL(KIND=c_double), DIMENSION(nft,nrecord), INTENT(IN) :: in_mX       ! predictor matrix (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(nk,nft), INTENT(IN):: in_mK             ! kit matrix (row is a kit)
+         
+             ! INOUTs
+               REAL(KIND=c_double), DIMENSION(nft), INTENT(INOUT) :: beta_solution  ! The solution for the original problem 
+               REAL(KIND=c_double), INTENT(INOUT) :: f_solution                     ! The objectuve value at the solution
+               TYPE(set_info) :: set                                                ! The data set used as a base in the generation of starting point         
+                              
+           !***************************** LOCAL VARIABLES ************************************      
+               
+               REAL(KIND=c_double), DIMENSION(nft_subp,nrecord) :: mX_subp         ! predictor matrix in the reduved problem (column is an observation)
+               INTEGER(KIND=c_int), DIMENSION(nkits_subp,nft_subp) :: mK_subp      ! Kit matrix in the reduced problem (row is a kit)
+               INTEGER(KIND=c_int), DIMENSION(nk,nft_subp) :: mK_help               ! A help Kit matrix (row is a kit)
+                
+               REAL(KIND=c_double), DIMENSION(nft_subp) :: x0_subp                 ! the starting point used in the reduced problem
+               REAL(KIND=c_double), DIMENSION(nft_subp) :: beta_subp               ! the solution of the reduced problem
+               
+               REAL(KIND=c_double) :: f_subp                                       ! the objective function value at the solution of the reduced problem
+               REAL(KIND=c_double) :: CPUtime                                      ! the CPU time (in seconds)
+               
+               INTEGER(KIND = c_int) :: problem1                                   ! The DC component f1 of the objective               
+               INTEGER(KIND = c_int) :: problem2                                   ! The DC component f2 of the objective  
+                                
+               INTEGER(KIND=c_int) :: mrounds                                      ! the maximum number of rounds in one main iteration
+                                                                                   ! If 'mrounds' <=0 then DEFAULT value 'mrounds'=5000 is used
+               
+               INTEGER(KIND=c_int) :: mit                                          ! the maximum number of main iterations
+                                                                                   ! If 'mit' <=0 then DEFAULT value 'mit'=5000 is used
+                                                                          
+               INTEGER(KIND=c_int) :: mrounds_esc                                  ! the maximum number of rounds in one escape procedure
+                                                                                   ! If 'mrounds_clarke' <=0 then DEFAULT value 'mrounds_clarke'=5000 is used
+               
+               LOGICAL :: agg_used                                                 ! .TRUE. if aggregation is used in DBDC
+               LOGICAL :: stepsize_used                                            ! .TRUE. if Simple stepsize determination is not used
+               
+               
+               INTEGER(KIND=c_int) :: termination         ! The reason for termination in DBDC method
+                                                          ! 1 - the stopping condition is satisfied (i.e. Clarke stationarity)
+                                                          ! 2 - the approximate stopping condition is satisfied (i.e. the step-length beta* < eps)
+                                                          ! 3 - the maximum number 'mrounds' of rounds executed in one main iteration
+                                                          ! 4 - the maximum number of 'main iterations' is executed  
+                                                          ! 5 - the maximum number 'mrounds_clarke' of rounds executed in one 'Clarke stationary' alqorithm
+                                                          
+               INTEGER(KIND=c_int), DIMENSION(8) :: counter   ! contains the values of different counteres for DBDC method: 
+                                                              !   counter(1) = iter_counter         the number of 'main iterations' executed
+                                                              !   counter(2) = subprob_counter      the number of subproblems solved
+                                                              !   counter(3) = f_counter            the number of function values evaluated for DC component in 'main iteration'
+                                                              !   counter(4) = subgrad1_counter     the number of subgradients calculated for f_1 in 'main iteration'
+                                                              !   counter(5) = subgrad2_counter     the number of subgradients calculated for f_2 in 'main iteration'
+                                                              !--------------------------------------------------------------------------------------------------------------------------                   
+                                                              !   counter(6) = stop_cond_counter    the number of times 'Clarke stationary algorithm' is executed 
+                                                              !   counter(7) = clarke_f_counter     the number of function values evaluated for f in 'Clarke stationary algorithms'
+                                                              !   counter(8) = clarke_sub_counter   the number of subgradients caluculated for f in 'Clarke stationary algorithms'             
+
+               INTEGER(KIND=c_int) :: iprint_DBDC  ! variable that specifies print option in DBDC method:
+                                                !   iprint = 0 : print is suppressed
+                                                !   iprint = 1 : basic print of final result 
+                                                !   iprint = -1: basic print of final result (without the solution vector)
+                                                !   iprint = 2 : extended print of final result 
+                                                !   iprint = -2: extended print of final result (without the solution vector)
+                                                !   iprint = 3 : basic print of intermediate results and extended print of final results
+                                                !   iprint = -3: basic print of intermediate results and extended print of final results (without the solution vector)
+                                                !   iprint = 4 : extended print of intermediate results and extended print of final results 
+                                                !   iprint = -4: extended print of intermediate results and extended print of final results (without the solution vectors)
+                                                
+                                                ! If 'iprint' <= -5 .OR. 'iprint' >= 5 then DEFAULT value 'iprint'=1 is used    
+
+!**
+               ! Scalars in LMBM
+               INTEGER(KIND=c_int) :: mc        ! Initial maximum number of stored corrections.
+               
+               REAL(KIND=c_double) :: LMBMstart  ! The starting time
+               
+               INTEGER, DIMENSION(4) :: iout     ! Output integer parameters.
+                                                 !   iout(1)   Number of used iterations.
+                                                 !   iout(2)   Number of used function evaluations.
+                                                 !   iout(3)   Number of used subgradient evaluations (LMBM)
+                                                 !               or number of outer iterations (LDGBM).
+                                                 !   iout(4)   Cause of termination:
+                                                 !               1  - The problem has been solved
+                                                 !                    with desired accuracy.
+                                                 !               2  - Changes in function values < tolf in mtesf
+                                                 !                    subsequent iterations.
+                                                 !               3  - Changes in function value < 
+                                                 !                    tolf*small*MAX(|f_k|,|f_(k-1)|,1),
+                                                 !                    where small is the smallest positive number
+                                                 !                    such that 1.0 + small > 1.0.
+                                                 !               4  - Number of function calls > mfe.
+                                                 !               5  - Number of iterations > mit.
+                                                 !               6  - Time limit exceeded. 
+                                                 !               7  - f < tolb.
+                                                 !              -1  - Two consecutive restarts.
+                                                 !              -2  - Number of restarts > maximum number
+                                                 !                    of restarts.
+                                                 !              -3  - Failure in function or subgradient
+                                                 !                    calculations (assigned by the user).
+                                                 !              -4  - Failure in attaining the demanded
+                                                 !                    accuracy.
+                                                 !              -5  - Invalid input parameters.
+                                                 !              -6  - Unspecified error.
+ !** 
+                                                
+               INTEGER(KIND=c_int) :: total
+               INTEGER :: i, j, ind
+               
+             ! The solved subproblem is defined
+               problem1 = 32_c_int
+               problem2 = 32_c_int
+
+             ! Some parameters for the solver DBDC
+               mrounds = 5000_c_int
+               mit = 5000_c_int
+               mrounds_esc = 500_c_int
+               iprint_DBDC = 0_c_int
+               agg_used = .TRUE.
+               stepsize_used = .TRUE.
+               
+             ! Parameter in LMBM
+               mc = 7            
+               
+             ! The data allocation needs to be done only for the first starting point during each iteration
+               IF (first_visit) THEN      
+               
+                 ! Construnction of mX_subp matrix used in the subproblem
+                   mX_subp = 0.0_c_double
+                   DO i = 1, nrecord
+                     ! Valuse mX_subp for features in the selected kit
+                       DO j = 1, nft_subp
+                           mX_subp(j,i) = in_mX(kits_table(j),i)
+                       END DO
+                       
+                   END DO       
+
+                 ! Columns for the reduced kit matrix are selected
+                   DO i = 1, nft_subp
+                       DO j = 1, nk
+                           mK_help(j,i) = in_mK(j,kits_table(i))
+                       END DO
+                   END DO 
+                       
+                 ! Rows for the reduced kit matrix are selected  
+                   mK_subp = 0
+                   ind = 0
+                   DO j = 1, nk
+                     total = 0_c_int
+                     DO i = 1, nft_subp
+                       total = total + mK_help(j,i)
+                     END DO
+                     IF (total > 0) THEN 
+                       ind = ind + 1
+                       DO i = 1, nft_subp
+                          mK_subp(ind, i) = mK_help(j,i) 
+                       END DO                        
+                     END IF
+                     
+                   END DO
+                       
+                 ! Predictor and kit matrices for the reduced problem are stored              
+                   CALL allocate_mX_cox_reduced(set, mX_subp, mK_subp, nrecord, nft_subp, nkits_subp, k)
+                 				   
+               END IF
+               
+             ! Starting point   
+               DO j = 1, nft_subp
+                  x0_subp(j) = x_0(kits_table(j))
+               END DO 
+               
+               IF (solver==1) THEN 
+ 
+                   CALL DBDC_algorithm(f_subp, beta_subp, x0_subp, rho, 0.0_c_double, &
+                        & mit, mrounds, mrounds_esc, termination, counter, CPUtime,  &
+                        & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, nft_subp, &
+                        & set) 
+
+               ELSE IF (solver == 2) THEN
+
+                  CALL allocate_xn(nft_subp) 
+                  CALL init_LMBMinfo(problem1, set) 
+                  CALL init_x_var(x0_subp)      
+                  CALL set_rho_LMBM(rho)                  
+                  CALL cpu_time(LMBMstart)   ! Start CPU timining
+                  CALL lmbm(mc,f_subp,iout(1),iout(2),iout(3),iout(4),LMBMstart)     
+                  CALL copy_x_var(beta_subp)
+                  CALL deallocate_LMBMinfo_reduced_cox()
+                  CALL deallocate_x_var() 
+				  
+               END IF
+
+               beta_solution = 0.0_c_double
+               DO i = 1, nft_subp
+                    beta_solution(kits_table(i)) = beta_subp(i)
+               END DO      
+               f_solution = f_subp
+               
+         END SUBROUTINE  reduced_problem
+        !.......................................................................................
+        ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>        
+        ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
+        !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |        
+        !** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** 
+        !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
+
+
+
+
+       ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
+        !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |
+        ! START ** START ** START ** START ** START ** START ** START ** START ** START ** START 
+        !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|         
+        ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>
+        !***************************************************************************************
+        !  ----------------------------------------------------------------------------------  |
+        !  |                                                                                |  |        
+        !  |             GENERATING STARTING POINT USING A SPECIFIC KIT                     |  |
+        !  |                                                                                |  |        
+        !  ----------------------------------------------------------------------------------  |
+        !***************************************************************************************
+         SUBROUTINE generate_startpoint(set, x_ed, x_0, f_0, nft, nft_subp, nrecord, & 
+                                       & kits_table, in_mX, solver) 
             !_____________________________________________________________________________________
             ! 
             !
@@ -17394,7 +18164,7 @@ END MODULE lmbm_mod
             !         * 'nft_subp'      : the dimension of the SUBPROBLEM
             !
             !         * 'kits_table'    : the indices of features in the considered kit, INTEGER-table
-            !         * 'kit'           : the number of features in the considered kit, INTEGER
+            !         * 'kit'           : the indice of the considered kit, INTEGER
             !
             !         * 'in_mX'         : The original observed data
             !         
@@ -17417,7 +18187,6 @@ END MODULE lmbm_mod
                INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! The dimension of the original problem
                INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! The number of observations 
                INTEGER(KIND = c_int), INTENT(IN) :: nft_subp              ! the dimension of the SUBPROBLEM (i.e. the number of features in the selected kit)
-               INTEGER(KIND = c_int), INTENT(IN) :: kit                   ! the indice of the considerd kit
                
                REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_ed    ! the previous solution to the original problem   
                               
@@ -17432,7 +18201,6 @@ END MODULE lmbm_mod
                REAL(KIND=c_double), DIMENSION(nft), INTENT(INOUT) :: x_0  ! The starting point generated during this subroutine
                REAL(KIND=c_double), INTENT(INOUT) :: f_0                  ! The objectuve value at the new starting point generated during this subroutine
                TYPE(set_info) :: set                                      ! The data set used as a base in the generation of starting point                   
-               TYPE(set_info) :: set_original                             ! The original data 
                
            !***************************** LOCAL VARIABLES ************************************      
                
@@ -17442,8 +18210,6 @@ END MODULE lmbm_mod
                REAL(KIND=c_double), DIMENSION(nft_subp) :: beta_subp               ! the solution of the subproblem
                
                REAL(KIND=c_double) :: f_subp                                       ! the objective function value at the solution of the subproblem
-               REAL(KIND=c_double) :: f1_current                                       ! the objective function value at the solution of the subproblem
-               REAL(KIND=c_double) :: f2_current                                       ! the objective function value at the solution of the subproblem
                REAL(KIND=c_double) :: CPUtime                                      ! the CPU time (in seconds)
 
 
@@ -17590,13 +18356,9 @@ END MODULE lmbm_mod
                     x_0(kits_table(i)) = beta_subp(i)
                END DO      
                f_0 = f_subp
-               
-
+                         
                CALL deallocate_mX_cox_subp(set)
                
-
-               
-
          END SUBROUTINE  generate_startpoint
         !.......................................................................................
         ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>        
@@ -17604,8 +18366,6 @@ END MODULE lmbm_mod
         !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |        
         !** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** 
         !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
-        
-        
         
         
 
@@ -18645,8 +19405,9 @@ END MODULE lmbm_mod
         !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
 
 
-
-  
-
   END MODULE oscar
+
+
+
+
 
