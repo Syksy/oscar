@@ -227,6 +227,12 @@ oscar <- function(
 	}else if(!inherits(kmax, c("integer", "numeric"))){
 		stop("Provided kmax parameter ought to be of type 'integer' or 'numeric' cast to an integer")
 	}
+	# Check allowed kmax limits
+	if(kmax<=0){
+		kmax <- 1
+	}else if(kmax > nrow(k)){
+		kmax <- nrow(k)
+	}
 	# If kit weights are missing, assume them to be unit cost
 	if(missing(w)){
 		w <- rep(1, times=nrow(k))
@@ -322,9 +328,9 @@ oscar <- function(
 			print(res)
 		}
 		# Beta per k steps
-		bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
+		#bperk <- matrix(res[[1]], nrow = ncol(x), ncol = kmax)
 		# Naming rows/cols/vector elements
-		rownames(bperk) <- colnames(x)
+		#rownames(bperk) <- colnames(x)
 	# Gaussian / normal distribution fit using mean-squared error	
 	}else if(family %in% c("mse", "gaussian")){
 		# Call C function for Mean-Squared Error regression
@@ -370,9 +376,9 @@ oscar <- function(
 		)
 		# Beta per k steps
 		# Add row for intercept
-		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
+		#bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
 		# Naming rows/cols/vector elements
-		rownames(bperk) <- c(colnames(x),"intercept")
+		#rownames(bperk) <- c(colnames(x),"intercept")
 		
 	}else if(family == "logistic"){
 		# Call C function for logistic regression
@@ -418,9 +424,9 @@ oscar <- function(
 		)
 		# Beta per k steps
 		# Add row for intercept
-		bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
+		#bperk <- matrix(res[[1]], nrow = ncol(x)+1, ncol = nrow(k))
 		# Naming rows/cols/vector elements
-		rownames(bperk) <- c(colnames(x),"intercept")
+		#rownames(bperk) <- c(colnames(x),"intercept")
 	
 	}
 
@@ -436,7 +442,7 @@ oscar <- function(
 	# Beta per k steps
 	# Cox regression doesn't have intercept
 	if(family == "cox"){
-		bperk <- matrix(res[[1]], nrow = ncol(x), ncol = nrow(k))
+		bperk <- matrix(res[[1]], nrow = ncol(x), ncol = kmax)
 		rownames(bperk) <- colnames(x)
 	# All other model families have intercept
 	}else{
@@ -449,7 +455,7 @@ oscar <- function(
 	# Target function values per k steps
 	fperk <- as.numeric(res[[2]])
 	# Naming rows/cols/vector elements
-	names(fperk) <- colnames(bperk) <- paste("k_", 1:nrow(k), sep="")
+	names(fperk) <- colnames(bperk) <- paste("k_", 1:kmax, sep="")
 	
 	if(verb>=2){
 		print("fperk")
@@ -464,7 +470,7 @@ oscar <- function(
 		print(bperk)
 	}
 	## Get kperk from Fortran
-	kperk <- t(matrix(res[[3]], nrow = nrow(k), ncol = nrow(k)))
+	kperk <- t(matrix(res[[3]], nrow = nrow(k), ncol = kmax))
 	if(verb>=3){
 		print("kperk1")
 		print(dim(kperk))
