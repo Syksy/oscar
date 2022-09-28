@@ -13422,14 +13422,14 @@ END MODULE lmbm_mod
     !--------------------------------------------------------------------------
     ! ^^^^ START: IF Fortran code is used with R-C-interface ^^^^
     ! !--------------------------------------------------------------------------        
-          SUBROUTINE oscar_cox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
-       & in_print, in_start, in_k_max, &
-       & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
-       & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &
-       & nKitOnes, betakits, &
-       & solver_id, in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
-       & in_tolg, in_tolg2, in_eta, in_epsL, in_percentage, in_s_selection) & 
-        & BIND(C, name = "oscar_cox_f_")               
+           SUBROUTINE oscar_cox(x, y, kits, costs, nrow, ncol, nkits, beta, fperk, &
+        & in_print, in_start, in_k_max, &
+        & in_mrounds, in_mit, in_mrounds_esc, in_b1, in_b2, in_b, &
+        & in_m, in_m_clarke, in_c, in_r_dec, in_r_inc, in_eps1, in_eps, in_crit_tol, &
+        & nKitOnes, betakits, &
+        & solver_id, in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, &
+        & in_tolg, in_tolg2, in_eta, in_epsL, in_percentage, in_s_selection) & 
+         & BIND(C, name = "oscar_cox_f_")               
     !--------------------------------------------------------------------------
     ! ^^^^ END: IF Fortran code is used with R-C-interface ^^^^
     !--------------------------------------------------------------------------
@@ -13557,7 +13557,7 @@ END MODULE lmbm_mod
             !--------------------------------------------------------------------------            
             ! ^^^^ START: If Fortran code is used without R-C-interface ^^^^
             !-------------------------------------------------------------------------- 
-             ! ** Inputs for OSCAR and DBDC **                   
+             ! ! ** Inputs for OSCAR and DBDC **                   
                ! INTEGER(KIND = c_int), INTENT(IN) :: nrow                  ! Number of rows in x (i.e. records)
                ! INTEGER(KIND = c_int), INTENT(IN) :: ncol                  ! Number of cols in x (i.e. features)
                ! INTEGER(KIND = c_int), INTENT(IN) :: nkits                 ! Number of kits for features
@@ -13685,66 +13685,47 @@ END MODULE lmbm_mod
            !***************************** LOCAL VARIABLES ************************************      
            
                TYPE(set_info) :: info                         ! The set of information                     
- 
-               REAL(KIND=c_double) :: CPUtime                 ! the CPU time (in seconds)
-      
-               INTEGER(KIND=c_int) :: solver                  ! defines the solver used (1=DBDC, 2=LMBM)      
 
-               INTEGER(KIND=c_int) :: nft                     ! the dimension of the problem = the number of features in a predictor
-               INTEGER(KIND=c_int) :: nrecord                 ! the number of records (data points)
-               INTEGER(KIND=c_int) :: nk                      ! the number of kits 
-               INTEGER(KIND=c_int) :: nk_max                  ! the maximum number of kits in the loop 
-   
+             ! **--** REAL tables **--**
                REAL(KIND=c_double), DIMENSION(nKitOnes) :: beta_solution    ! the solution vector beta obtained for the problem
 
                REAL(KIND=c_double), DIMENSION(nKitOnes,nkits) :: points     ! the beta_solutions for problem 3 for fixed k ('nkits' different starting points) 
-               REAL(KIND=c_double), DIMENSION(nkits) ::        f_points     ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
+               REAL(KIND=c_double), DIMENSION(nkits) ::          f_points   ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
                REAL(KIND=c_double), DIMENSION(nKitOnes) ::       x_koe      ! The solution to Cox's proportional hazard model without regularization
                REAL(KIND=c_double), DIMENSION(nKitOnes) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
                
                REAL(KIND=c_double), DIMENSION(nKitOnes,nkits) :: x_solution    ! the beta solutions for the problem with fixed starting points and number of kits 
                REAL(KIND=c_double), DIMENSION(nkits) :: f_solution             ! the objective function valuse at the solution 'x_solution'
-               REAL(KIND=c_double) :: f_solution_DBDC                          ! the f_solution obtained from DBDC method
+               REAL(KIND = c_double), DIMENSION(nKitOnes*nkits)  :: beta_nft   ! Output variable for beta coefficients per k
+               REAL(KIND=c_double), DIMENSION(nKitOnes) :: x_0                 ! the starting point
                
-               REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE :: in_mX               ! predictor matrix (row is an observation)
-               INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: in_mY               ! observed times and labels matrix (row is an observation)  
-               INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: in_mK               ! kit matrix (row is a kit)
-               REAL(KIND=c_double), DIMENSION(:), ALLOCATABLE   :: in_mC               ! kit costs    
+               REAL(KIND=c_double), DIMENSION(nrow) :: mTimes          ! Times for the observations   
+               
+               REAL(KIND=c_double), DIMENSION(8) :: mrho               ! Vector containing the values of rho parameter used in the method 
+               
+               REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE :: in_mX       ! predictor matrix (row is an observation)
+               REAL(KIND=c_double), DIMENSION(:), ALLOCATABLE   :: in_mC       ! kit costs    
+               REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE :: mXt         ! predictor matrix (column is an observation)
+
+             ! **--** INTEGER tables **--**
+               INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: in_mY       ! observed times and labels matrix (row is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: in_mK       ! kit matrix (row is a kit)
+               INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: mYt         ! observed times and labels matrix (column is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: mK          ! Modified kit matrix (There is only one value one in each column) 
+
+               INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed       ! indices of kits in the previous solution 'x_ed'
+               
+               INTEGER(KIND=c_int), DIMENSION(nrow) :: mTimesInd       ! Labels of times for the observations (0=alive, 1=death)  
+               INTEGER(KIND=c_int), DIMENSION(ncol) :: KitOnes        ! The number of kits where each variables is located. If kits do not intersect then each variable is only in one kit!
+               
                !REAL(KIND=c_double), DIMENSION(nrow,ncol) :: in_mX          ! predictor matrix (row is an observation)
                !INTEGER(KIND=c_int), DIMENSION(nrow,2) :: in_mY             ! observed times and labels matrix (row is an observation)  
                !INTEGER(KIND=c_int), DIMENSION(nkits,ncol) :: in_mK         ! kit matrix (row is a kit)
                !REAL(KIND=c_double), DIMENSION(nkits) :: in_mC              ! kit costs          
-       
-               REAL(KIND=c_double), DIMENSION(:,:), ALLOCATABLE :: mXt      ! predictor matrix (column is an observation)
-               INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: mYt      ! observed times and labels matrix (column is an observation)  
-               INTEGER(KIND=c_int), DIMENSION(:,:), ALLOCATABLE :: mK       ! Modified kit matrix (There is only one value one in each column)                 
                !REAL(KIND=c_double), DIMENSION(nKitOnes,nrow) :: mXt        ! predictor matrix (column is an observation)
                !INTEGER(KIND=c_int), DIMENSION(2,nrow) :: mYt               ! observed times and labels matrix (column is an observation)  
-               !INTEGER(KIND=c_int), DIMENSION(nkits,nKitOnes) :: mK        ! Modified kit matrix (There is only one value one in each column) 
-               
-               REAL(KIND = c_double), DIMENSION(nKitOnes*nkits)  :: beta_nft   !Output variable for beta coefficients per k
-
-               INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed       ! indices of kits in the previous solution 'x_ed'
-
-               REAL(KIND=c_double), DIMENSION(nKitOnes) :: x_0             ! the starting point
-               
-               REAL(KIND=c_double), DIMENSION(nrow) :: mTimes          ! Times for the observations   
-               INTEGER(KIND=c_int), DIMENSION(nrow) :: mTimesInd       ! Labels of times for the observations (0=alive, 1=death)  
-               
-               INTEGER(KIND=c_int), DIMENSION(ncol) :: KitOnes        ! The number of kits where each variables is located. If kits do not intersect then each variable is only in one kit!
-              
-               REAL(KIND=c_double), DIMENSION(8) :: mrho        ! Vector containing the values of rho parameter used in the method 
-              
-               INTEGER(KIND=c_int) :: nstart              ! the number of starting point
-               INTEGER(KIND=c_int) :: start_max           ! the number of starting point when 'start = 5'
-
-               INTEGER(KIND=c_int) :: termination         ! The reason for termination in DBDC method
-                                                          ! 1 - the stopping condition is satisfied (i.e. Clarke stationarity)
-                                                          ! 2 - the approximate stopping condition is satisfied (i.e. the step-length beta* < eps)
-                                                          ! 3 - the maximum number 'mrounds' of rounds executed in one main iteration
-                                                          ! 4 - the maximum number of 'main iterations' is executed  
-                                                          ! 5 - the maximum number 'mrounds_clarke' of rounds executed in one 'Clarke stationary' alqorithm
-                                                          
+               !INTEGER(KIND=c_int), DIMENSION(nkits,nKitOnes) :: mK        ! Modified kit matrix (There is only one value one in each column)   
+                                                     
                INTEGER(KIND=c_int), DIMENSION(8) :: counter   ! contains the values of different counteres for DBDC method: 
                                                               !   counter(1) = iter_counter         the number of 'main iterations' executed
                                                               !   counter(2) = subprob_counter      the number of subproblems solved
@@ -13754,7 +13735,44 @@ END MODULE lmbm_mod
                                                               !--------------------------------------------------------------------------------------------------------------------------                   
                                                               !   counter(6) = stop_cond_counter    the number of times 'Clarke stationary algorithm' is executed 
                                                               !   counter(7) = clarke_f_counter     the number of function values evaluated for f in 'Clarke stationary algorithms'
-                                                              !   counter(8) = clarke_sub_counter   the number of subgradients caluculated for f in 'Clarke stationary algorithms'             
+                                                              !   counter(8) = clarke_sub_counter   the number of subgradients caluculated for f in 'Clarke stationary algorithms'    
+
+             ! **--** REALs **--**
+               REAL(KIND=c_double) :: f_solution_DBDC                          ! the f_solution obtained from DBDC method
+
+               REAL(KIND=c_double) :: cost            ! The cost of solution beta
+               REAL(KIND=c_double) :: small           ! The cost of solution beta
+               
+               REAL(KIND=c_double) :: s_time, f_time  ! The start and finish times
+               REAL(KIND=c_double) :: cpu             ! The cpu time
+               
+               REAL(KIND=c_double) :: f1_current      ! The value of f1
+               REAL(KIND=c_double) :: f2_current      ! The value of f2
+
+               REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
+              
+               REAL(KIND=c_double) :: percentage          ! Percentage of the used starting points 
+               REAL(KIND=c_double) :: elapsed_time        ! elapsed 'clock' time in seconds
+               REAL(KIND=c_double) :: LMBMstart           ! The starting time in LMBM
+               REAL(KIND=c_double) :: CPUtime             ! the CPU time (in seconds)
+
+             ! **--** INTEGERs **--**
+               INTEGER(KIND=c_int) :: solver                  ! defines the solver used (1=DBDC, 2=LMBM)      
+
+               INTEGER(KIND=c_int) :: nft                     ! the dimension of the problem = the number of features in a predictor
+               INTEGER(KIND=c_int) :: nrecord                 ! the number of records (data points)
+               INTEGER(KIND=c_int) :: nk                      ! the number of kits 
+               INTEGER(KIND=c_int) :: nk_max                  ! the maximum number of kits in the loop 
+
+               INTEGER(KIND=c_int) :: nstart              ! the number of starting point
+               INTEGER(KIND=c_int) :: start_max           ! the number of starting point when 'start = 5'
+
+               INTEGER(KIND=c_int) :: termination         ! The reason for termination in DBDC method
+                                                          ! 1 - the stopping condition is satisfied (i.e. Clarke stationarity)
+                                                          ! 2 - the approximate stopping condition is satisfied (i.e. the step-length beta* < eps)
+                                                          ! 3 - the maximum number 'mrounds' of rounds executed in one main iteration
+                                                          ! 4 - the maximum number of 'main iterations' is executed  
+                                                          ! 5 - the maximum number 'mrounds_clarke' of rounds executed in one 'Clarke stationary' alqorithm         
         
                INTEGER(KIND=c_int) :: user_n             ! the dimension of the problem
                        
@@ -13767,7 +13785,6 @@ END MODULE lmbm_mod
                INTEGER(KIND=c_int) :: mrounds_clarke     ! the maximum number of rounds during one 'Clarke stationary' algorithm
                                                          ! If 'mrounds_clarke' <=0 then DEFAULT value 'mrounds_clarke'=5000 is used
 
-               ! Possible USER PARAMETER
                INTEGER(KIND=c_int) :: iprint   ! specifies the print
                                                !   iprint = 0 : print is suppressed
                                                !   iprint = -1 : prints for each L0-norm problem the final value of Cox's proportional hazard model (Not table form)
@@ -13803,29 +13820,10 @@ END MODULE lmbm_mod
                                                !                L0-problems are solved in order: k = 1, 2, ... , nkits (randomly generated)
                                                ! 
                                                !   start = -4 : for L0-norm problem with k nonzero components uses 'start_max' starting points 
-                                               !                L0-problems are solved in order: k = nkits, nkits-1, ... , 1 (randomly generated)                                                              
-                               
- 
-               LOGICAL :: agg_used              ! .TRUE. if aggregation is used in the algorithm. Otherwise .FALSE.                                                           
-               LOGICAL :: stepsize_used         ! .TRUE. if simple stepsize determination is used in the algorithm. Otherwise .FALSE.
-               
-               LOGICAL :: scale_in_use          ! If .TRUE. data is scaled
-               
-               LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
+                                               !                L0-problems are solved in order: k = nkits, nkits-1, ... , 1 (randomly generated)  
 
-               REAL(KIND=c_double) :: cost            ! The cost of solution beta
-               REAL(KIND=c_double) :: small           ! The cost of solution beta
-               
-               REAL(KIND=c_double) :: s_time, f_time  ! The start and finish times
-               REAL(KIND=c_double) :: cpu             ! The cpu time
-               
-               REAL(KIND=c_double) :: f1_current      ! The value of f1
-               REAL(KIND=c_double) :: f2_current      ! The value of f2
 
-               REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
-              
-               REAL(KIND=c_double) :: percentage              ! Percentage of the used starting points 
-               INTEGER(KIND=c_int) :: s_selection             ! Starting point selection                               
+               INTEGER(KIND=c_int) :: s_selection           ! Starting point selection                               
                
                INTEGER(KIND=c_int) :: problem1              ! The DC component f1 
                INTEGER(KIND=c_int) :: problem2              ! The DC component f2 
@@ -13848,12 +13846,10 @@ END MODULE lmbm_mod
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2
                INTEGER(KIND=c_int) :: l, l2, j3
 
-               REAL(KIND=c_double) :: elapsed_time                  ! elapsed 'clock' time in seconds
                INTEGER(KIND=c_int) :: clock_start, clock_end, clock_rate  ! start and finish 'clock' time 
             
                ! Scalars in LMBM
                INTEGER(KIND=c_int) ::  mc        ! Number of corrections.
-               REAL(KIND=c_double) :: LMBMstart  ! The starting time
                INTEGER, DIMENSION(4) :: iout     ! Output integer parameters.
                                                  !   iout(1)   Number of used iterations.
                                                  !   iout(2)   Number of used function evaluations.
@@ -13881,7 +13877,15 @@ END MODULE lmbm_mod
                                                  !                    accuracy.
                                                  !              -5  - Invalid input parameters.
                                                  !              -6  - Unspecified error.               
- 
+
+             ! **--** LOGICALs **--** 
+               LOGICAL :: agg_used              ! .TRUE. if aggregation is used in the algorithm. Otherwise .FALSE.                                                           
+               LOGICAL :: stepsize_used         ! .TRUE. if simple stepsize determination is used in the algorithm. Otherwise .FALSE.
+               
+               LOGICAL :: scale_in_use          ! If .TRUE. data is scaled
+               
+               LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
+
  
                CALL cpu_time(s_time)   ! Start CPU timing
                CALL SYSTEM_CLOCK(COUNT_RATE=clock_rate) ! Find the rate
@@ -14022,7 +14026,9 @@ END MODULE lmbm_mod
               !---------------------------------------------------------------------------
               !                       READING DATA MATRICES
               !---------------------------------------------------------------------------
-  
+ 
+               ! ! WRITE(*,*) 'osa00'
+ 
                 ! OPEN(78,file=infileX,status='old',form='formatted')
                 ! DO i=1,nrecord
                    ! READ(78,*) (in_mX(i,j),j=1,ncol)
@@ -14042,6 +14048,8 @@ END MODULE lmbm_mod
                 ! CLOSE(78)
                            
                 ! in_mC = 1.0_c_double
+
+               ! ! WRITE(*,*) 'osa01'
 
                 
               !--------------------------------------------------------------------------
@@ -14117,7 +14125,7 @@ END MODULE lmbm_mod
                CALL heapsort_ind(mTimes,mTimesInd)   
 
 !****
-!                WRITE(*,*) 'osa02'
+              !  WRITE(*,*) 'osa02'
 
              ! Allocation of temporary data matrices     
                ALLOCATE(mXt(nKitOnes,nrow),mYt(2,nrow),mK(nkits,nKitOnes))
@@ -14134,7 +14142,7 @@ END MODULE lmbm_mod
                  END DO
                END DO
                
-!                WRITE(*,*) 'osa03'
+              !  WRITE(*,*) 'osa03'
             
                !Transpose of matrix mY          
                DO i = 1, nrecord
@@ -14144,13 +14152,13 @@ END MODULE lmbm_mod
                  END DO
                END DO    
                
-!                WRITE(*,*) 'osa04'
+              !  WRITE(*,*) 'osa04'
 
                ! Alters the kit matrix
                mK = 0_c_int
                l2 = 1_c_int
                
-!                WRITE(*,*) 'osa041'
+             !   WRITE(*,*) 'osa041'
                
                DO j = 1, ncol 
                   DO i = 1, nk
@@ -14161,7 +14169,7 @@ END MODULE lmbm_mod
                   END DO               
                END DO 
                      
-!              WRITE(*,*) 'osa0'
+            !   WRITE(*,*) 'osa0'
                
              ! The deallocation of the temporary data  
                DEALLOCATE(in_mX, in_mY, in_mK)
@@ -14224,6 +14232,8 @@ END MODULE lmbm_mod
                       CALL deallocate_x_var() 
                            
                   END IF     
+                  
+                 ! WRITE(*,*) 'f_solution', f_solution_DBDC
               END IF              
 
               ! Notice: * solution x_koe is obtained by fitting Cox's model to data without regularization
@@ -14277,28 +14287,17 @@ END MODULE lmbm_mod
                   !-------------------------------------------------------------------------------------------------------
               
 !******                  
-!                  WRITE(*,*) 'osa1'
-                  
-                    IF (s_selection > 0) THEN  
-                   
+                !  WRITE(*,*) 'osa1'
+                                    
                      CALL solution_with_k_kits_cox_v2(x_solution, f_solution, k, small, &
-                                               & x_ed, kit_num_ed, kits_beta_ed, &
-                                               & nk, iprint, mrho, mit, mrounds, mrounds_clarke, &
+                                               & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
+                                               & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
                                                & agg_used, stepsize_used, user_n, problem1, problem2, &
                                                & info, mXt, mYt, mK, nrecord,  & 
                                                & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
                                                & in_b, in_m_clarke, in_eps, in_crit_tol, mc, solver, & 
                                                & percentage, s_selection)                                                
                     
-                    ELSE ! The only option used in the previous version of OSCAR (s_selection = 0)
-
-                   !  CALL solution_with_k_kits_cox(x_solution, f_solution, k, small, &
-                   !                            & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
-                   !                            & nk, start, iprint, mrho, mit, mrounds, mrounds_clarke, &
-                   !                            & agg_used, stepsize_used, user_n, problem1, problem2, &
-                   !                            & info, mc, solver)                                              
-                    
-                    END IF
                     
                     ! Storing of the obtained solutions and the corresponding objective values                               
                      DO j3 = 1, nk   
@@ -14308,7 +14307,7 @@ END MODULE lmbm_mod
                          f_points(j3) = f_solution(j3)
                      END DO  
   
-!                   WRITE(*,*) 'osa2'
+                !   WRITE(*,*) 'osa2'
                    
                    min_ind = 0
                    IF (start == 1) THEN 
@@ -14420,14 +14419,14 @@ END MODULE lmbm_mod
               IF (scale_in_use) THEN  ! Rescaling
 
 !*****              
-!                 WRITE(*,*) 'rescaling'
+               !  WRITE(*,*) 'rescaling'
                  
                  CALL set_k(info, nk)               
                  info%user_lambda = 0.0_c_double
                  CALL rescaling_cox(info)        ! the rescaling of data 
                  
 !*****
- !                WRITE(*,*) 'valistep'
+               !  WRITE(*,*) 'valistep'
                  
                  DO k = 1, nk_max         ! Each solution generated is rescaled
                    ind = (k-1)*user_n
@@ -14452,7 +14451,7 @@ END MODULE lmbm_mod
                  END DO 
                  
 !******              
-!                 WRITE(*,*) 'rescaling done'
+                ! WRITE(*,*) 'rescaling done'
 
               ELSE   
                   CALL set_k(info, nk)               
@@ -14813,7 +14812,6 @@ END MODULE lmbm_mod
 
                INTEGER(KIND=c_int), DIMENSION(ncol) :: KitOnes        ! The number of kits where each variables is located. If kits do not intersect then each variable is only in one kit!
                
-!               INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta     ! indices of kits in the solution 'beta_solution'
                INTEGER(KIND=c_int), DIMENSION(nkits) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
 
                REAL(KIND=c_double), DIMENSION(nKitOnes+1) :: x_0          ! the starting point
@@ -14923,6 +14921,7 @@ END MODULE lmbm_mod
                REAL(KIND=c_double) :: f2_current      ! The value of f2
                
                REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
+
                
                INTEGER(KIND=c_int) :: problem1              ! The DC component f1 
                INTEGER(KIND=c_int) :: problem2              ! The DC component f2 
@@ -15883,7 +15882,7 @@ END MODULE lmbm_mod
            
            !***************************** LOCAL VARIABLES ************************************      
 
-               TYPE(set_info) :: info                         ! The set of information                     
+               TYPE(set_info) :: info           ! The set of information                     
  
                REAL(KIND=c_double) :: CPUtime                 ! the CPU time (in seconds)
 
@@ -15897,7 +15896,7 @@ END MODULE lmbm_mod
                REAL(KIND=c_double), DIMENSION(nKitOnes+1) :: beta_solution    ! the solution vector beta obtained for the problem
 
                REAL(KIND=c_double), DIMENSION(nKitOnes+1,nkits) :: points     ! the beta_solutions for problem 3 for fixed k ('nkits' different starting points) 
-               REAL(KIND=c_double), DIMENSION(nkits) ::            f_points   ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
+               REAL(KIND=c_double), DIMENSION(nkits) ::      f_points     ! the objective function values for problem 3 for fixed k ('nkits' different starting points)
                REAL(KIND=c_double), DIMENSION(nKitOnes+1) ::       x_koe      ! The solution to Cox's proportional hazard model without regularization
                REAL(KIND=c_double), DIMENSION(nKitOnes+1) ::       x_ed       ! the beta solution for the previous problem where the number of nonzero elements was one smaller
 
@@ -16015,7 +16014,7 @@ END MODULE lmbm_mod
                LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
                
                LOGICAL :: ed_sol_in_pen         ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
-       
+
                REAL(KIND=c_double) :: cost            ! The cost of solution beta
                REAL(KIND=c_double) :: small           ! The cost of solution beta
                
@@ -16031,6 +16030,7 @@ END MODULE lmbm_mod
                INTEGER(KIND=c_int) :: problem2              ! The DC component f2 
         
                INTEGER(KIND=c_int) :: help_counter
+
                INTEGER(KIND=c_int) :: kit_num_ed   ! The number of kits in the current and previous solutions
                INTEGER(KIND=c_int) :: i, j, k, ind, min_ind, j1, j2
                INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization
@@ -16119,6 +16119,7 @@ END MODULE lmbm_mod
  
                tread_num = max_threads
       
+!               WRITE(*,*) 'The number of threads', max_threads              
                ! ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
 
                ! The initialization of parametrs used in DBDC methods
@@ -16691,532 +16692,6 @@ END MODULE lmbm_mod
         !---------------------------------------------------------------------------------------
         
         
-        ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
-        !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |
-        ! START ** START ** START ** START ** START ** START ** START ** START ** START ** START 
-        !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|         
-        ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>
-        !***************************************************************************************
-        !  ----------------------------------------------------------------------------------  |
-        !  |                                                                                |  |        
-        !  |             SOLVING THE PROBLEM WITH k KITS AND STARTING POINT i               |  |
-        !  |                                                                                |  |        
-        !  ----------------------------------------------------------------------------------  |
-        !***************************************************************************************
-         SUBROUTINE solution_with_k_kits_cox( x_solution, f_solution, k, f_prev, & 
-                                    & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
-                                    & nk, start, iprint, mrho, mit, mrounds, mrounds_esc, &
-                                    & agg_used, stepsize_used, nft, problem1, problem2,  &      
-                                    & info, mc, solver) 
-            !_____________________________________________________________________________________
-            ! 
-            !           
-            ! * 'problem1  and problem2   : defines the used objective function is Cox's proportional hazards model with L0-norm for kits
-            !                              (parametric approach since the number of nonzero elements is fixed) 
-            !
-            !   Solves the L0-norm problem from a fixed starting points for thread "i" with "k" kits
-            !                                                 
-            !
-            ! INPUT:  * 'nft'           : The dimension of the problem = the number of features in a predictor, INTEGER
-            !         * 'nk'            : the (maximum) number of kits, INTEGER
-            !         * 'nrecord'       : the number of observations, INTEGER
-            !
-            !         * 'k'             : the number of kits in the problem, INTEGER
-            !
-            !         * 'x_ed'          : the beta solution for the previous problem where the number of nonzero kits was one smaller (INTEGER)
-            !         * 'x_koe'         : The solution to Cox's proportional hazard model without regularization
-            !         * 'kit_num_ed'    : The number of kits in the previous solution
-            !         * 'kit_beta_ed'   : indices of kits in the previous solution 'x_ed'
-            ! 
-            !         * 'print'         : specifies the print, INTEGER
-            !         * 'start'         : specifies how starting points are selected when the L0-norm problem is solved for  
-            !                             the fixed number of kits and in which order the L0-norm problems are solved, INTEGER
-            !         * 'mrho'          : List of used rho values
-            !
-            !         * 'problem1'      : Defines the DC component f1 of the objective
-            !         * 'problem2'      : Defines the DC component f2 of the objective
-            !
-            !         * 'in_mX', 'in_mY', 'in_mK', 'in_mC'    : Are the data matrices 
-            !         
-            !         * 'solver'        : defines the solver used (1=DBDC, 2=LMBM)
-            !         
-            !         PARAMETERS in DBDC method:
-            !
-            !         * mrounds     : the maximum number of rounds in one main iteratioin
-            !         * mit         : the maximum number of main iterations
-            !         * mrounds_esc : the maximum number of rounds in escape procedure
-            !
-            !         * agg_used       : .TRUE. if aggregation is used 
-            !         * stepsize_used  : .TRUE. if Simple stepsize determination is not used
-            !
-            !         * in_b1          : the size of bundle B1
-            !         * in_b2          : the size of bundle B2
-            !         * in_b           : the size of bundle in escape procedure
-            !
-            !         * in_m           : the descent parameter in main iteration
-            !         * in_m_clarke    : the descent parameter in escape procedure
-            !         * in_c           : the extra decrease parameter in main iteration
-            !         * in_r_dec       : the decrease parameter in main iteration
-            !         * in_r_inc       : the increase parameter in main iteration
-            !         * in_eps1        : the enlargement parameter
-            !         * in_eps         : the stopping tolerance: proximity measure  
-            !         * in_crit_tol    : the stopping tolerance: criticality tolerance               !
-            !
-            ! OUTPUT: * 'f_solution'      : The objective function values for the L0-norm problem with "k" kits from fixed strating points in thread "i", 
-            !                              REAL, DIMENSION(nk) 
-            !         * 'x_solution'      : The vector containing solution vector betas for the L0-norm problem with "k" kits from fixed strating points in thread "i", 
-            !                              REAL, DIMENSION(nft,nk) 
-            !
-            ! INOUT:  * 'info'            : The set of information
-            !
-            !
-            ! NOTICE: * The dimension of vectors 'x_solution', 'x_ed' and 'x_koe' has to be 'nft' ('nft' is the dimension of the problem)
-            !
-            !
-            ! NOTICE: * 'print' has to be 0, 1, 2 or 3.           
-            !         * 'start' has to be 1, 2, 3 or 4.              
-            
-            !***********************************************************************************
-               IMPLICIT NONE
-            !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
-            ! INPUTs
-               TYPE(set_info), INTENT(INOUT) :: info                                     ! The set of information                     
-
-               INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (also the dimension of the problem)
-               INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
-             !  INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
-               
-               REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_koe    ! The solution to Cox's proportional hazard model without regularization
-               REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_ed     ! the beta solution for the previous problem where the number of nonzero kits was one smaller   
-               
-               REAL(KIND=c_double), INTENT(IN) :: f_prev                   ! The objective value for the previous problem where the number of nonzero kits was one smaller       
-               
-               INTEGER(KIND=c_int), INTENT(IN) :: kit_num_ed                   ! The number of kits in the previous solution
-               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
-
-               REAL(KIND=c_double), DIMENSION(8), INTENT(IN) :: mrho      ! Vector containing the values of rho parameter used in the method 
-            
-               INTEGER(KIND = c_int), INTENT(IN) :: start                 ! Starting point procedure used
-               INTEGER(KIND = c_int), INTENT(IN) :: iprint                ! Print used
-
-               INTEGER(KIND = c_int), INTENT(IN) :: solver                ! the solver used
-               
-               INTEGER(KIND = c_int), INTENT(IN) :: k                     ! The number of kits in the problem 
-               
-               INTEGER(KIND = c_int), INTENT(IN) :: problem1              ! The DC component f1 of the objective               
-               INTEGER(KIND = c_int), INTENT(IN) :: problem2              ! The DC component f2 of the objective               
-               
-               INTEGER(KIND=c_int), INTENT(INOUT) :: mrounds                 ! the maximum number of rounds in one main iteration
-                                                                          ! If 'mrounds' <=0 then DEFAULT value 'mrounds'=5000 is used
-               
-               INTEGER(KIND=c_int), INTENT(INOUT) :: mit                     ! the maximum number of main iterations
-                                                                          ! If 'mit' <=0 then DEFAULT value 'mit'=5000 is used
-                                                                          
-               INTEGER(KIND=c_int), INTENT(INOUT) :: mrounds_esc             ! the maximum number of rounds in one escape procedure
-                                                                          ! If 'mrounds_clarke' <=0 then DEFAULT value 'mrounds_clarke'=5000 is used
-                
-               LOGICAL, INTENT(IN) :: agg_used                            ! .TRUE. if aggregation is used in DBDC
-               LOGICAL, INTENT(IN) :: stepsize_used                       ! .TRUE. if Simple stepsize determination is not used
-               
-              ! Parameters in DBDC method
-              ! INTEGER(KIND=c_int), INTENT(IN) :: in_b1                   ! the size of bundle B1
-              ! INTEGER(KIND=c_int), INTENT(IN) :: in_b2                   ! the size of bundle B2
-              ! INTEGER(KIND=c_int), INTENT(IN) :: in_b                    ! the size of bundle in escape procedure
-               
-              ! REAL(KIND=c_double), INTENT(IN) :: in_m                    ! the descent parameter in main iteration
-              ! REAL(KIND=c_double), INTENT(IN) :: in_m_clarke             ! the descent parameter in escape procedure
-              ! REAL(KIND=c_double), INTENT(IN) :: in_c                    ! the extra decrease parameter in main iteration
-              ! REAL(KIND=c_double), INTENT(IN) :: in_r_dec                ! the decrease parameter in main iteration
-              ! REAL(KIND=c_double), INTENT(IN) :: in_r_inc                ! the increase parameter in main iteration
-              ! REAL(KIND=c_double), INTENT(IN) :: in_eps1                 ! the enlargement parameter
-              ! REAL(KIND=c_double), INTENT(IN) :: in_eps                  ! the stopping tolerance: proximity measure  
-              ! REAL(KIND=c_double), INTENT(IN) :: in_crit_tol             ! the stopping tolerance: criticality tolerance
-
-              ! The data matrices
-              ! REAL(KIND=c_double), DIMENSION(nft,nrecord) :: in_mX       ! predictor matrix (column is an observation)
-              ! INTEGER(KIND=c_int), DIMENSION(2,nrecord) :: in_mY         ! observed times and labels matrix (column is an observation)  
-              ! INTEGER(KIND=c_int), DIMENSION(nk,nft) :: in_mK            ! kit matrix (row is a kit)
-              ! REAL(KIND=c_double), DIMENSION(nk) :: in_mC                ! kit costs          
-                     
-            ! OUTPUTs
-               REAL(KIND = c_double), INTENT(OUT), DIMENSION(nft,nk)  :: x_solution   !Output variable for beta coefficients with k kits and starting points for the thread i
-               REAL(KIND = c_double), DIMENSION(nk), INTENT(OUT)      :: f_solution   !Output variable target function value with k kits and starting points for the thread i
-             
-            ! Scalar in LMBM          
-               INTEGER(KIND=c_int), INTENT(INOUT) :: mc                   ! Initial maximum number of stored corrections.
-               
-           
-           !***************************** LOCAL VARIABLES ************************************      
- 
-              ! TYPE(set_info) :: set1                                   ! The set of information                     
-              ! TYPE(set_info) :: set                                    ! The set of information                     
-
-               REAL(KIND=c_double) :: CPUtime                           ! the CPU time (in seconds)
-               REAL(KIND=c_double) :: f_solution_DBDC                   ! the f_solution obtained from DBDC method
-  
-               REAL(KIND=c_double), DIMENSION(nft) :: beta_solution     ! the solution vector beta obtained during the execution      
-          
-               INTEGER(KIND=c_int), DIMENSION(nk) :: kits_beta          ! indices of kits in the solution 'beta_solution'
-
-               REAL(KIND=c_double), DIMENSION(nft) :: x_0               ! the starting point
-               
-               INTEGER(KIND=c_int) :: termination         ! The reason for termination in DBDC method
-                                                          ! 1 - the stopping condition is satisfied (i.e. Clarke stationarity)
-                                                          ! 2 - the approximate stopping condition is satisfied (i.e. the step-length beta* < eps)
-                                                          ! 3 - the maximum number 'mrounds' of rounds executed in one main iteration
-                                                          ! 4 - the maximum number of 'main iterations' is executed  
-                                                          ! 5 - the maximum number 'mrounds_clarke' of rounds executed in one 'Clarke stationary' alqorithm
-                                                          
-               INTEGER(KIND=c_int), DIMENSION(8) :: counter   ! contains the values of different counteres for DBDC method: 
-                                                              !   counter(1) = iter_counter         the number of 'main iterations' executed
-                                                              !   counter(2) = subprob_counter      the number of subproblems solved
-                                                              !   counter(3) = f_counter            the number of function values evaluated for DC component in 'main iteration'
-                                                              !   counter(4) = subgrad1_counter     the number of subgradients calculated for f_1 in 'main iteration'
-                                                              !   counter(5) = subgrad2_counter     the number of subgradients calculated for f_2 in 'main iteration'
-                                                              !--------------------------------------------------------------------------------------------------------------------------                   
-                                                              !   counter(6) = stop_cond_counter    the number of times 'Clarke stationary algorithm' is executed 
-                                                              !   counter(7) = clarke_f_counter     the number of function values evaluated for f in 'Clarke stationary algorithms'
-                                                              !   counter(8) = clarke_sub_counter   the number of subgradients caluculated for f in 'Clarke stationary algorithms'             
-        
-               INTEGER(KIND=c_int) :: user_n             ! the dimension of the problem
-                                      
-               INTEGER(KIND=c_int) :: iprint_DBDC  ! variable that specifies print option in DBDC method:
-                                                !   iprint = 0 : print is suppressed
-                                                !   iprint = 1 : basic print of final result 
-                                                !   iprint = -1: basic print of final result (without the solution vector)
-                                                !   iprint = 2 : extended print of final result 
-                                                !   iprint = -2: extended print of final result (without the solution vector)
-                                                !   iprint = 3 : basic print of intermediate results and extended print of final results
-                                                !   iprint = -3: basic print of intermediate results and extended print of final results (without the solution vector)
-                                                !   iprint = 4 : extended print of intermediate results and extended print of final results 
-                                                !   iprint = -4: extended print of intermediate results and extended print of final results (without the solution vectors)
-                                                
-                                                ! If 'iprint' <= -5 .OR. 'iprint' >= 5 then DEFAULT value 'iprint'=1 is used    
-               
-               LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
-               LOGICAL :: run_stop              ! If .TRUE. run of this subroutine is stopped for selected k
-               LOGICAL :: mukana                ! If .TRUE. specific kit is in the solution
-               
-               LOGICAL :: ed_sol_in_pen         ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
-               LOGICAL :: new_start             ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
-       
-               REAL(KIND=c_double) :: rho             ! The parameter rho used in L0-norm
-               REAL(KIND=c_double) :: cost            ! The cost of solution beta
-                            
-               REAL(KIND=c_double) :: f1_current      ! The value of f1
-               REAL(KIND=c_double) :: f2_current      ! The value of f2
-               
-               REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
-               
-               REAL(KIND=c_double) :: random_num                  ! Random number
-               REAL(KIND=c_double), DIMENSION(nk) :: mRand        ! Random number matrix
-               INTEGER(KIND=c_int), DIMENSION(nk) :: mRandInd     ! Original indices of random numbers in matrix
-        
-               INTEGER(KIND=c_int) :: help_counter
-               INTEGER(KIND=c_int) :: num_rho
-               INTEGER(KIND=c_int) :: kit_num               ! The number of kits in the current solution
-!               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2, ui
-               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2
-!               INTEGER(KIND=c_int) :: max_threads          ! the maximum number of threads that can be used in parallellization         
-
-               INTEGER(KIND=c_int) ::  kk                   ! the start index for starting point    
-                
-!**
-               ! Scalars in LMBM
-               REAL(KIND=c_double) :: LMBMstart  ! The starting time
-               INTEGER, DIMENSION(4) :: iout     ! Output integer parameters.
-                                                 !   iout(1)   Number of used iterations.
-                                                 !   iout(2)   Number of used function evaluations.
-                                                 !   iout(3)   Number of used subgradient evaluations (LMBM)
-                                                 !               or number of outer iterations (LDGBM).
-                                                 !   iout(4)   Cause of termination:
-                                                 !               1  - The problem has been solved
-                                                 !                    with desired accuracy.
-                                                 !               2  - Changes in function values < tolf in mtesf
-                                                 !                    subsequent iterations.
-                                                 !               3  - Changes in function value < 
-                                                 !                    tolf*small*MAX(|f_k|,|f_(k-1)|,1),
-                                                 !                    where small is the smallest positive number
-                                                 !                    such that 1.0 + small > 1.0.
-                                                 !               4  - Number of function calls > mfe.
-                                                 !               5  - Number of iterations > mit.
-                                                 !               6  - Time limit exceeded. 
-                                                 !               7  - f < tolb.
-                                                 !              -1  - Two consecutive restarts.
-                                                 !              -2  - Number of restarts > maximum number
-                                                 !                    of restarts.
-                                                 !              -3  - Failure in function or subgradient
-                                                 !                    calculations (assigned by the user).
-                                                 !              -4  - Failure in attaining the demanded
-                                                 !                    accuracy.
-                                                 !              -5  - Invalid input parameters.
-                                                 !              -6  - Unspecified error.
- !** 
-                    !--------------------------------------------        
-                    !                INITIALIZATION
-                    !--------------------------------------------
-                    
-                    user_n = nft              ! The dimension of the problem
-                    iprint_DBDC = 0_c_int     ! The print is supressed 
-                  
-                    ed_sol_in_pen = .FALSE.
-                   !ed_sol_in_pen = .TRUE.    ! the previous solution is utilized during the solution of the penalized problem  
-
-                    tol_zero = (10.0_c_double)**(-6)
- 
-                   ! ! The initialization of parametrs used in DBDC methods
-                   ! CALL allocate_parameters(set, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                           ! & in_b, in_m_clarke, in_eps, in_crit_tol)
-  
-                   ! ! Allocation of sizes od data matrices in function.f95
-                    ! CALL allocate_data_cox(set, nft, nrecord, nk, k)   
-                    
-                   ! ! Allocation of data matrices    
-                    ! CALL allocate_matrices_cox(set, in_mX, in_mY, in_mK, in_mC,  & 
-                                      ! & nrecord, nft, nk)
-           
-                    ! set%user_rho = 0.0_c_double
-                    
-                    CALL  set_k(info, k)                        ! The number of nonzero kits is fixed
- 
-!** 
-                    IF (solver == 2) THEN
-
-                        CALL allocate_xn(user_n)
-     
-                     ! ! The initialization of parametrs used in DBDC methods
-                       ! CALL allocate_parameters(set1, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, &
-                                           ! & in_eps1, in_b, in_m_clarke, in_eps, in_crit_tol)
-  
-                       ! ! Allocation of sizes od data matrices in function.f95
-                       ! CALL allocate_data_cox(set1, nft, nrecord, nk, k)   
-                    
-                       ! ! Allocation of data matrices    
-                       ! CALL allocate_matrices_cox(set1, in_mX, in_mY, in_mK, in_mC,  & 
-                                      ! & nrecord, nft, nk)
-                    
-                       ! CALL  set_k(set1, k)                        ! The number of nonzero kits is fixed
-     
-                        CALL init_LMBMinfo(problem1, info)   
-                       ! CALL set_lambda_LMBM(0.0_c_double)              
-     
-                    END IF
-
-                    ! The starting points for are looked through
-                    DO kk = 1, nk 
-                        !--------------------------------------------
-                        !    THE GENERATION OF THE STARTING POINT
-                        !--------------------------------------------
-                         x_0 = x_ed                  ! The base of the starting point is the previous solution (k-1 nonzero kits)
-                         mukana = .FALSE.           
-                         IF (start == 2 .OR. start == 3) THEN     ! Only nkits-k+1 starting points used             
-                           DO ii = 1, kit_num_ed                  ! Then we check if the kit kk belongs to the previous solution
-                             IF (kk == kits_beta_ed(ii)) THEN   
-                               mukana = .TRUE.                    ! 'mukana' tells if the kit kk is in solution     
-                             END IF
-                           END DO
-                         END IF
-                         
-                         ! Is a new starting point generated?
-                         IF (start == 2) THEN
-                            IF(mukana) THEN
-                               new_start = .FALSE.
-                            ELSE
-                               new_start = .TRUE.
-                            END IF               
-                         ELSE
-                            new_start = .TRUE.
-                         END IF                  
-                        
-                         
-                       IF (new_start) THEN       ! .TRUE. if a new starting point is generated
-                        
-                        IF ((start == 2) .OR. (start == 3)) THEN 
-                          DO ii = 1, nft               ! the features are looke
-                            IF (info%mK(ii,kk)==1) THEN
-                               x_0(ii) = x_koe(ii)    ! In starting poitnt x_0, we initialize features in kit kk with values from solution x_koe
-                            END IF   
-                          END DO
-                        END IF  
-                        
-                        IF (start == 4) THEN ! A random starting point is generated
-                           x_0 = 0.01_c_double
-                           DO ii = 1, nk
-                             CALL RANDOM_NUMBER(random_num)
-                             mRand(ii) = random_num
-                             mRandInd(ii) = ii
-                           END DO 
-                           CALL heapsort_ind(mRand,mRandInd)                    
-                           DO ii = 1, k
-                              DO i2 = 1, nft 
-                                IF (info%mK(i2,mRandInd(ii))==1) THEN
-                                  x_0(i2) = x_koe(i2)    ! In starting point x_0, we initialize features in kit i with values from solution x_koe
-                                END IF   
-                              END DO     
-                           END DO
-                        END IF                  
-                          
-                        run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
-                        num_rho = 0                 ! The selection of the first value of penalization parameter rho
-                      
-                        IF (iprint >= 2) THEN
-!                           WRITE(*,*) '-------------------------------------' 
-!                           WRITE(*,*) 'New start point used.' 
-                        END IF
-                      
-                        DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
-                      
-                        num_rho = num_rho + 1       ! The update of the parameter rho
-                        
-                        IF (num_rho < 9) THEN
-                         SELECT CASE(num_rho)        ! The selection of the parameter rho
-                      
-                          CASE(1)
-                            rho = mrho(1)
-                          CASE(2)
-                            rho = mrho(2)                  
-                          CASE(3)
-                            rho = mrho(3)                  
-                          CASE(4)
-                            rho = mrho(4)              
-                          CASE(5)
-                            rho = mrho(5)                  
-                          CASE(6)
-                            rho = mrho(6)                  
-                          CASE(7)
-                            rho = mrho(7)                 
-                          CASE(8)
-                            rho = mrho(8)                             
-                         END SELECT 
-                        ELSE
-                          rho = 10.0_c_double * rho
-                          
-                          IF (num_rho>=24) THEN 
-                          run_stop = .TRUE.         ! Forced stop in optimization
-                          END IF 
-                        END IF
-                    
-                        ! The optimization problem is solved fot the current rho and x_0
-!**      
-                        IF (solver==1) THEN 
-         
-                            CALL DBDC_algorithm( f_solution_DBDC, beta_solution, x_0, rho, 0.0_c_double, &
-                                & mit, mrounds, mrounds_esc, termination, counter, CPUtime,  &
-                                & agg_used, stepsize_used, iprint_DBDC, problem1, problem2, nft, &
-                                & info) 
-        
-                        ELSE IF (solver == 2) THEN
-                           
-                           CALL init_x_var(x_0)
-                           CALL set_rho_LMBM(rho)   
-                           CALL cpu_time(LMBMstart)   ! Start CPU timining
-                           CALL lmbm(mc, f_solution_DBDC, iout(1),iout(2),iout(3),iout(4),LMBMstart)      
-                           CALL copy_x_var(beta_solution)
-                           info%user_rho = rho
- 
-                        END IF
-!**      
-                
-                        IF (ed_sol_in_pen) THEN 
-                          x_0 = beta_solution   ! Starting point for the next round
-                        END IF    
-                    
-                        help_counter = 0           
-                        DO j = 1, nft         ! The number of zero components in beta vector is computed
-                          IF ( ABS(beta_solution(j)) < tol_zero) THEN
-                            help_counter = help_counter +1
-                            beta_solution(j) = 0.0_c_double
-                          END IF
-                        END DO
-                       
-                        cost = 0.0_c_double      ! The initialization of the cost of 'beta_solution'
-                        kit_num = 0              ! The initialization of the number of kits in 'beta_solution'
-                        kits_beta = 0            ! The initialization of kits in 'beta_solution'
-                      
-                        !Calculation of kits in solution
-                        DO j1 = 1, nk        ! Each kit is looked through
-                          kit_in_use = .FALSE.  
-                          DO j2 = 1, nft
-                            IF (info%mK(j2,j1)==1) THEN 
-                              IF ( ABS(beta_solution(j2)) >= tol_zero) THEN    ! If the condition is satisfied the kit j1 is in solution 'beta_solution'
-                                 kit_in_use = .TRUE.                                  
-                              END IF
-                            END IF
-                          END DO
-                          IF (kit_in_use) THEN       ! Executed if kit j1 is in solution 'beta_solution'
-                            cost = cost + info%mC(j1)     ! The cost of kit j1 is taken into account
-                            kit_num = kit_num + 1    ! The number of kits is updated
-                            kits_beta(kit_num) = j1  ! The index of kit j1 is updated to table kits_beta                      
-                          END IF 
-                        END DO
-        
-                        ! We check if the optimization of problem 3 with k kits can be stopped            
-                        IF (kit_num <= k .OR. run_stop) THEN 
-                           IF (run_stop) THEN 
-                             f_solution(kk) = (10.0_c_double)**10
-                           END IF
-                           run_stop = .TRUE.     ! The optimization can be stopped
-                           DO j = 1, nft
-                             x_solution(j,kk) = beta_solution(j)        ! We store the solution to x_solution
-                           END DO       
-                           
-                           f1_current = f1(info,beta_solution,problem1,user_n)
-                           f2_current = f2(info,beta_solution,problem2,user_n)
-                           f_solution(kk) = f1_current-f2_current       ! We store the objective funtion value without penalization to f_solution
-                        END IF               
-                       
-                        f1_current = f1(info,beta_solution,problem1,user_n) 
-                        f2_current = f2(info,beta_solution,problem2,user_n)
-        
-                        IF (iprint > 2) THEN
-                             WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-!**                         ! WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-!                             WRITE(*,*) 'rho', rho, 'f1',f1_current, 'f2',f2_current, 'kits', kit_num
-                        END IF
-                        
-                        IF (run_stop) THEN
-                          IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
-                            WRITE(*,*)
-                            WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                            !WRITE(*,*) 'x=', beta_solution
-                            !WRITE(*,*)                          
-                          END IF  
-                          IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
-                            WRITE(*,*)
-                            WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-                          END IF
-                        END IF
-                        
-                        END DO
-                        
-                       ELSE
-                       
-                         DO j = 1, nft
-                            x_solution(j,kk) = x_ed(j)
-                         END DO     
-                         f_solution(kk) = f_prev
-                       END IF           
-                   
-                   END DO
-                   
-                   !CALL deallocate_data_cox(set) 
-
-!**       
-                   IF (solver == 2) THEN
-                      CALL deallocate_LMBMinfo_cox()
-                      !CALL deallocate_data_cox(set1)    
-                      CALL deallocate_x_var()                 
-                   END IF
-!**         
-         END SUBROUTINE  solution_with_k_kits_cox
-        !.......................................................................................
-        ! <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>  <>        
-        ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
-        !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |        
-        !** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** END ** 
-        !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
-
-
 
         ! _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
         !| | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |
@@ -17231,8 +16706,8 @@ END MODULE lmbm_mod
         !  ----------------------------------------------------------------------------------  |
         !***************************************************************************************
          SUBROUTINE solution_with_k_kits_cox_v2( x_solution, f_solution, k, f_prev, & 
-                                    & x_ed, kit_num_ed, kits_beta_ed, &
-                                    & nk, iprint, mrho, mit, mrounds, mrounds_esc, &
+                                    & x_ed, x_koe, kit_num_ed, kits_beta_ed, &
+                                    & nk, start, iprint, mrho, mit, mrounds, mrounds_esc, &
                                     & agg_used, stepsize_used, nft, problem1, problem2,  &      
                                     & info, in_mX, in_mY, in_mK, nrecord, & 
                                     & in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
@@ -17271,7 +16746,7 @@ END MODULE lmbm_mod
             !         * 'solver'        : defines the solver used (1=DBDC, 2=LMBM)
             !
             !         * 'percentage'    : the percentage of the starting points selected, REAL from the interval (0,1]
-            !         * 's_selection'   : the starting point selection procedure, INTEGER, either 1 or 2
+            !         * 's_selection'   : the starting point selection procedure, INTEGER, either 0, 1, 2, 3 or 4
             !         
             !         PARAMETERS in DBDC method:
             !
@@ -17313,31 +16788,39 @@ END MODULE lmbm_mod
                IMPLICIT NONE
             !**************************** NEEDED FROM USER (INPUT/OUTPUT) *************************************   
             ! INPUTs
-            
-              ! The data matrices
-               REAL(KIND=c_double), DIMENSION(nft,nrecord), INTENT(IN) :: in_mX  ! predictor matrix (column is an observation)
-               INTEGER(KIND=c_int), DIMENSION(2,nrecord), INTENT(IN) :: in_mY    ! observed times and labels matrix (column is an observation)  
-               INTEGER(KIND=c_int), DIMENSION(nk,nft), INTENT(IN) :: in_mK       ! kit matrix (row is a kit)
 
                TYPE(set_info),INTENT(INOUT) :: info                              ! The set of information           
             
+             ! **--** REAL tables **--** 
+               REAL(KIND=c_double), DIMENSION(nft,nrecord), INTENT(IN) :: in_mX  ! predictor matrix (column is an observation)
+            
               ! Other data
                REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_ed         ! the beta solution for the previous problem where the number of nonzero kits was one smaller   
-               
-               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
-               REAL(KIND=c_double), DIMENSION(8), INTENT(IN) :: mrho           ! Vector containing the values of rho parameter used in the method 
+               REAL(KIND=c_double), DIMENSION(nft), INTENT(IN) :: x_koe        ! The solution to Cox's proportional hazard model without regularization
               
+               REAL(KIND=c_double), DIMENSION(8), INTENT(IN) :: mrho           ! Vector containing the values of rho parameter used in the method 
+             
+             ! **--** INTEGER tables **--** 
+               INTEGER(KIND=c_int), DIMENSION(2,nrecord), INTENT(IN) :: in_mY    ! observed times and labels matrix (column is an observation)  
+               INTEGER(KIND=c_int), DIMENSION(nk,nft), INTENT(IN) :: in_mK       ! kit matrix (row is a kit)
 
+               INTEGER(KIND=c_int), DIMENSION(nk), INTENT(IN) :: kits_beta_ed  ! indices of kits in the previous solution 'x_ed'
+              
+             ! **--** REALs **--**
+               REAL(KIND=c_double), INTENT(IN) :: f_prev                  ! The objective value for the previous problem where the number of nonzero kits was one smaller                      
+               REAL(KIND=c_double), INTENT(IN) :: percentage              ! Percentage of the used starting points 
+             
+             
+             ! **--** INTEGERs **--**
                INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (also the dimension of the problem)
                INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
                INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
                               
-               REAL(KIND=c_double), INTENT(IN) :: f_prev                  ! The objective value for the previous problem where the number of nonzero kits was one smaller                      
                INTEGER(KIND=c_int), INTENT(IN) :: kit_num_ed              ! The number of kits in the previous solution
                
-               REAL(KIND=c_double), INTENT(IN) :: percentage              ! Percentage of the used starting points 
                INTEGER(KIND=c_int), INTENT(IN) :: s_selection             ! Starting point selection strategy
                
+               INTEGER(KIND = c_int), INTENT(IN) :: start                 ! Starting point procedure used               
                INTEGER(KIND = c_int), INTENT(IN) :: iprint                ! Print used
 
                INTEGER(KIND = c_int), INTENT(IN) :: solver                ! the solver used
@@ -17354,8 +16837,9 @@ END MODULE lmbm_mod
                                                                           ! If 'mit' <=0 then DEFAULT value 'mit'=5000 is used
                                                                           
                INTEGER(KIND=c_int), INTENT(INOUT) :: mrounds_esc          ! the maximum number of rounds in one escape procedure
+
                                                                           ! If 'mrounds_clarke' <=0 then DEFAULT value 'mrounds_clarke'=5000 is used
-                
+             ! **--** LOGICALs **--**                
                LOGICAL, INTENT(IN) :: agg_used                            ! .TRUE. if aggregation is used in DBDC
                LOGICAL, INTENT(IN) :: stepsize_used                       ! .TRUE. if Simple stepsize determination is not used
                
@@ -17385,32 +16869,22 @@ END MODULE lmbm_mod
  
                TYPE(set_info) :: set_subp                               ! The set of information for SUBPROBLEMS                   
 
-               REAL(KIND=c_double) :: CPUtime                           ! the CPU time (in seconds)
-               REAL(KIND=c_double) :: f_solution_DBDC                   ! the f_solution obtained from DBDC method
-               REAL(KIND=c_double) :: f_0                               ! the function value at the starting point
-               REAL(KIND=c_double) :: best_f_start                      ! the best function value at the starting points
-  
                REAL(KIND=c_double), DIMENSION(nft) :: beta_solution     ! the solution vector beta obtained during the execution    
                REAL(KIND=c_double), DIMENSION(nft) :: best_x_start      ! the best starting point in regards to the function value
                
                REAL(KIND=c_double), DIMENSION(nft+1,nk) :: starts       ! the starting points together with the objective function value and kit number
                REAL(KIND=c_double), DIMENSION(nk) :: f_list             ! the function values at the starting points
-               INTEGER(KIND=c_int), DIMENSION(nk) :: f_ind              ! the list of indices for function values              
-               INTEGER(KIND=c_int), DIMENSION(nk) :: kit_starts         ! the list of kits used to generate starting points
-               INTEGER(KIND=c_int) :: n_starts                          ! the number of generated starting points
-          
-               INTEGER(KIND=c_int), DIMENSION(nk) :: kits_beta          ! indices of kits in the solution 'beta_solution'
 
                REAL(KIND=c_double), DIMENSION(nft) :: x_0               ! the starting point
                REAL(KIND=c_double), DIMENSION(nft) :: x_help            ! the help point
+
+               REAL(KIND=c_double), DIMENSION(nk) :: mRand        ! Random number matrix
                
-               INTEGER(KIND=c_int) :: termination         ! The reason for termination in DBDC method
-                                                          ! 1 - the stopping condition is satisfied (i.e. Clarke stationarity)
-                                                          ! 2 - the approximate stopping condition is satisfied (i.e. the step-length beta* < eps)
-                                                          ! 3 - the maximum number 'mrounds' of rounds executed in one main iteration
-                                                          ! 4 - the maximum number of 'main iterations' is executed  
-                                                          ! 5 - the maximum number 'mrounds_clarke' of rounds executed in one 'Clarke stationary' alqorithm
-                                                          
+
+               INTEGER(KIND=c_int), DIMENSION(nk) :: f_ind              ! the list of indices for function values              
+               INTEGER(KIND=c_int), DIMENSION(nk) :: kit_starts         ! the list of kits used to generate starting points
+               INTEGER(KIND=c_int), DIMENSION(nk) :: kits_beta          ! indices of kits in the solution 'beta_solution'
+               
                INTEGER(KIND=c_int), DIMENSION(8) :: counter   ! contains the values of different counteres for DBDC method: 
                                                               !   counter(1) = iter_counter         the number of 'main iterations' executed
                                                               !   counter(2) = subprob_counter      the number of subproblems solved
@@ -17422,6 +16896,38 @@ END MODULE lmbm_mod
                                                               !   counter(7) = clarke_f_counter     the number of function values evaluated for f in 'Clarke stationary algorithms'
                                                               !   counter(8) = clarke_sub_counter   the number of subgradients caluculated for f in 'Clarke stationary algorithms'             
         
+               INTEGER(KIND=c_int), DIMENSION(nk) :: mRandInd     ! Original indices of random numbers in matrix
+
+               INTEGER(KIND=c_int), DIMENSION(nft) :: kits_subp     ! The indices of features in SUBPROBLEM/ALTERED PROBLEM        
+               INTEGER(KIND=c_int), DIMENSION(nft) :: fea_table     ! The indices of features in SUBPROBLEM/ALTERED PROBLEM 
+        
+               REAL(KIND=c_double) :: CPUtime                       ! the CPU time (in seconds)
+               REAL(KIND=c_double) :: f_solution_DBDC               ! the f_solution obtained from DBDC method
+               REAL(KIND=c_double) :: f_0                           ! the function value at the starting point
+               REAL(KIND=c_double) :: best_f_start                  ! the best function value at the starting points
+
+               REAL(KIND=c_double) :: rho             ! The parameter rho used in L0-norm
+               REAL(KIND=c_double) :: cost            ! The cost of solution beta
+                            
+               REAL(KIND=c_double) :: f1_current      ! The value of f1
+               REAL(KIND=c_double) :: f2_current      ! The value of f2
+               
+               REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
+ 
+               REAL(KIND=c_double) :: random_num      ! Random number  
+
+               INTEGER(KIND=c_int) :: n_starts        ! the number of generated starting points
+          
+
+               
+               INTEGER(KIND=c_int) :: termination         ! The reason for termination in DBDC method
+                                                          ! 1 - the stopping condition is satisfied (i.e. Clarke stationarity)
+                                                          ! 2 - the approximate stopping condition is satisfied (i.e. the step-length beta* < eps)
+                                                          ! 3 - the maximum number 'mrounds' of rounds executed in one main iteration
+                                                          ! 4 - the maximum number of 'main iterations' is executed  
+                                                          ! 5 - the maximum number 'mrounds_clarke' of rounds executed in one 'Clarke stationary' alqorithm
+                                                          
+
                INTEGER(KIND=c_int) :: user_n             ! the dimension of the problem
                                       
                INTEGER(KIND=c_int) :: iprint_DBDC  ! variable that specifies print option in DBDC method:
@@ -17436,38 +16942,30 @@ END MODULE lmbm_mod
                                                 !   iprint = -4: extended print of intermediate results and extended print of final results (without the solution vectors)
                                                 
                                                 ! If 'iprint' <= -5 .OR. 'iprint' >= 5 then DEFAULT value 'iprint'=1 is used    
-               
-               LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
-               LOGICAL :: run_stop              ! If .TRUE. run of this subroutine is stopped for selected k
-               LOGICAL :: mukana                ! If .TRUE. specific kit is in the solution
-               
-               LOGICAL :: ed_sol_in_pen         ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
-       
-               REAL(KIND=c_double) :: rho             ! The parameter rho used in L0-norm
-               REAL(KIND=c_double) :: cost            ! The cost of solution beta
-                            
-               REAL(KIND=c_double) :: f1_current      ! The value of f1
-               REAL(KIND=c_double) :: f2_current      ! The value of f2
-               
-               REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
-              
+
                INTEGER(KIND=c_int) :: s_end           ! The index of the last possible startin point
                       
                INTEGER(KIND=c_int) :: help_counter
                INTEGER(KIND=c_int) :: num_rho
                INTEGER(KIND=c_int) :: kit_num               ! The number of kits in the current solution
-               INTEGER(KIND=c_int) :: j, j1, j2, ii
+               INTEGER(KIND=c_int) :: j, j1, j2, ii, i2
 
                INTEGER(KIND=c_int) :: kk                    ! the start index for starting point    
                INTEGER(KIND=c_int) :: ind_start, s_ind      ! the start index for starting point    
                INTEGER(KIND=c_int) :: floor_size, ceil_size, gap    ! the variabls used to determine the used starting points  
                
                INTEGER(KIND=c_int) :: nft_subp                      ! The number of features in SUBPROBLEM/ALTERED PROBLEM
-               INTEGER(KIND=c_int), DIMENSION(nft) :: kits_subp     ! The indices of features in SUBPROBLEM/ALTERED PROBLEM        
-               INTEGER(KIND=c_int), DIMENSION(nft) :: fea_table     ! The indices of features in SUBPROBLEM/ALTERED PROBLEM 
+
                INTEGER(KIND=c_int)  :: nkits_subp                   ! The indices of features in SUBPROBLEM/ALTERED PROBLEM 
                
-               LOGICAL :: first_visit                               ! .TRUE. if reduced problem is visited first time during this iteration
+               LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
+               LOGICAL :: run_stop              ! If .TRUE. run of this subroutine is stopped for selected k
+               LOGICAL :: mukana                ! If .TRUE. specific kit is in the solution
+               LOGICAL :: new_start             ! If .TRUE. a new starting point is generated
+               
+               LOGICAL :: ed_sol_in_pen         ! If .TRUE. previous solution is utilized during the solution of the penalized problem 
+                      
+               LOGICAL :: first_visit           ! .TRUE. if reduced problem is visited first time during this iteration
 
 !**
                ! Scalars in LMBM
@@ -17550,75 +17048,138 @@ END MODULE lmbm_mod
                            END IF
                          END DO
                          
-                         ! Is a new starting point generated?
-                         IF(.NOT. mukana) THEN   ! If .TRUE. a new starting point is generated
-                            n_starts = n_starts + 1   ! One new starting point 
-                            kit_starts(n_starts) = kk ! The Kit used to generate a starting point
+                         IF (s_selection > 0 ) THEN 
+                             ! Is a new starting point generated?
+                             IF(.NOT. mukana) THEN   ! If .TRUE. a new starting point is generated
+                                n_starts = n_starts + 1   ! One new starting point 
+                                kit_starts(n_starts) = kk ! The Kit used to generate a starting point
 
-                            nft_subp = 0_c_int       ! Initialization of the number of features in the used kit kk
-                            kits_subp = 0_c_int      ! Initialization of the table containing indices of features in kit kk
-                        
-                            DO ii = 1, nft               ! the features are looked throuh
-                              IF (info%mK(ii,kk)==1) THEN
-                                nft_subp = nft_subp + 1
-                                kits_subp(nft_subp) = ii
-                              END IF   
-                           END DO
-                          
-                           CALL generate_startpoint(set_subp, x_ed, x_0, f_0, nft, nft_subp, nrecord, & 
-                                       & kits_subp, in_mX, solver)
+                                nft_subp = 0_c_int       ! Initialization of the number of features in the used kit kk
+                                kits_subp = 0_c_int      ! Initialization of the table containing indices of features in kit kk
+                            
+                                DO ii = 1, nft               ! the features are looked throuh
+                                  IF (info%mK(ii,kk)==1) THEN
+                                    nft_subp = nft_subp + 1
+                                    kits_subp(nft_subp) = ii
+                                  END IF   
+                               END DO
+                              
+                               CALL generate_startpoint(set_subp, x_ed, x_0, f_0, nft, nft_subp, nrecord, & 
+                                           & kits_subp, in_mX, solver)
+                                 
+                               DO j = 1, nft                     
+                                 starts(j,n_starts) = x_0(j)        ! Saving the new start point and its objective value
+                               END DO 
+                               starts(nft+1,n_starts) = f_0         ! Saving the corresponding objective value
+                            
+                            END IF     
+                            
+                         ELSE ! The starting point generation procedure used in the previous version of OSCAR
+
+
+                             x_0 = x_ed                  ! The base of the starting point is the previous solution (k-1 nonzero kits)
                              
-                           DO j = 1, nft                     
-                             starts(j,n_starts) = x_0(j)        ! Saving the new start point and its objective value
-                           END DO 
-                           starts(nft+1,n_starts) = f_0         ! Saving the corresponding objective value
-                        
-                        END IF                       
-                                      
+                             ! Is a new starting point generated?
+                             IF (start == 2) THEN
+                                IF(mukana) THEN
+                                   new_start = .FALSE.
+                                ELSE
+                                   new_start = .TRUE.
+                                END IF               
+                             ELSE
+                                new_start = .TRUE.
+                             END IF                  
+                            
+                             
+                           IF (new_start) THEN       ! .TRUE. if a new starting point is generated
+                             n_starts = n_starts + 1   ! One new starting point 
+                             kit_starts(n_starts) = kk ! The Kit used to generate a starting point
+                             
+                             IF ((start == 2) .OR. (start == 3)) THEN 
+                               DO ii = 1, nft             ! the features are looked through
+                                 IF (info%mK(ii,kk)==1) THEN
+                                   x_0(ii) = x_koe(ii)    ! In starting poitnt x_0, we initialize features in kit kk with values from solution x_koe
+                                 END IF   
+                               END DO
+                             END IF  
+                             
+                             IF (start == 4) THEN ! A random starting point is generated
+                               x_0 = 0.01_c_double
+                               DO ii = 1, nk
+                                 CALL RANDOM_NUMBER(random_num)
+                                 mRand(ii) = random_num
+                                 mRandInd(ii) = ii
+                               END DO 
+                               CALL heapsort_ind(mRand,mRandInd)                    
+                               DO ii = 1, k
+                                  DO i2 = 1, nft 
+                                    IF (info%mK(i2,mRandInd(ii))==1) THEN
+                                      x_0(i2) = x_koe(i2)    ! In starting point x_0, we initialize features in kit i with values from solution x_koe
+                                    END IF   
+                                  END DO     
+                               END DO
+                             END IF 
+                             
+                             DO j = 1, nft                     
+                               starts(j,n_starts) = x_0(j)        ! Saving the new start point 
+                             END DO
+                             
+                           END IF
+
+                         END IF 
+ 
                     END DO 
                     !---------- starting points generated ------------
                     
-                    f_list = 0.0_c_double
-                    f_ind = 0_c_int
-                    DO ii = 1, n_starts
-                       f_list(ii) = starts(nft+1,ii)   !f values at the starting points
-                    END DO
-                    DO ii = 1, nk
-                       f_ind(ii) = ii
-                    END DO
-                 
-                    CALL heapsort_k(f_list,f_ind, n_starts)
+                    IF (s_selection > 0) THEN 
                     
-                    s_ind = nk-n_starts  
+                        f_list = 0.0_c_double
+                        f_ind = 0_c_int
+                        DO ii = 1, n_starts
+                           f_list(ii) = starts(nft+1,ii)   !f values at the starting points
+                        END DO
+                        DO ii = 1, nk
+                           f_ind(ii) = ii
+                        END DO
+                     
+                        CALL heapsort_k(f_list,f_ind, n_starts)
+                        
+                        s_ind = nk-n_starts  
+                        
+                        ! The best starting point and its function value
+                        best_f_start = starts(nft+1,f_ind(s_ind+1))
+                        DO ii = 1, nft
+                           best_x_start(ii) = starts(ii,f_ind(s_ind+1))                    
+                        END DO
+                        
+                        ! Determination of the used solutions
+                        IF (percentage>=0.9999999999_c_double) THEN 
+                          gap = 1
+                          ceil_size = n_starts
+                          floor_size = n_starts
+                          s_end = n_starts
+                        ELSE
+                          floor_size = FLOOR(REAL(percentage*n_starts))
+                          ceil_size = CEILING(REAL(percentage*n_starts))
+                          s_end = n_starts                    
+                          IF (floor_size < 1) THEN 
+                             floor_size = 1
+                          END IF
+                          gap = FLOOR(REAL(n_starts)/REAL(floor_size))
+                          IF (s_selection /= 2 ) THEN 
+                             gap = 1
+                             s_end = ceil_size                     
+                          ELSE IF(s_selection==2) THEN
+                             s_end = n_starts
+                          END IF
+                        END IF
                     
-                    ! The best starting point and its function value
-                    best_f_start = starts(nft+1,f_ind(s_ind+1))
-                    DO ii = 1, nft
-                       best_x_start(ii) = starts(ii,f_ind(s_ind+1))                    
-                    END DO
-                    
-                    ! Determination of the used solutions
-                    IF (percentage>=0.9999999999_c_double) THEN 
-                      gap = 1
-                      ceil_size = n_starts
-                      floor_size = n_starts
-                      s_end = n_starts
-                    ELSE
-                      floor_size = FLOOR(REAL(percentage*n_starts))
-                      ceil_size = CEILING(REAL(percentage*n_starts))
-                      s_end = n_starts                    
-                      IF (floor_size < 1) THEN 
-                         floor_size = 1
-                      END IF
-                      gap = FLOOR(REAL(n_starts)/REAL(floor_size))
-                      IF (s_selection /= 2 ) THEN 
-                         gap = 1
-                         s_end = ceil_size                     
-                      ELSE IF(s_selection==2) THEN
-                         s_end = n_starts
-                      END IF
+                    ELSE ! The starting point generation procedure used in the previous version of OSCAR
+                        s_end = n_starts
+                        gap = 1
+                        best_f_start = f_prev 
+                        best_x_start = x_ed
                     END IF
-                    
                     
                     !-------------------------------------------------------
                     !      The SIZE and FEATURES in the REDUCED PROBLEM
@@ -17660,16 +17221,24 @@ END MODULE lmbm_mod
                     END IF
                     
 
-                    WRITE(*,*) 'Starting points are generated'
+                    !WRITE(*,*) 'Starting points are generated'
 
                     DO ii = 1, s_end, gap              ! Starting points are looked through 
                          
-                         ind_start = f_ind(s_ind+ii)
-                         ! The initialization of the starting point
-                         DO j = 1, nft                     
-                           x_0(j) = starts(j,ind_start)     ! Saving the new start point and its objective value
-                         END DO 
-                    
+                         IF (s_selection > 0) THEN 
+                             ind_start = f_ind(s_ind+ii)
+                             ! The initialization of the starting point
+                             DO j = 1, nft                     
+                               x_0(j) = starts(j,ind_start)     ! Saving the new start point and its objective value
+                             END DO 
+                         ELSE ! The starting point generation procedure used in the previous version of OSCAR
+                             ind_start = ii
+                             ! The initialization of the starting point
+                             DO j = 1, nft                     
+                               x_0(j) = starts(j,ii)     ! Saving the new start point and its objective value
+                             END DO                          
+                         END IF 
+                         
                         run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
                         num_rho = 0                 ! The selection of the first value of penalization parameter rho
                                             
@@ -17838,12 +17407,12 @@ END MODULE lmbm_mod
                    END DO
  
 
-                    WRITE(*,*) 'Starting points have been looked through'
+                   ! WRITE(*,*) 'Starting points have been looked through'
  
                    CALL deallocate_mY_cox_subp(set_subp)
                    
                    IF ((s_selection > 2) .AND. (k>1)) THEN
-                      CALL deallocate_mX_cox_reduced(set_subp) 			  
+                      CALL deallocate_mX_cox_reduced(set_subp)            
                    END IF
                                       
                    IF ((solver == 2) .AND. (s_selection < 3)) THEN
@@ -18091,7 +17660,7 @@ END MODULE lmbm_mod
                        
                  ! Predictor and kit matrices for the reduced problem are stored              
                    CALL allocate_mX_cox_reduced(set, mX_subp, mK_subp, nrecord, nft_subp, nkits_subp, k)
-                 				   
+                                   
                END IF
                
              ! Starting point   
@@ -18117,7 +17686,7 @@ END MODULE lmbm_mod
                   CALL copy_x_var(beta_subp)
                   CALL deallocate_LMBMinfo_reduced_cox()
                   CALL deallocate_x_var() 
-				  
+                  
                END IF
 
                beta_solution = 0.0_c_double
@@ -18596,7 +18165,6 @@ END MODULE lmbm_mod
                INTEGER(KIND=c_int) :: num_rho
                INTEGER(KIND=c_int) :: kit_num               ! The number of kits in the current solution
                INTEGER(KIND=c_int) :: j, j1, j2, ii, i2
-!               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization  
 
                
                INTEGER(KIND=c_int) :: startind, j3, kk      ! the start index for starting point    
@@ -19119,7 +18687,6 @@ END MODULE lmbm_mod
                INTEGER(KIND=c_int) :: num_rho
                INTEGER(KIND=c_int) :: kit_num               ! The number of kits in the current solution
                INTEGER(KIND=c_int) :: j, j1, j2, ii, i2
-!               INTEGER(KIND=c_int) :: max_threads           ! the maximum number of threads that can be used in parallellization         
                INTEGER(KIND=c_int) :: startind, j3, kk      ! the start index for starting point    
 
  !**
@@ -19405,6 +18972,7 @@ END MODULE lmbm_mod
         !|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
 
 
+       
   END MODULE oscar
 
 
