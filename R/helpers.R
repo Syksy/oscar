@@ -93,7 +93,7 @@ oscar.cv <- function(
 		# Constructing appropriate model object
 		if(fit@family == "cox"){
 			# Cox model is 2-column in y-response
-			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=fit@family, k=fit@k, w=fit@w, verb=verb, start=fit@start, ...)
+			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=fit@family, k=fit@k, w=fit@w, verb=verb, start=fit@start, in_selection=fit@in_selection, percentage = fit@percentage, ...)
 		}else if(fit@family %in% c("mse", "gaussian", "logistic")){
 			# All other models have a y-vector
 			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=c(fit@y)[cvsets$train[[z]]], family=fit@family, k=fit@k, w=fit@w, verb=verb, start=fit@start, ...)
@@ -233,7 +233,7 @@ oscar.bs <- function(
 		ytemp <- fit@y[samps,]
 		# Wrap expression inside try for catching errors
 		try({
-			ftemp <- oscar::oscar(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, kmax = fit@kmax, print = verb, start = fit@start, verb = verb, ...)		
+			ftemp <- oscar::oscar(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, kmax = fit@kmax, print = verb, start = fit@start, verb = verb, in_selection=fit@in_selection, percentage = fit@percentage,...)		
 		})
 		# Return successfully fitted model
 		if(!inherits(ftemp,"try-error")){
