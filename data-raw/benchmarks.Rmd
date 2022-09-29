@@ -19,9 +19,64 @@ vignette: >
 library(oscar)
 # For 'omics data from prostate cancer;
 library(curatedPCaData)
+# Surv
+library(survival)
 ```
 
 # OSCAR benchmarking
+
+```{r}
+
+Y1 <- Surv(event=colData(mae_tcga)[["disease_specific_recurrence_status"]], time=colData(mae_tcga)[["days_to_disease_specific_recurrence"]])
+X1_samps <- colData(mae_tcga)$sample_name[-which(is.na(Y1))]
+Y1 <- Y1[-which(is.na(Y1))]
+Y1 <- Y1[-which(!X1_samps %in% colnames(mae_tcga[["gex.rsem.log"]]))]
+X1_samps <- X1_samps[-which(!X1_samps %in% colnames(mae_tcga[["gex.rsem.log"]]))]
+
+length(X1_samps)
+length(Y1)
+
+X1 <- mae_tcga[["gex.rsem.log"]][,X1_samps]
+
+#> table(apply(X1, MARGIN=1, FUN=function(x) { !all(x==unique(x)[1]) }))
+#
+#FALSE  TRUE 
+#  287 19371
+#
+# Remove genes with redundant expression, e.g. 0 across all samples
+X1 <- X1[which(apply(X1, MARGIN=1, FUN=function(x) { !all(x==unique(x)[1]) })),]
+
+set.seed(1)
+
+X1_100 <- t(X1[sample(1:nrow(X1), 100),])
+X1_1000 <- t(X1[sample(1:nrow(X1), 1000),])
+X1_5000 <- t(X1[sample(1:nrow(X1), 5000),])
+X1_10000 <- t(X1[sample(1:nrow(X1), 10000),])
+
+X1_1000_2 <- t(X1[1:1000,])
+oscar_X1_1000_2_setup1 <- oscar(x=X1_1000_2, y=Y1, family="cox", kmax=20, in_selection=3, percentage=0.02, solver="LMBM")
+
+
+
+Sys.time()
+#oscar_X1_100_setup1 <- oscar(x=X1_100, y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.02, solver="LMBM")
+Sys.time()
+oscar_X1_1000_setup1 <- oscar(x=X1_1000, y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.02, solver="LMBM")
+Sys.time()
+oscar_X1_5000_setup1 <- oscar(x=X1_5000, y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.02, solver="LMBM")
+Sys.time()
+oscar_X1_10000_setup1 <- oscar(x=X1_10000, y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.02, solver="LMBM")
+Sys.time()
+
+
+
+X2 <- mae_taylor[["gex.rma"]]
+
+
+
+
+
+```
 
 
 # Session info
