@@ -60,7 +60,7 @@ setClass("oscar", # abbreviation
 		kmax = NA_integer_,
 		metric = NA_character_,
 		solver = NA_character_,
-		in_selection ) = NA_integer_,
+		in_selection = NA_integer_,
 	 	percentage = NA_real_,
 		call = call("oscar")
 	),
