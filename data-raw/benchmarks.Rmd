@@ -48,25 +48,29 @@ X1 <- X1[which(apply(X1, MARGIN=1, FUN=function(x) { !all(x==unique(x)[1]) })),]
 
 set.seed(1)
 
-X1_100 <- t(X1[sample(1:nrow(X1), 100),])
-X1_1000 <- t(X1[sample(1:nrow(X1), 1000),])
-X1_5000 <- t(X1[sample(1:nrow(X1), 5000),])
-X1_10000 <- t(X1[sample(1:nrow(X1), 10000),])
+t01 <- Sys.time()
+oscar_X1_k10_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=10, in_selection=3, percentage=0.01, solver="DBDC")
 
-X1_1000_2 <- t(X1[1:1000,])
-oscar_X1_1000_2_setup1 <- oscar(x=X1_1000_2, y=Y1, family="cox", kmax=20, in_selection=3, percentage=0.02, solver="LMBM")
+t01 <- Sys.time()
+oscar_X1_k10_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=10, in_selection=3, percentage=0.01, solver="LMBM")
+t02 <- Sys.time()
+oscar_X1_k20_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=20, in_selection=3, percentage=0.01, solver="LMBM")
+t03 <- Sys.time()
+oscar_X1_k30_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.01, solver="LMBM")
+t04 <- Sys.time()
+oscar_X1_k40_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=40, in_selection=3, percentage=0.01, solver="LMBM")
+t05 <- Sys.time()
+oscar_X1_k50_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=50, in_selection=3, percentage=0.01, solver="LMBM")
+t06 <- Sys.time()
 
-
-
-Sys.time()
-#oscar_X1_100_setup1 <- oscar(x=X1_100, y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.02, solver="LMBM")
-Sys.time()
-oscar_X1_1000_setup1 <- oscar(x=X1_1000, y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.02, solver="LMBM")
-Sys.time()
-oscar_X1_5000_setup1 <- oscar(x=X1_5000, y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.02, solver="LMBM")
-Sys.time()
-oscar_X1_10000_setup1 <- oscar(x=X1_10000, y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.02, solver="LMBM")
-Sys.time()
+oscar_X1_k30_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.005, solver="LMBM")
+t07 <- Sys.time()
+oscar_X1_k30_setup2 <- oscar(x=t(X1), y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.02, solver="LMBM")
+t08 <- Sys.time()
+oscar_X1_k30_setup3 <- oscar(x=t(X1), y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.05, solver="LMBM")
+t09 <- Sys.time()
+oscar_X1_k30_setup4 <- oscar(x=t(X1), y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.10, solver="LMBM")
+t10 <- Sys.time()
 
 
 
