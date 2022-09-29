@@ -66,9 +66,9 @@ extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP 
 	SEXP fperk;
 	SEXP betakits;
 	// Format output and protect them from garbage collection
-	PROTECT(beta = allocVector(REALSXP, nc*nk));
-	PROTECT(fperk = allocVector(REALSXP, nk));
-	PROTECT(betakits=allocVector(INTSXP, nk*nk));
+	PROTECT(beta = allocVector(REALSXP, nc*inkmax));
+	PROTECT(fperk = allocVector(REALSXP, inkmax));
+	PROTECT(betakits=allocVector(INTSXP, nk*inkmax));
 
 
 	// Call Fortran subroutine
