@@ -34,6 +34,8 @@ setClass("oscar", # abbreviation
 		kmax = "integer",	# Number of maximum k tested
 		metric = "character",	# Name of the goodness-of-fit metric used
 		solver = "character",  	# Name of the solver used in the optimization (DBDC = 1 or LMBM = 2)
+		in_selection = "integer", # Starting point selection method used in the optimization
+		percentage = "numeric", # Percentage of used starting points (and potential predictors per k with in_selection 3 and 4)
 		call = "call"		# Function call
 	),	
 	prototype(
@@ -58,6 +60,8 @@ setClass("oscar", # abbreviation
 		kmax = NA_integer_,
 		metric = NA_character_,
 		solver = NA_character_,
+		in_selection ) = NA_integer_,
+	 	percentage = NA_real_,
 		call = call("oscar")
 	),
 	# Function for testing whether all S4-slots are legitimate for the S4 object 
@@ -520,6 +524,8 @@ oscar <- function(
 		start=control$start,	# Method for generating starting points
 		kmax=kmax,	# Max run k-step
 		solver = solver,# Solver used in optimization (DBDC or LMBM)
+		in_selection = in_selection, # Used starting point selection method
+		percentage = percentage, # Percentage of starting points
 		call = Call	# Used function call
 	)
 
