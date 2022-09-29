@@ -524,7 +524,7 @@ oscar <- function(
 		start=control$start,	# Method for generating starting points
 		kmax=kmax,	# Max run k-step
 		solver = solver,# Solver used in optimization (DBDC or LMBM)
-		in_selection = in_selection, # Used starting point selection method
+		in_selection = as.integer(in_selection), # Used starting point selection method
 		percentage = percentage, # Percentage of starting points
 		call = Call	# Used function call
 	)
