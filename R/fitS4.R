@@ -89,6 +89,8 @@ setClass("oscar", # abbreviation
 #' @param print Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}, Default: 3
 #' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality, Default: ncol(x)
 #' @param sanitize Whether input column names should be cleaned of potentially problematic symbols, Default: TRUE
+#' @param storeX If data matrix X should be saved in the model object; turning this off might would help with memory, Default: TRUE 
+#' @param storeY If data response Y should be saved in the model object; turning this off might would help with memory, Default: TRUE 
 #' @param control Tuning parameters for the optimizers, see function oscar.control(), Default: see ?oscar.control
 #' @param ... Additional parameters
 #'
@@ -125,8 +127,12 @@ oscar <- function(
 	kmax,    # Maximum tested k-values
 	sanitize = TRUE,	# Whether column (i.e. variable) names are cleaned of potentially hazardous symbols
 	# Tuning parameter generation for the optimizers DBDC and LMBM; default values are generated with oscar.control-function, and can be replaced in the list
-	percentage = 1, # Which percentage of possible starting points is used (1=100%)
-	in_selection = 1, # Which starting point selection strategy is used (1 or 2)
+	percentage = 1, # Percentage of possible starting points used (1=100%, 0.1=10% etc)
+	in_selection = 1, # Which starting point selection strategy is used (1, 2 or 3)
+	# Whether certain slots should be stored; saves space e.g. if large X matrices are not stored over multiple fit objects
+	storeX = TRUE,
+	storeY = TRUE,
+	# Control parameters
 	control,
 	# Additional parameters, passed on to oscar.control(...)
 	...
@@ -514,8 +520,8 @@ oscar <- function(
 		kperk = kperk[1:kmax], # Chosen kits per k-steps up to kmax
 		cperk = cperk[1:kmax], # Total kit costs per each k-step up to kmax
 		## Data slots
-		x=as.matrix(x),	# Data matrix X
-		y=as.matrix(y), # Response Y
+		x=ifelse(storeX, as.matrix(x), NULL), # Data matrix X
+		y=ifelse(storeY, as.matrix(y), NULL), # Response Y
 		k=as.matrix(k), # Kit matrix K
 		w=as.numeric(w),	# Vector of weights/costs for kits
 		## Additional parameters
