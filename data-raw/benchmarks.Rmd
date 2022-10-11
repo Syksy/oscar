@@ -1,9 +1,9 @@
 ---
-title: "OSCAR benchmarking for various p and optimizer settings"
+title: "OSCAR benchmarking for various p, n and optimizer settings"
 output: rmarkdown::html_vignette
 date: "`r Sys.Date()`"
 vignette: >
-  %\VignetteIndexEntry{OSCAR benchmarking for various p and optimizer settings}
+  %\VignetteIndexEntry{OSCAR benchmarking for various p, n and optimizer settings}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
@@ -15,9 +15,10 @@ vignette: >
 \newcommand{\x}{{\boldsymbol{x}}}            # vector x bolded
 
 ```{r, echo=FALSE}
+## Load necessary dependencies for running the benchmarks
 # For OSCAR methodology; 
 library(oscar)
-# For 'omics data from prostate cancer;
+# For 'omics data from prostate cancer (https://github.com/Syksy/curatedPCaData):
 library(curatedPCaData)
 # Surv
 library(survival)
@@ -25,8 +26,9 @@ library(survival)
 
 # OSCAR benchmarking
 
-```{r}
+Prepare TCGA transcriptomics:
 
+```{r tcga}
 Y1 <- Surv(event=colData(mae_tcga)[["disease_specific_recurrence_status"]], time=colData(mae_tcga)[["days_to_disease_specific_recurrence"]])
 X1_samps <- colData(mae_tcga)$sample_name[-which(is.na(Y1))]
 Y1 <- Y1[-which(is.na(Y1))]
@@ -37,50 +39,327 @@ length(X1_samps)
 length(Y1)
 
 X1 <- mae_tcga[["gex.rsem.log"]][,X1_samps]
-
-#> table(apply(X1, MARGIN=1, FUN=function(x) { !all(x==unique(x)[1]) }))
-#
-#FALSE  TRUE 
-#  287 19371
-#
 # Remove genes with redundant expression, e.g. 0 across all samples
 X1 <- X1[which(apply(X1, MARGIN=1, FUN=function(x) { !all(x==unique(x)[1]) })),]
+```
+
+Run benchmarks in TCGA
+
+```{r}
+# Run TCGA by default
+benchf <- function(p, kmax, percentage, solver, X = t(X1), Y=Y1, iter = 1){
+	t0 <- Sys.time()
+	if(!missing(p)){
+		fit <- oscar(x=X[,sample(1:ncol(X), p)], y=Y, family="cox", kmax=kmax, in_selection=3, percentage=percentage, solver=solver)
+	}else{
+		fit <- oscar(x=X, y=Y, family="cox", kmax=kmax, in_selection=3, percentage=percentage, solver=solver)
+	}
+	if(missing(p)){
+		p <- ncol(X)
+	}
+	t1 <- Sys.time()
+	dif <- t1 - t0
+	c("Time diff" = as.numeric(t1 - t0), "Time unit" = attr(dif, "units"), "kmax" = kmax, "percentage" = percentage, "solver" = ifelse(solver=="LMBM", 2, 1), "f(kmax)" = fit@fperk[fit@kmax], "p" = p, "cindex" = fit@goodness[fit@kmax], iter = as.numeric(iter))	
+}
+
 
 set.seed(1)
+benches <- benchf(kmax = 2, percentage = 0.01, solver = "LMBM")
+benches
 
-t01 <- Sys.time()
-oscar_X1_k10_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=10, in_selection=3, percentage=0.01, solver="DBDC")
+for(solv in "LMBM"){
+	for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
+	#for(perc in c(0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
+		for(k in c(2:5, 7, 10, 20, 30, 50)){
+			bench <- benchf(kmax = k, percentage = perc, solver = solv, iter = 1)
+			benches <- rbind(benches, bench)
+			save.image("benchmarks_type1_tcga.RData")
+		}
+	}
+}
 
-t01 <- Sys.time()
-oscar_X1_k10_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=10, in_selection=3, percentage=0.01, solver="LMBM")
-t02 <- Sys.time()
-oscar_X1_k20_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=20, in_selection=3, percentage=0.01, solver="LMBM")
-t03 <- Sys.time()
-oscar_X1_k30_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.01, solver="LMBM")
-t04 <- Sys.time()
-oscar_X1_k40_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=40, in_selection=3, percentage=0.01, solver="LMBM")
-t05 <- Sys.time()
-oscar_X1_k50_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=50, in_selection=3, percentage=0.01, solver="LMBM")
-t06 <- Sys.time()
+set.seed(1)
+benches2 <- benchf(kmax = 50, percentage = 0.01, p = 50, solver = "LMBM")
+benches2
 
-oscar_X1_k30_setup1 <- oscar(x=t(X1), y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.005, solver="LMBM")
-t07 <- Sys.time()
-oscar_X1_k30_setup2 <- oscar(x=t(X1), y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.02, solver="LMBM")
-t08 <- Sys.time()
-oscar_X1_k30_setup3 <- oscar(x=t(X1), y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.05, solver="LMBM")
-t09 <- Sys.time()
-oscar_X1_k30_setup4 <- oscar(x=t(X1), y=Y1, family="cox", kmax=30, in_selection=3, percentage=0.10, solver="LMBM")
-t10 <- Sys.time()
+for(solv in "LMBM"){
+	for(iteration in 1:50){
+		for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
+		#for(perc in c(0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
+			for(k in c(50)){
+				for(p in c(50, 100, 200, 500, 1000, 2000, 5000, 10000)){
+					set.seed(iteration)
+					bench2 <- benchf(kmax = k, percentage = perc, solver = solv, p = p, iter = iteration)
+					benches2 <- rbind(benches2, bench2)
+					save.image("benchmarks_type2_tcga.RData")
+				}
+			}
+		}
+	}
+}
+
+deparse_bench <- function(x){
+	# Time in minutes
+	t <- apply(x, MARGIN=1, FUN=function(df){
+		if(df["Time unit"]=="mins"){
+			as.numeric(df["Time diff"])
+		}else if(df["Time unit"]=="hours"){
+			as.numeric(df["Time diff"])*60
+		}else if(df["Time unit"]=="secs"){
+			as.numeric(df["Time diff"])/60
+		}
+	})
+	# 6th column is the f(kmax)
+	data.frame(t_mins = t, k = as.numeric(x[,"kmax"]), perc = as.numeric(x[,"percentage"]), fkmax = as.numeric(x[,6]), p = as.integer(x[,"p"]), cindex = as.numeric(x[,"cindex.concordance"]), iter=as.integer(x[,"iter"]))
+}
+plot_timeperc <- function(df, title=""){
+	dat <- by(df, INDICES=df$per, FUN=function(x){
+		data.frame(x=x$k, y=x$t_mins)
+	})
+	percs <- as.numeric(names(dat))
+	
+	plot.new()
+	plot.window(xlim=extendrange(df$k), ylim=extendrange(df$t_mins))
+	box(); axis(1); axis(2)
+	title(xlab="k", ylab="Time (mins)", main=title)
+	
+	lapply(1:length(percs), FUN=function(i){
+		df <- dat[[i]]
+		print(df)
+		points(x=df$x, y=df$y, type="l", col=i)
+		points(x=df$x, y=df$y, pch=16, col=i)	
+	})
+	legend("topleft", lwd=1, pch=16, col=1:length(dat), legend=paste("Percentage = ", names(dat)))
+	dat
+}
+plot_fvalperc <- function(df, title=""){
+	dat <- by(df, INDICES=df$per, FUN=function(x){
+		data.frame(x=x$k, y=x$fkmax)
+	})
+	percs <- as.numeric(names(dat))
+	
+	plot.new()
+	plot.window(xlim=extendrange(df$k), ylim=extendrange(df$fkmax))
+	box(); axis(1); axis(2)
+	title(xlab="k", ylab="f(k), -log likelihood", main=title)
+	
+	lapply(1:length(percs), FUN=function(i){
+		df <- dat[[i]]
+		print(df)
+		points(x=df$x, y=df$y, type="l", col=i)
+		points(x=df$x, y=df$y, pch=16, col=i)	
+	})
+	#legend("bottomleft", lwd=1, pch=16, col=1:length(dat), legend=paste("Percentage = ", names(dat)))
+	dat
+}
+plot_cindexperc <- function(df, title=""){
+	dat <- by(df, INDICES=df$per, FUN=function(x){
+		data.frame(x=x$k, y=x$cindex)
+	})
+	percs <- as.numeric(names(dat))
+	
+	plot.new()
+	plot.window(xlim=extendrange(df$k), ylim=extendrange(df$cindex))
+	box(); axis(1); axis(2)
+	title(xlab="k", ylab="Concordance index", main=title)
+	
+	lapply(1:length(percs), FUN=function(i){
+		df <- dat[[i]]
+		print(df)
+		points(x=df$x, y=df$y, type="l", col=i)
+		points(x=df$x, y=df$y, pch=16, col=i)	
+	})
+	#legend("bottomleft", lwd=1, pch=16, col=1:length(dat), legend=paste("Percentage = ", names(dat)))
+	dat
+}
+plot_nperc <- function(df, title=""){
+	dat <- by(df, INDICES=df$perc, FUN=function(x){
+		data.frame(x=x$p, y=x$t_mins)
+	})
+	percs <- as.numeric(names(dat))
+	
+	plot.new()
+	plot.window(xlim=extendrange(df$p), ylim=extendrange(df$t_mins))
+	box(); axis(1); axis(2)
+	title(xlab="dimensionality (p)", ylab="Time (mins)", main=title)
+	
+	lapply(1:length(percs), FUN=function(i){
+		df <- dat[[i]]
+		print(df)
+		#points(x=df$x, y=df$y, type="l", col=i)
+		points(x=df$x, y=df$y, pch=16, col=i)	
+	})
+	#legend("topleft", lwd=1, pch=16, col=1:length(dat), legend=paste("Percentage = ", names(dat)))
+	dat
+}
+plot_timeiterperc <- function(df, title=""){
+	dat <- by(df, INDICES=df$perc, FUN=function(x){
+		data.frame(x=x$p, y=x$t_mins, iter=x$iter)
+	})
+	percs <- as.numeric(names(dat))
+	
+	plot.new()
+	plot.window(xlim=extendrange(df$p), ylim=extendrange(df$t_mins))
+	box(); axis(1); axis(2)
+	title(xlab="dimensionality (p)", ylab="Time (mins)", main=title)
+	
+	lapply(1:length(percs), FUN=function(i){
+		df <- dat[[i]]
+
+		#print(df)
+
+		df <- by(df, INDICES=df$iter, FUN=function(y){
+			data.frame(x=y$x, y=y$y)
+		})
+
+		lapply(df, FUN=function(x){
+			points(x=x$x, y=x$y, lwd=1, col=i, type="l")	
+			points(x=x$x, y=x$y, pch=16, col=i)	
+		})
+	})
+	#legend("topleft", lwd=1, pch=16, col=1:length(dat), legend=paste("Percentage = ", names(dat)))
+	dat
+}
+plot_fvaliterperc <- function(df, title=""){
+	dat <- by(df, INDICES=df$perc, FUN=function(x){
+		data.frame(x=x$p, y=x$fkmax, iter=x$iter)
+	})
+	percs <- as.numeric(names(dat))
+	
+	plot.new()
+	plot.window(xlim=extendrange(df$p), ylim=extendrange(df$fkmax))
+	box(); axis(1); axis(2)
+	title(xlab="dimensionality (p)", ylab="f(k), -log likelihood", main=title)
+	
+	lapply(1:length(percs), FUN=function(i){
+		df <- dat[[i]]
+
+		#print(df)
+
+		df <- by(df, INDICES=df$iter, FUN=function(y){
+			data.frame(x=y$x, y=y$y)
+		})
+
+		lapply(df, FUN=function(x){
+			points(x=x$x, y=x$y, lwd=1, col=i, type="l")	
+			points(x=x$x, y=x$y, pch=16, col=i)	
+		})
+	})
+	#legend("topleft", lwd=1, pch=16, col=1:length(dat), legend=paste("Percentage = ", names(dat)))
+	dat
+}
+
+load("benchmarks_type1.RData")
+load("benchmarks_type2.RData")
+
+## Plot results from TCGA
+
+datbench <- deparse_bench(benches)
+datbench2 <- deparse_bench(benches2)
+
+#par(mfrow=c(2,3))
+par(mfrow=c(2,2))
+# Upper row
+dattime_a1 <- plot_timeperc(datbench, title="TCGA full (p=19,358, n=413)")
+dattime_a2 <- plot_fvalperc(datbench, title="TCGA full (p=19,358, n=413)")
+dattime_a3 <- plot_cindexperc(datbench, title="TCGA full (p=19,358, n=413)")
+# Lower row
+#dattime_b1 <- plot_nperc(datbench2, title="TCGA subsampled p (n=413, kmax=50)")
+dattime_b2 <- plot_timeiterperc(datbench2, title="TCGA subsampled p (n=413, kmax=50)")
+
+```
 
 
+Process MSKCC transcriptome:
+
+```
 
 X2 <- mae_taylor[["gex.rma"]]
+Y2 <- Surv(event=colData(mae_taylor)[["disease_specific_recurrence_status"]], time=colData(mae_taylor)[["days_to_disease_specific_recurrence"]])
+names(Y2) <- colData(mae_taylor)[,"sample_name"]
+X2_samps <- colData(mae_taylor)$sample_name[-which(is.na(Y2))]
+Y2 <- Y2[-which(is.na(Y2))]
+Y2 <- Y2[-which(!X2_samps %in% colnames(mae_taylor[["gex.rma"]]))]
+X2_samps <- X2_samps[-which(!X2_samps %in% colnames(mae_taylor[["gex.rma"]]))]
+X2 <- mae_taylor[["gex.rma"]][,X2_samps]
+# Remove genes with redundant expression, e.g. 0 across all samples
+X2 <- X2[which(apply(X2, MARGIN=1, FUN=function(x) { !all(x==unique(x)[1]) })),]
 
 
+
+benchf <- function(p, kmax, percentage, solver, X = t(X2), Y=Y2, iter = 1){
+	t0 <- Sys.time()
+	if(!missing(p)){
+		fit <- oscar(x=X[,sample(1:ncol(X), p)], y=Y, family="cox", kmax=kmax, in_selection=3, percentage=percentage, solver=solver)
+	}else{
+		fit <- oscar(x=X, y=Y, family="cox", kmax=kmax, in_selection=3, percentage=percentage, solver=solver)
+	}
+	if(missing(p)){
+		p <- ncol(X)
+	}
+	t1 <- Sys.time()
+	dif <- t1 - t0
+	c("Time diff" = as.numeric(t1 - t0), "Time unit" = attr(dif, "units"), "kmax" = kmax, "percentage" = percentage, "solver" = ifelse(solver=="LMBM", 2, 1), "f(kmax)" = fit@fperk[fit@kmax], "p" = p, "cindex" = fit@goodness[fit@kmax], iter = as.numeric(iter))	
+}
+
+set.seed(1)
+benches <- benchf(kmax = 2, percentage = 0.01, solver = "LMBM")
+benches
+
+for(solv in "LMBM"){
+	for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
+	#for(perc in c(0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
+		for(k in c(2:5, 7, 10, 20, 30, 50)){
+			bench <- benchf(kmax = k, percentage = perc, solver = solv, iter = 1)
+			benches <- rbind(benches, bench)
+			save.image("benchmarks_type1_mskcc.RData")
+		}
+	}
+}
+
+set.seed(1)
+benches2 <- benchf(kmax = 50, percentage = 0.01, p = 50, solver = "LMBM")
+benches2
+
+for(solv in "LMBM"){
+	for(iteration in 1:50){
+		for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
+		#for(perc in c(0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
+			for(k in c(50)){
+				for(p in c(50, 100, 200, 500, 1000, 2000, 5000, 10000)){
+					set.seed(iteration)
+					bench2 <- benchf(kmax = k, percentage = perc, solver = solv, p = p, iter = iteration)
+					benches2 <- rbind(benches2, bench2)
+					save.image("benchmarks_type2_mskcc.RData")
+				}
+			}
+		}
+	}
+}
+
+## Plot results from Taylor et al. (MSKCC)
+
+load("benchmarks_type1_mskcc.RData")
+load("benchmarks_type2_mskcc.RData")
+
+datbench <- deparse_bench(benches)
+datbench2 <- deparse_bench(benches2)
+
+#par(mfrow=c(2,3))
+par(mfrow=c(2,2))
+# Upper row
+dattime_a1 <- plot_timeperc(datbench, title="MSKCC full (p=17,410, n=140)")
+dattime_a2 <- plot_fvalperc(datbench, title="MSKCC full (p=17,410, n=140)")
+dattime_a3 <- plot_cindexperc(datbench, title="MSKCC full (p=17,410, n=140)")
+# Lower row
+#dattime_b1 <- plot_nperc(datbench2, title="MSKCC subsampled p (n=140, kmax=50)")
+dattime_b2 <- plot_timeiterperc(datbench2, title="MSKCC subsampled p (n=140, kmax=50)")
 
 
 
 ```
+
+
 
 
 # Session info
