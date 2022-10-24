@@ -2405,9 +2405,9 @@
                   a = a * b
                   set%hav(2,i) = SQRT(a)               
                   
-                  IF (a < 0.000001_c_double) THEN 
-                       set%hav(2,i) = 1.0_c_double               
-                  END IF                  
+               !   IF (a < 0.000001_c_double) THEN 
+               !        set%hav(2,i) = 1.0_c_double               
+               !   END IF                  
                   
 
                END DO     
@@ -14423,22 +14423,46 @@ END MODULE lmbm_mod
                  
                  CALL set_k(info, nk)               
                  info%user_lambda = 0.0_c_double
+
+                 WRITE(*,*) '---------------------------------------------'                   
+                 
+                 ! The objective function values before rescaling
+                 DO k = 1, nk_max         ! Each solution generated is looked through
+                   ind = (k-1)*user_n
+                   ! The solution under consideration is stored to 'beta_solution' vector
+                   DO i = 1, user_n
+                        beta_solution(i) = beta_nft(ind+i)
+                   END DO
+                   
+                   f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value without rescaling
+                   f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value without rescaling
+                   WRITE(*,*) 'kits', k, 'before scaling objcetive', f1_current-f2_current
+                  
+                 END DO                  
+                 
+                 WRITE(*,*) '---------------------------------------------'                    
+                 
+                 CALL set_k(info, nk)               
+                 info%user_lambda = 0.0_c_double
                  CALL rescaling_cox(info)        ! the rescaling of data 
                  
 !*****
-               !  WRITE(*,*) 'valistep'
+!!                 WRITE(*,*) 'valistep'
                  
                  DO k = 1, nk_max         ! Each solution generated is rescaled
                    ind = (k-1)*user_n
                    ! The solution under consideration is stored to 'beta_solution' vector
                    DO i = 1, user_n
                         beta_solution(i) = beta_nft(ind+i)
-                   END DO
+                   END DO              
                    CALL rescaling_beta_cox(info, beta_solution)         ! Rescaling of solution
                    f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value 
                    f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value
-                   fperk(k) = f1_current-f2_current               ! The objective function value for problem 3 with k nonzero kits 
-                    
+                   fperk(k) = f1_current-f2_current                     ! The objective function value for problem 3 with k nonzero kits 
+
+                   WRITE(*,*) 'kits', k, 'after scaling objcetive', fperk(k)
+                   !WRITE(*,*) beta_solution
+                   
                    l2 = 1   
                    ind = (k-1)*ncol
                    DO i = 1, ncol 
@@ -14449,6 +14473,8 @@ END MODULE lmbm_mod
                    END DO       
                    
                  END DO 
+                
+                 WRITE(*,*) '---------------------------------------------'
                  
 !******              
                 ! WRITE(*,*) 'rescaling done'
