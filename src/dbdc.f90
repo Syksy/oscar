@@ -13685,7 +13685,6 @@ END MODULE lmbm_mod
            !***************************** LOCAL VARIABLES ************************************      
            
                TYPE(set_info) :: info                         ! The set of information                     
-               TYPE(set_info) :: info2                        ! The set of information                     
 
              ! **--** REAL tables **--**
                REAL(KIND=c_double), DIMENSION(nKitOnes) :: beta_solution    ! the solution vector beta obtained for the problem
@@ -13939,11 +13938,7 @@ END MODULE lmbm_mod
                     
                ! The initialization of parametrs used in DBDC methods
                CALL allocate_parameters(info, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                           & in_b, in_m_clarke, in_eps, in_crit_tol)
-!*!*
-               CALL allocate_parameters(info2, in_b1, in_b2, in_m, in_c, in_r_dec, in_r_inc, in_eps1, &
-                                           & in_b, in_m_clarke, in_eps, in_crit_tol)
-!*!*                                           
+                                           & in_b, in_m_clarke, in_eps, in_crit_tol)                                         
                                          
                ! The initialization of parameters used in LMBM method
                CALL init_par(in_na, in_mcu, in_mcinit, in_tolf, in_tolf2, in_tolg, &
@@ -14181,9 +14176,6 @@ END MODULE lmbm_mod
          
                ! Allocation of sizes of matrices in function.f95
                CALL allocate_data_cox(info,nft,nrecord,nk,user_n)   
-!*!*
-               CALL allocate_data_cox(info2,nft,nrecord,nk,user_n)   
-!*!*
                            
               !---------------------------------------------------------------------------
               !                     STORING DATA MATRICES 
@@ -14192,11 +14184,6 @@ END MODULE lmbm_mod
           
               CALL allocate_matrices_cox(info, mXt, mYt, mK, in_mC,  & 
                                       & nrecord, nft, nk)
-
-!*!*
-              CALL allocate_matrices_cox(info2, mXt, mYt, mK, in_mC,  & 
-                                      & nrecord, nft, nk)
-!*!*
 
             ! Scaling of data 
               IF (scale_in_use) THEN
@@ -14436,7 +14423,7 @@ END MODULE lmbm_mod
                  CALL set_k(info, nk)               
                  info%user_lambda = 0.0_c_double
 
-                 WRITE(*,*) '---------------------------------------------'                   
+               !  WRITE(*,*) '---------------------------------------------'                   
                  
                  ! The objective function values before rescaling
                  DO k = 1, nk_max         ! Each solution generated is looked through
@@ -14448,16 +14435,14 @@ END MODULE lmbm_mod
                    
                    f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value without rescaling
                    f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value without rescaling
-                   WRITE(*,*) 'kits', k, 'before scaling objcetive', f1_current-f2_current
+                   fperk(k) = f1_current-f2_current                     ! The objective function value for problem 3 with k nonzero kits 
+                   
+                 !  WRITE(*,*) 'kits', k, 'before scaling objcetive', f1_current-f2_current
                   
                  END DO                  
                  
-                 WRITE(*,*) '---------------------------------------------'                    
+                ! WRITE(*,*) '---------------------------------------------'                    
 
-!*!*
-                 CALL set_k(info2, nk)               
-                 info2%user_lambda = 0.0_c_double
-!*!*
                  CALL rescaling_cox(info)        ! the rescaling of data 
                  
 !*****
@@ -14470,11 +14455,11 @@ END MODULE lmbm_mod
                         beta_solution(i) = beta_nft(ind+i)
                    END DO              
                    CALL rescaling_beta_cox(info, beta_solution)         ! Rescaling of solution
-                   f1_current = f1(info2, beta_solution,problem1,user_n) ! The f_1 value 
-                   f2_current = f2(info2, beta_solution,problem1,user_n) ! The f_2 value
-                   fperk(k) = f1_current-f2_current                     ! The objective function value for problem 3 with k nonzero kits 
+                   !f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value 
+                   !f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value
+                   !fperk(k) = f1_current-f2_current                     ! The objective function value for problem 3 with k nonzero kits 
 
-                   WRITE(*,*) 'kits', k, 'after scaling objcetive', fperk(k)
+                   !WRITE(*,*) 'kits', k, 'after scaling objcetive', fperk(k)
                    !WRITE(*,*) beta_solution
                    
                    l2 = 1   
@@ -14488,16 +14473,7 @@ END MODULE lmbm_mod
                    
                  END DO 
                 
-                 WRITE(*,*) '---------------------------------------------'
-!*!*
-                 DO i = 1, nft
-                    DO j = 1, nrecord
-                       IF (ABS(info%mX(i,j)-info2%mX(i,j))>0.00001_c_double) THEN 
-                          WRITE(*,*) 'i', i, 'j', j, 'ero', ABS(info%mX(i,j)-info2%mX(i,j))                    
-                       END IF                   
-                    END DO 
-                 END DO
-!*!*
+              !   WRITE(*,*) '---------------------------------------------'
 
 !******              
                 ! WRITE(*,*) 'rescaling done'
@@ -14546,9 +14522,6 @@ END MODULE lmbm_mod
             END IF
        
              CALL deallocate_data_cox(info) 
-!*!*
-             CALL deallocate_data_cox(info2) 
-!*!*
              DEALLOCATE(mXt,mYt,mK,in_mC)
 
 
