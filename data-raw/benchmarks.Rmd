@@ -69,7 +69,6 @@ benches
 
 for(solv in "LMBM"){
 	for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
-	#for(perc in c(0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
 		for(k in c(2:5, 7, 10, 20, 30, 50)){
 			bench <- benchf(kmax = k, percentage = perc, solver = solv, iter = 1)
 			benches <- rbind(benches, bench)
@@ -85,7 +84,6 @@ benches2
 for(solv in "LMBM"){
 	for(iteration in 1:50){
 		for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
-		#for(perc in c(0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
 			for(k in c(50)){
 				for(p in c(50, 100, 200, 500, 1000, 2000, 5000, 10000)){
 					set.seed(iteration)
@@ -249,13 +247,15 @@ plot_fvaliterperc <- function(df, title=""){
 	dat
 }
 
-load("benchmarks_type1.RData")
-load("benchmarks_type2.RData")
-
 ## Plot results from TCGA
+
+load("benchmarks_type1_tcga.RData")
+load("benchmarks_type2_tcga.RData")
 
 datbench <- deparse_bench(benches)
 datbench2 <- deparse_bench(benches2)
+head(datbench)
+head(datbench2)
 
 #par(mfrow=c(2,3))
 par(mfrow=c(2,2))
@@ -308,7 +308,6 @@ benches
 
 for(solv in "LMBM"){
 	for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
-	#for(perc in c(0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
 		for(k in c(2:5, 7, 10, 20, 30, 50)){
 			bench <- benchf(kmax = k, percentage = perc, solver = solv, iter = 1)
 			benches <- rbind(benches, bench)
@@ -324,7 +323,6 @@ benches2
 for(solv in "LMBM"){
 	for(iteration in 1:50){
 		for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
-		#for(perc in c(0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
 			for(k in c(50)){
 				for(p in c(50, 100, 200, 500, 1000, 2000, 5000, 10000)){
 					set.seed(iteration)
@@ -345,17 +343,13 @@ load("benchmarks_type2_mskcc.RData")
 datbench <- deparse_bench(benches)
 datbench2 <- deparse_bench(benches2)
 
-#par(mfrow=c(2,3))
 par(mfrow=c(2,2))
 # Upper row
 dattime_a1 <- plot_timeperc(datbench, title="MSKCC full (p=17,410, n=140)")
 dattime_a2 <- plot_fvalperc(datbench, title="MSKCC full (p=17,410, n=140)")
 dattime_a3 <- plot_cindexperc(datbench, title="MSKCC full (p=17,410, n=140)")
 # Lower row
-#dattime_b1 <- plot_nperc(datbench2, title="MSKCC subsampled p (n=140, kmax=50)")
 dattime_b2 <- plot_timeiterperc(datbench2, title="MSKCC subsampled p (n=140, kmax=50)")
-
-
 
 ```
 
