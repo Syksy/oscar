@@ -1758,7 +1758,7 @@
                set%user_eps = in_eps
                set%user_crit_tol = in_crit_tol
                
-               set%user_a = 100.0_c_double
+               set%user_a = 200.0_c_double
            
            END SUBROUTINE allocate_parameters
            !------------------------------------------------------------------------------------------     
@@ -1801,7 +1801,7 @@
                set%user_eps = in_eps
                set%user_crit_tol = in_crit_tol
                
-               set%user_a = 100.0_c_double
+               set%user_a = 200.0_c_double
            
            END SUBROUTINE allocate_parameters_subp
            !------------------------------------------------------------------------------------------    
@@ -14423,7 +14423,7 @@ END MODULE lmbm_mod
                  CALL set_k(info, nk)               
                  info%user_lambda = 0.0_c_double
 
-               !  WRITE(*,*) '---------------------------------------------'                   
+                 WRITE(*,*) '---------------------------------------------'                   
                  
                  ! The objective function values before rescaling
                  DO k = 1, nk_max         ! Each solution generated is looked through
@@ -14435,13 +14435,13 @@ END MODULE lmbm_mod
                    
                    f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value without rescaling
                    f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value without rescaling
-                   fperk(k) = f1_current-f2_current                     ! The objective function value for problem 3 with k nonzero kits 
+                 !  fperk(k) = f1_current-f2_current                     ! The objective function value for problem 3 with k nonzero kits 
                    
-                 !  WRITE(*,*) 'kits', k, 'before scaling objcetive', f1_current-f2_current
+                   WRITE(*,*) 'kits', k, 'before scaling objective', f1_current-f2_current
                   
                  END DO                  
                  
-                ! WRITE(*,*) '---------------------------------------------'                    
+                 WRITE(*,*) '---------------------------------------------'                    
 
                  CALL rescaling_cox(info)        ! the rescaling of data 
                  
@@ -14455,12 +14455,11 @@ END MODULE lmbm_mod
                         beta_solution(i) = beta_nft(ind+i)
                    END DO              
                    CALL rescaling_beta_cox(info, beta_solution)         ! Rescaling of solution
-                   !f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value 
-                   !f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value
-                   !fperk(k) = f1_current-f2_current                     ! The objective function value for problem 3 with k nonzero kits 
+                   f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value 
+                   f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value
+                   fperk(k) = f1_current-f2_current                     ! The objective function value for problem 3 with k nonzero kits 
 
-                   !WRITE(*,*) 'kits', k, 'after scaling objcetive', fperk(k)
-                   !WRITE(*,*) beta_solution
+                   WRITE(*,*) 'kits', k, 'after scaling objective', fperk(k)
                    
                    l2 = 1   
                    ind = (k-1)*ncol
