@@ -78,10 +78,10 @@ oscar.cv <- function(
 		list(train = train, test = test)
 	}
 	# Generate cv-folds
-	cvsets <- cv(fit@x, fold = fold, seed = seed,strata=strata)
+	cvsets <- cv(fit@x, fold = fold, seed = seed, strata = strata)
 	cvsets
 	# Verbose
-	if(verb>=1) print(str(cvsets))
+	if(verb>=2) print(str(cvsets))
 	
 	# Fit family to use
 	#family <- fit@family
@@ -89,17 +89,33 @@ oscar.cv <- function(
 	ks <- 1:nrow(fit@k)
 	# Loop over the CV folds, make a list of predictions and the real values
 	cvs <- lapply(1:fold, FUN=function(z){
-		if(verb>=1) print(paste("CV fold", z))
+		if(verb>=1) cat(paste0("\nCV fold ", z, " of ", fold))
 		# Constructing appropriate model object
 		if(fit@family == "cox"){
 			# Cox model is 2-column in y-response
-			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=fit@y[cvsets$train[[z]],], family=fit@family, k=fit@k, w=fit@w, verb=verb, start=fit@start, in_selection=fit@in_selection, percentage = fit@percentage, ...)
+			y <- fit@y[cvsets$train[[z]],]
 		}else if(fit@family %in% c("mse", "gaussian", "logistic")){
 			# All other models have a y-vector
-			fittmp <- oscar::oscar(x=fit@x[cvsets$train[[z]],], y=c(fit@y)[cvsets$train[[z]]], family=fit@family, k=fit@k, w=fit@w, verb=verb, start=fit@start, ...)
+			y <- c(fit@y)[cvsets$train[[z]]]
 		}else{
 			stop(paste("Incorrect family-parameter fit@family:", fit@family))
 		}
+		# Exhaustively use same set of fitting parameters in CV fits as in original fit
+		fittmp <- oscar::oscar(
+			x = fit@x[cvsets$train[[z]],], 
+			y = y, 
+			family = fit@family, 
+			k = fit@k, 
+			w = fit@w, 
+			verb = verb, 
+			start = fit@start, 
+			rho = fit@rho,
+			solver = fit@solver,
+			in_selection = fit@in_selection, 
+			percentage = fit@percentage, 
+			...
+		)
+		
 		if(verb>=1) print("CV fit, predicting...")
 		# Perform predictions over all k-value fits
 		# Model specificity in predictions (?)

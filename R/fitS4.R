@@ -520,8 +520,10 @@ oscar <- function(
 		kperk = kperk[1:kmax], # Chosen kits per k-steps up to kmax
 		cperk = cperk[1:kmax], # Total kit costs per each k-step up to kmax
 		## Data slots
-		x=ifelse(storeX, as.matrix(x), NULL), # Data matrix X
-		y=ifelse(storeY, as.matrix(y), NULL), # Response Y
+		#x=ifelse(storeX, as.matrix(x), as.matrix(NA_real_)), # Data matrix X
+		#y=ifelse(storeY, as.matrix(y), as.matrix(NA_real_)), # Response Y
+		x=as.matrix(x),
+		y=as.matrix(y),
 		k=as.matrix(k), # Kit matrix K
 		w=as.numeric(w),	# Vector of weights/costs for kits
 		## Additional parameters
