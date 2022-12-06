@@ -83,17 +83,23 @@ oscar.cv <- function(
 	# Verbose
 	if(verb>=2) print(str(cvsets))
 	
-	# Fit family to use
-	#family <- fit@family
 	# K-steps
 	ks <- 1:nrow(fit@k)
 	# Loop over the CV folds, make a list of predictions and the real values
 	cvs <- lapply(1:fold, FUN=function(z){
-		if(verb>=1) cat(paste0("\nCV fold ", z, " of ", fold))
+		if(verb>=1) cat(paste0("\nCV fold ", z, " of ", fold, "\n"))
+		
+		# Remove redundant columns but give out a warning
+		x <- fit@x[cvsets$train[[z]],]
+		if(any(apply(x, MARGIN=2, FUN=\(q){ all(q==unique(q)[1]) }))){
+			w <- which(apply(x, MARGIN=2, FUN=\(q){ all(q==unique(q)[1]) }))
+			x <- x[,-w]
+			warning(paste("CV matrix 'x' contains redundant data columns in fold", z, " and these are removed in the cross-validation"))
+		}
 		# Constructing appropriate model object
 		if(fit@family == "cox"){
 			# Cox model is 2-column in y-response
-			y <- fit@y[cvsets$train[[z]],]
+			y <- survival::Surv(fit@y[cvsets$train[[z]],])
 		}else if(fit@family %in% c("mse", "gaussian", "logistic")){
 			# All other models have a y-vector
 			y <- c(fit@y)[cvsets$train[[z]]]
@@ -102,14 +108,14 @@ oscar.cv <- function(
 		}
 		# Exhaustively use same set of fitting parameters in CV fits as in original fit
 		fittmp <- oscar::oscar(
-			x = fit@x[cvsets$train[[z]],], 
+			x = x, 
 			y = y, 
 			family = fit@family, 
 			k = fit@k, 
 			w = fit@w, 
 			verb = verb, 
 			start = fit@start, 
-			rho = fit@rho,
+			#rho = fit@rho,
 			solver = fit@solver,
 			in_selection = fit@in_selection, 
 			percentage = fit@percentage, 
@@ -120,23 +126,16 @@ oscar.cv <- function(
 		# Perform predictions over all k-value fits
 		# Model specificity in predictions (?)
 		pred <- lapply(1:fit@kmax, FUN=function(ki){
-			#if(verb>=2) print(f)
 			x <- fit@x[cvsets$test[[z]],,drop=FALSE]
-			#colnames(x) <- colnames(fit@x)
-			#x <- as.matrix(fit@x[cvsets$test[[z]],])
 			# MSE/Gaussian
 			if(fit@family %in% c("mse", "gaussian")){
 				oscar::predict(fit, type = "response", k = ki, newdata = x)
-				#as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))
-				
 			# Logistic	
 			}else if(fit@family %in% c("logistic")){
 				oscar::predict(fit, type = "response", k = ki, newdata = x)
-				#as.vector(unlist(stats::predict.glm(f, type="response", newdata=x)))
 			# Cox
 			}else if(fit@family %in% c("cox")){
 				oscar::predict(fit, type = "response", k = ki, newdata = x)
-				#as.vector(unlist(survival:::predict.coxph(f, type="risk", newdata=x)))
 			}
 		})
 		# True values; vectorization if not Cox ph model
