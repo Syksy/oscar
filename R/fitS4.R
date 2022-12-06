@@ -177,6 +177,16 @@ oscar <- function(
 		stop("User provided custom goodness metrics not yet supported.")
 	}
 
+	# Checking for redundancy in data matrix (columns with singular value) or NAs
+	# Results in a stop
+	if(any(apply(x, MARGIN=2, FUN=\(q){ all(q==unique(q)[1]) }))){
+		stop("Matrix 'x' contains redundant data columns which contain only a singular value")
+	}else if(any(is.na(x))){
+		stop("Matrix 'x' contains NA-values")
+	}else if(any(is.na(y))){
+		stop("Response 'y' contains NA-values")
+	}
+
 	# Flip Cox event/time columns to correct column order
 	if(family == "cox" & inherits(y, c("matrix", "array", "Surv"))){
 		# For Cox, we expect events to be second column
