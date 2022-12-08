@@ -91,9 +91,11 @@ oscar.cv <- function(
 		
 		# Remove redundant columns but give out a warning
 		x <- fit@x[cvsets$train[[z]],]
+		k <- fit@k
 		if(any(apply(x, MARGIN=2, FUN=\(q){ all(q==unique(q)[1]) }))){
 			w <- which(apply(x, MARGIN=2, FUN=\(q){ all(q==unique(q)[1]) }))
 			x <- x[,-w]
+			k <- k[-w,-w]
 			warning(paste("CV matrix 'x' contains redundant data columns in fold", z, " and these are removed in the cross-validation"))
 		}
 		# Constructing appropriate model object
@@ -111,7 +113,7 @@ oscar.cv <- function(
 			x = x, 
 			y = y, 
 			family = fit@family, 
-			k = fit@k, 
+			k = k, 
 			w = fit@w, 
 			verb = verb, 
 			start = fit@start, 
