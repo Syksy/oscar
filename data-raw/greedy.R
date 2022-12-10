@@ -20,7 +20,7 @@ greedyfw <- function(
 	seed, # If there should be a set seed
 	...
 ){
-	# Extract names of the variables/columns while replacing the problematic - with . as per R conventions
+	# Extract names of the variables/columns while replacing the problematic '-', '/' etc with '.' as per R conventions
 	vars <- gsub("-|/", ".", colnames(x))
 	colnames(x) <- gsub("-|/", ".", colnames(x))
 
@@ -34,17 +34,27 @@ greedyfw <- function(
 		cat(paste0("\np: ", p, " / ", min(maxk, ncol(x)), "\n"))
 		# Loop over remaining variables and selected one which adds most to C-index
 		cs <- unlist(lapply(vars, FUN=\(v){
-			# Construct appropriate data matrix
-			feats <- as.data.frame(x[,c(selected, v)])
-			colnames(feats) <- c(selected, v)
-			f <- as.formula(paste0("y ~ ", paste(c(selected, v), collapse="+")))
-			if(verb>=2){
-				print(f)
-				print(head(feats))
-			}
-			fit <- survival::coxph(f, data = feats)
-			ci <- fit[["concordance"]]["concordance"]
-			ci
+			tryCatch(
+				expr = {
+					# Construct appropriate data matrix
+					feats <- as.data.frame(x[,c(selected, v)])
+					colnames(feats) <- c(selected, v)
+					f <- as.formula(paste0("y ~ ", paste(c(selected, v), collapse="+")))
+					if(verb>=2){
+						print(f)
+						print(head(feats))
+					}
+					fit <- survival::coxph(f, data = feats)
+					ci <- fit[["concordance"]]["concordance"]
+					ci
+				},
+				# Error when trying to extract fit/c-index
+				error = function(e){
+					print(paste("Error occurred with variable", v, "; returning ci=0.5"))
+					ci <- 0.5
+					ci
+				}
+			)
 		}))
 		w <- which.max(cs)
 		# Add C-index maximizing variable into the selected variables, remove it from candidate variables
@@ -143,9 +153,15 @@ greedyfw.cv <- function(
 		preds_test <- predict(fit_train, newdata = x_test)
 		
 		# Calculate test-prediction c-index
-		ci_pred <- survival::coxph(y_test ~ preds_test)[["concordance"]]["concordance"]
-		
-		ci_pred
+		tryCatch(
+			expr = {
+				ci_pred <- survival::coxph(y_test ~ preds_test)[["concordance"]]["concordance"]
+				ci_pred
+			}, 
+			e = {
+				NA_real_
+			}
+		)
 	})	
 	do.call("c", cvs)
 }
@@ -198,3 +214,9 @@ X2 <- t(X2)
 greedy_tcga <- greedyfw(x = X1, y = Y1, verb = 1, seed = 1, maxk = 50)
 #greedy_taylor <- greedyfw(x = X2, y = Y2, verb = 1, seed = 2, maxk = 50)
 greedy_taylor_f5 <- greedyfw(x = X2, y = Y2, verb = 1, seed = 2, maxk = 50, fold = 5)
+greedy_taylor <- greedyfw(x = X2, y = Y2, verb = 1, seed = 1, maxk = 50)
+
+par(mfrow=c(1,2))
+plot(1:50, apply(greedy_tcga$cvs, MARGIN=2, FUN=mean), main="TCGA, Greedy FS CV", xlab="Number of variables", ylab="Mean C-index over CV folds", type="l", ylim=c(0.7, 1.0))
+plot(1:50, apply(greedy_taylor_f5$cvs, MARGIN=2, FUN=mean), main="Taylor et al., Greedy FS CV", xlab="Number of variables", ylab="Mean C-index over CV folds", type="l", ylim=c(0.7, 1.0))
+
