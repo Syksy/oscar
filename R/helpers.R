@@ -117,6 +117,7 @@ oscar.cv <- function(
 			family = fit@family, 
 			k = k, 
 			w = w, 
+			kmax = fit@kmax,
 			verb = verb, 
 			start = fit@start, 
 			#rho = fit@rho,
@@ -150,6 +151,9 @@ oscar.cv <- function(
 		}else{
 			stop(paste("Incorrect family-parameter fit@family:", fit@family))
 		}
+		
+		if(verb>=1) print(paste("Finished fold", z))
+		
 		# Return predictions vs. real y-values
 		list(
 			# Predicted values

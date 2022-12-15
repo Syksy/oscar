@@ -14435,10 +14435,10 @@ END MODULE lmbm_mod
                    
                    f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value without rescaling
                    f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value without rescaling
-                 !  fperk(k) = f1_current-f2_current                     ! The objective function value for problem 3 with k nonzero kits 
+                   fperk(k) = f1_current-f2_current                     ! The objective function value for problem 3 with k nonzero kits 
                    
                    WRITE(*,*) 'kits', k, 'before scaling objective', f1_current-f2_current
-                  
+                 
                  END DO                  
                  
                  WRITE(*,*) '---------------------------------------------'                    
@@ -14455,11 +14455,15 @@ END MODULE lmbm_mod
                         beta_solution(i) = beta_nft(ind+i)
                    END DO              
                    CALL rescaling_beta_cox(info, beta_solution)         ! Rescaling of solution
-                   f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value 
-                   f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value
-                   fperk(k) = f1_current-f2_current                     ! The objective function value for problem 3 with k nonzero kits 
-
-                   WRITE(*,*) 'kits', k, 'after scaling objective', fperk(k)
+! Return unscaled target function values     
+!
+!                   f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value 
+!                   f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value
+!
+!
+!                   fperk(k) = f1_current-f2_current                     ! The objective function value for problem 3 with k nonzero kits 
+!
+!                   WRITE(*,*) 'kits', k, 'after scaling objective', fperk(k)
                    
                    l2 = 1   
                    ind = (k-1)*ncol
