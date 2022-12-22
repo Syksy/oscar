@@ -1,0 +1,129 @@
+---
+title: "OSCAR fits for large omics data"
+output: rmarkdown::html_vignette
+date: "`r Sys.Date()`"
+vignette: >
+  %\VignetteIndexEntry{OSCAR fits for large omics data}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+\newcommand{\vertiii}[1]{{\left\vert\kern-0.25ex\left\vert\kern-0.25ex\left\vert #1 
+    \right\vert\kern-0.25ex\right\vert\kern-0.25ex\right\vert}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}      # vector \beta bolded
+\newcommand{\bg}{{\boldsymbol{g}}}           # vector g bolded
+\newcommand{\bW}{{\boldsymbol{W}}}           # vector W bolded
+\newcommand{\x}{{\boldsymbol{x}}}            # vector x bolded
+
+```{r, echo=FALSE}
+## Load necessary dependencies for running the benchmarks
+# For OSCAR methodology; 
+library(oscar)
+# For 'omics data from prostate cancer (https://github.com/Syksy/curatedPCaData):
+library(curatedPCaData)
+# Surv
+library(survival)
+```
+
+```{r tcga}
+# Create TCGA data matrix and Surv-response 
+X1_samps <- rownames(colData(mae_tcga))[which(
+	# Subset to primary samples
+	colData(mae_tcga)$sample_type == "primary" & 
+	# No NA recurrence statuses
+	!is.na(colData(mae_tcga)$disease_specific_recurrence_status) & 
+	# No NA recurrence follow-up times
+	!is.na(colData(mae_tcga)$days_to_disease_specific_recurrence) &
+	# Has to be present in transciptomics
+	rownames(colData(mae_tcga)) %in% colnames(mae_tcga[["gex.rsem.log"]])
+	)]
+Y1 <- Surv(event=colData(mae_tcga)[X1_samps, "disease_specific_recurrence_status"], time=colData(mae_tcga)[X1_samps, "days_to_disease_specific_recurrence"])
+X1 <- mae_tcga[["gex.rsem.log"]][,X1_samps]
+# Only include non-redundant variables
+w <- apply(X1, MARGIN=1, FUN=\(q){ !all(q == unique(q)[1]) })
+X1 <- X1[w,]
+
+```
+
+
+```{r taylor}
+# Create Taylor et al. data matrix and Surv-response
+X2_samps <- rownames(colData(mae_taylor))[which(
+	# Subset to primary samples
+	colData(mae_taylor)$sample_type == "primary" & 
+	# No NA recurrence statuses
+	!is.na(colData(mae_taylor)$disease_specific_recurrence_status) & 
+	# No NA recurrence follow-up times
+	!is.na(colData(mae_taylor)$days_to_disease_specific_recurrence) &
+	# Has to be present in transciptomics
+	rownames(colData(mae_taylor)) %in% colnames(mae_taylor[["gex.rma"]])
+	)]
+Y2 <- Surv(event=colData(mae_taylor)[X2_samps, "disease_specific_recurrence_status"], time=colData(mae_taylor)[X2_samps, "days_to_disease_specific_recurrence"])
+X2 <- mae_taylor[["gex.rma"]][,X2_samps]
+# Only include non-redundant variables
+w <- apply(X2, MARGIN=1, FUN=\(q){ !all(q == unique(q)[1]) })
+X2 <- X2[w,]
+
+```
+
+
+```{r sun}
+# Create Sun et al. data matrix and binary recurrence outcome (no follow-up time available); use as validation
+X3_samps <- rownames(colData(mae_sun))[which(
+	# Subset to primary samples
+	colData(mae_sun)$sample_type == "primary" & 
+	# No NA recurrence statuses
+	!is.na(colData(mae_sun)$disease_specific_recurrence_status) & 
+	## No follow-up information! Run using logistic regression
+	# No NA recurrence follow-up times
+	#!is.na(colData(mae_sun)$days_to_disease_specific_recurrence) &
+	# Has to be present in transciptomics
+	rownames(colData(mae_sun)) %in% colnames(mae_sun[["gex.rma"]])
+	)]
+Y3 <- as.numeric(colData(mae_sun)[X3_samps, "disease_specific_recurrence_status"])
+X3 <- mae_sun[["gex.rma"]][,X3_samps]
+# Only include non-redundant variables
+w <- apply(X3, MARGIN=1, FUN=\(q){ !all(q == unique(q)[1]) })
+X3 <- X3[w,]
+
+```
+
+CV-model runs for TCGA and MSKCC
+
+```{r}
+
+fit_tcga <- oscar(x=t(X1), y=Y1, family="cox", kmax=50, in_selection=3, percentage=10^-4, solver="LMBM")
+
+fit.cv_tcga <- oscar.cv(fit_tcga, fold=10, seed=1, verb=1)
+
+fit_taylor <- oscar(x=t(X2), y=Y2, family="cox", kmax=50, in_selection=3, percentage=10^-4, solver="LMBM")
+
+fit.cv_taylor <- oscar.cv(fit_taylor, fold=10, seed=2, verb=1)
+
+save.image("bigdata_fits_oscar.RData")
+
+```
+
+Visualize CVs:
+
+```{r}
+
+load("bigdata_fits_oscar.RData")
+
+par(mfrow=c(1,2))
+plot(1:fit_tcga@kmax, apply(fit.cv_tcga, MARGIN=2, FUN=mean), type="l", xlab="Cardinality 'k'", ylab="Mean C-index over CV-folds", main="TCGA CV", ylim=c(0.6, 1.0))
+plot(1:fit_taylor@kmax, apply(fit.cv_taylor, MARGIN=2, FUN=mean), type="l", xlab="Cardinality 'k'", ylab="Mean C-index over CV-folds", main="Taylor et al. CV", ylim=c(0.6, 1.0))
+
+```
+
+Validate using Sun et al.:
+
+```{r validate}
+# TODO
+```
+
+# Session info
+
+```{r session}
+sessionInfo()
+```
+
