@@ -1,3 +1,7 @@
+## Datasets
+
+# Implementation for Greedy FS
+
 #' @title Greedy forward selection for features in Cox PH models using Condordance index
 #'
 #' @description x Input data matrix
@@ -14,10 +18,11 @@
 greedyfw <- function(
 	x,
 	y,
-	maxk = 30,
+	maxk = 50,
 	verb = 1, # Level of verbosity
 	fold = 10, # Cross-validation folds
 	seed, # If there should be a set seed
+	runCV = TRUE, # Should CV be run
 	...
 ){
 	# Extract names of the variables/columns while replacing the problematic '-', '/' etc with '.' as per R conventions
@@ -27,11 +32,11 @@ greedyfw <- function(
 	# Variables selected thus far
 	selected <- c()
 	cindex	<- c()
-	cvs <- list()
+	if(runCV) cvs <- list()
 	
 	# Iterate over candidate variables until desired var count 
 	for(p in 1:min(maxk, ncol(x))){
-		cat(paste0("\np: ", p, " / ", min(maxk, ncol(x)), "\n"))
+		if(verb>=1) cat(paste0("\np: ", p, " / ", min(maxk, ncol(x)), "\n"))
 		# Loop over remaining variables and selected one which adds most to C-index
 		cs <- unlist(lapply(vars, FUN=\(v){
 			tryCatch(
@@ -50,7 +55,7 @@ greedyfw <- function(
 				},
 				# Error when trying to extract fit/c-index
 				error = function(e){
-					print(paste("Error occurred with variable", v, "; returning ci=0.5"))
+					if(verb>=2) print(paste("Error occurred with variable", v, "; returning ci=0.5"))
 					ci <- 0.5
 					ci
 				}
@@ -63,7 +68,7 @@ greedyfw <- function(
 		# Store concordance of original fit
 		cindex <- c(cindex, cs[w])
 
-		if(verb>=1){
+		if(verb>=2){
 			print("Selected:")
 			print(selected)
 			print("C-indices:")
@@ -71,19 +76,23 @@ greedyfw <- function(
 		}
 		
 		# Run CV for thus far selected variables
-		cvs[[length(cvs)+1]] <- greedyfw.cv(x = x[,selected,drop=FALSE], y = y, fold = fold, seed = seed)
+		if(runCV) cvs[[length(cvs)+1]] <- greedyfw.cv(x = x[,selected,drop=FALSE], y = y, fold = fold, seed = seed)
 
-		if(verb>=1){
+		if(verb>=1 & runCV){
 			print("CV-folds:")
 			print(cvs)
 		}
 	}
 	
-	cvs <- do.call("cbind", cvs)
-	rownames(cvs) <- paste0("fold", 1:fold)
-	colnames(cvs) <- paste0("k", 1:ncol(cvs))
-	
-	list(selected = selected, cindex = cindex, cvs = cvs)
+	# Return either just fits or fits together with CVs	
+	if(runCV){
+		cvs <- do.call("cbind", cvs)
+		rownames(cvs) <- paste0("fold", 1:fold)
+		colnames(cvs) <- paste0("k", 1:ncol(cvs))
+		list(selected = selected, cindex = cindex, cvs = cvs)
+	}else{
+		list(selected = selected, cindex = cindex)
+	}
 }
 
 #' Cross-validation for greedy forward selection with Cox PH and c-index
@@ -165,58 +174,3 @@ greedyfw.cv <- function(
 	})	
 	do.call("c", cvs)
 }
-
-
-
-# Example code for running above function(s)
-library(curatedPCaData)
-library(survival)
-
-# TCGA
-X1_samps <- rownames(colData(mae_tcga))[which(
-	# Subset to primary samples
-	colData(mae_tcga)$sample_type == "primary" & 
-	# No NA recurrence statuses
-	!is.na(colData(mae_tcga)$disease_specific_recurrence_status) & 
-	# No NA recurrence follow-up times
-	!is.na(colData(mae_tcga)$days_to_disease_specific_recurrence) &
-	# Has to be present in transciptomics
-	rownames(colData(mae_tcga)) %in% colnames(mae_tcga[["gex.rsem.log"]])
-	)]
-Y1 <- Surv(event=colData(mae_tcga)[X1_samps, "disease_specific_recurrence_status"], time=colData(mae_tcga)[X1_samps, "days_to_disease_specific_recurrence"])
-X1 <- mae_tcga[["gex.rsem.log"]][,X1_samps]
-# Only include non-redundant variables
-w <- apply(X1, MARGIN=1, FUN=\(q){ !all(q == unique(q)[1]) })
-X1 <- X1[w,]
-# Rows are samples, columns are variables
-X1 <- t(X1)
-
-# Taylor et al. / MSKCC
-X2_samps <- rownames(colData(mae_taylor))[which(
-	# Subset to primary samples
-	colData(mae_taylor)$sample_type == "primary" & 
-	# No NA recurrence statuses
-	!is.na(colData(mae_taylor)$disease_specific_recurrence_status) & 
-	# No NA recurrence follow-up times
-	!is.na(colData(mae_taylor)$days_to_disease_specific_recurrence) &
-	# Has to be present in transciptomics
-	rownames(colData(mae_taylor)) %in% colnames(mae_taylor[["gex.rma"]])
-	)]
-Y2 <- Surv(event=colData(mae_taylor)[X2_samps, "disease_specific_recurrence_status"], time=colData(mae_taylor)[X2_samps, "days_to_disease_specific_recurrence"])
-X2 <- mae_taylor[["gex.rma"]][,X2_samps]
-# Only include non-redundant variables
-w <- apply(X2, MARGIN=1, FUN=\(q){ !all(q == unique(q)[1]) })
-X2 <- X2[w,]
-# Rows are samples, columns are variables
-X2 <- t(X2)
-
-
-greedy_tcga <- greedyfw(x = X1, y = Y1, verb = 1, seed = 1, maxk = 50)
-#greedy_taylor <- greedyfw(x = X2, y = Y2, verb = 1, seed = 2, maxk = 50)
-greedy_taylor_f5 <- greedyfw(x = X2, y = Y2, verb = 1, seed = 2, maxk = 50, fold = 5)
-greedy_taylor <- greedyfw(x = X2, y = Y2, verb = 1, seed = 1, maxk = 50)
-
-par(mfrow=c(1,2))
-plot(1:50, apply(greedy_tcga$cvs, MARGIN=2, FUN=mean), main="TCGA, Greedy FS CV", xlab="Number of variables", ylab="Mean C-index over CV folds", type="l", ylim=c(0.7, 1.0))
-plot(1:50, apply(greedy_taylor_f5$cvs, MARGIN=2, FUN=mean), main="Taylor et al., Greedy FS CV", xlab="Number of variables", ylab="Mean C-index over CV folds", type="l", ylim=c(0.7, 1.0))
-
