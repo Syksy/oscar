@@ -29,18 +29,23 @@ library(survival)
 Prepare TCGA transcriptomics:
 
 ```{r tcga}
-Y1 <- Surv(event=colData(mae_tcga)[["disease_specific_recurrence_status"]], time=colData(mae_tcga)[["days_to_disease_specific_recurrence"]])
-X1_samps <- colData(mae_tcga)$sample_name[-which(is.na(Y1))]
-Y1 <- Y1[-which(is.na(Y1))]
-Y1 <- Y1[-which(!X1_samps %in% colnames(mae_tcga[["gex.rsem.log"]]))]
-X1_samps <- X1_samps[-which(!X1_samps %in% colnames(mae_tcga[["gex.rsem.log"]]))]
 
-length(X1_samps)
-length(Y1)
-
+X1_samps <- rownames(colData(mae_tcga))[which(
+	# Subset to primary samples
+	colData(mae_tcga)$sample_type == "primary" & 
+	# No NA recurrence statuses
+	!is.na(colData(mae_tcga)$disease_specific_recurrence_status) & 
+	# No NA recurrence follow-up times
+	!is.na(colData(mae_tcga)$days_to_disease_specific_recurrence) &
+	# Has to be present in transciptomics
+	rownames(colData(mae_tcga)) %in% colnames(mae_tcga[["gex.rsem.log"]])
+	)]
+Y1 <- Surv(event=colData(mae_tcga)[X1_samps, "disease_specific_recurrence_status"], time=colData(mae_tcga)[X1_samps, "days_to_disease_specific_recurrence"])
 X1 <- mae_tcga[["gex.rsem.log"]][,X1_samps]
-# Remove genes with redundant expression, e.g. 0 across all samples
-X1 <- X1[which(apply(X1, MARGIN=1, FUN=function(x) { !all(x==unique(x)[1]) })),]
+# Only include non-redundant variables
+w <- apply(X1, MARGIN=1, FUN=\(q){ !all(q == unique(q)[1]) })
+X1 <- X1[w,]
+
 ```
 
 Run benchmarks in TCGA
@@ -82,7 +87,7 @@ benches2 <- benchf(kmax = 50, percentage = 0.01, p = 50, solver = "LMBM")
 benches2
 
 for(solv in "LMBM"){
-	for(iteration in 1:50){
+	for(iteration in 1:10){
 		for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
 			for(k in c(50)){
 				for(p in c(50, 100, 200, 500, 1000, 2000, 5000, 10000)){
@@ -95,6 +100,140 @@ for(solv in "LMBM"){
 		}
 	}
 }
+
+
+```
+
+
+Process MSKCC transcriptome:
+
+```
+
+X2_samps <- rownames(colData(mae_taylor))[which(
+	# Subset to primary samples
+	colData(mae_taylor)$sample_type == "primary" & 
+	# No NA recurrence statuses
+	!is.na(colData(mae_taylor)$disease_specific_recurrence_status) & 
+	# No NA recurrence follow-up times
+	!is.na(colData(mae_taylor)$days_to_disease_specific_recurrence) &
+	# Has to be present in transciptomics
+	rownames(colData(mae_taylor)) %in% colnames(mae_taylor[["gex.rma"]])
+	)]
+Y2 <- Surv(event=colData(mae_taylor)[X2_samps, "disease_specific_recurrence_status"], time=colData(mae_taylor)[X2_samps, "days_to_disease_specific_recurrence"])
+X2 <- mae_taylor[["gex.rma"]][,X2_samps]
+# Only include non-redundant variables
+w <- apply(X2, MARGIN=1, FUN=\(q){ !all(q == unique(q)[1]) })
+X2 <- X2[w,]
+
+benchf <- function(p, kmax, percentage, solver, X = t(X2), Y=Y2, iter = 1){
+	t0 <- Sys.time()
+	if(!missing(p)){
+		fit <- oscar(x=X[,sample(1:ncol(X), p)], y=Y, family="cox", kmax=kmax, in_selection=3, percentage=percentage, solver=solver)
+	}else{
+		fit <- oscar(x=X, y=Y, family="cox", kmax=kmax, in_selection=3, percentage=percentage, solver=solver)
+	}
+	if(missing(p)){
+		p <- ncol(X)
+	}
+	t1 <- Sys.time()
+	dif <- t1 - t0
+	c("Time diff" = as.numeric(t1 - t0), "Time unit" = attr(dif, "units"), "kmax" = kmax, "percentage" = percentage, "solver" = ifelse(solver=="LMBM", 2, 1), "f(kmax)" = fit@fperk[fit@kmax], "p" = p, "cindex" = fit@goodness[fit@kmax], iter = as.numeric(iter))	
+}
+
+set.seed(1)
+benches <- benchf(kmax = 2, percentage = 0.01, solver = "LMBM")
+benches
+
+for(solv in "LMBM"){
+	for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
+		for(k in c(2:5, 7, 10, 20, 30, 50)){
+			bench <- benchf(kmax = k, percentage = perc, solver = solv, iter = 1)
+			benches <- rbind(benches, bench)
+			save.image("benchmarks_type1_mskcc.RData")
+		}
+	}
+}
+
+set.seed(1)
+benches2 <- benchf(kmax = 50, percentage = 0.01, p = 50, solver = "LMBM")
+benches2
+
+for(solv in "LMBM"){
+	for(iteration in 1:10){
+		for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
+			for(k in c(50)){
+				for(p in c(50, 100, 200, 500, 1000, 2000, 5000, 10000)){
+					set.seed(iteration)
+					bench2 <- benchf(kmax = k, percentage = perc, solver = solv, p = p, iter = iteration)
+					benches2 <- rbind(benches2, bench2)
+					save.image("benchmarks_type2_mskcc.RData")
+				}
+			}
+		}
+	}
+}
+
+```
+
+
+Processing Sun et al. data:
+
+```{r}
+
+X3_samps <- rownames(colData(mae_sun))[which(
+	# Subset to primary samples
+	colData(mae_sun)$sample_type == "primary" & 
+	# No NA recurrence statuses
+	!is.na(colData(mae_sun)$disease_specific_recurrence_status) & 
+	## No follow-up information! Run using logistic regression
+	# No NA recurrence follow-up times
+	#!is.na(colData(mae_sun)$days_to_disease_specific_recurrence) &
+	# Has to be present in transciptomics
+	rownames(colData(mae_sun)) %in% colnames(mae_sun[["gex.rma"]])
+	)]
+Y3 <- as.numeric(colData(mae_sun)[X3_samps, "disease_specific_recurrence_status"])
+X3 <- mae_sun[["gex.rma"]][,X3_samps]
+# Only include non-redundant variables
+w <- apply(X3, MARGIN=1, FUN=\(q){ !all(q == unique(q)[1]) })
+X3 <- X3[w,]
+
+```
+
+CV-model runs for TCGA and MSKCC
+
+```{r}
+
+fit_tcga <- oscar(x=t(X1), y=Y1, family="cox", kmax=50, in_selection=3, percentage=10^-4, solver="LMBM")
+
+fit.cv_tcga <- oscar.cv(fit_tcga, fold=10, seed=1, verb=1)
+
+save.image("fits_tcga.RData")
+
+fit_taylor <- oscar(x=t(X2), y=Y2, family="cox", kmax=50, in_selection=3, percentage=10^-4, solver="LMBM")
+
+fit.cv_taylor <- oscar.cv(fit_taylor, fold=10, seed=2, verb=1)
+
+save.image("fits_taylor.RData")
+
+```
+
+
+Visualize CVs:
+
+```{r}
+
+load("fits_tcga.RData")
+load("fits_taylor.RData")
+
+par(mfrow=c(1,2))
+plot(1:fit_tcga@kmax, apply(fit.cv_tcga, MARGIN=2, FUN=mean), type="l", xlab="Cardinality 'k'", ylab="Mean C-index over CV-folds", main="TCGA CV", ylim=c(0.6, 1.0))
+plot(1:fit_taylor@kmax, apply(fit.cv_taylor, MARGIN=2, FUN=mean), type="l", xlab="Cardinality 'k'", ylab="Mean C-index over CV-folds", main="Taylor et al. CV", ylim=c(0.6, 1.0))
+
+```
+
+Benchmark visualizations:
+
+```{ r bench_funcs}
 
 deparse_bench <- function(x){
 	# Time in minutes
@@ -247,6 +386,13 @@ plot_fvaliterperc <- function(df, title=""){
 	dat
 }
 
+```
+
+
+TCGA:
+
+```{r bench_tcga}
+
 ## Plot results from TCGA
 
 load("benchmarks_type1_tcga.RData")
@@ -257,83 +403,21 @@ datbench2 <- deparse_bench(benches2)
 head(datbench)
 head(datbench2)
 
-#par(mfrow=c(2,3))
-par(mfrow=c(2,2))
+pdf("SupFig_Benchmarks_TCGA.pdf", width=10, height=10)
+par(mfrow=c(2,2), las=1)
 # Upper row
-dattime_a1 <- plot_timeperc(datbench, title="TCGA full (p=19,358, n=413)")
-dattime_a2 <- plot_fvalperc(datbench, title="TCGA full (p=19,358, n=413)")
-dattime_a3 <- plot_cindexperc(datbench, title="TCGA full (p=19,358, n=413)")
+dattime_a1 <- plot_timeperc(datbench, title="TCGA full (p=19,353, n=404)")
+dattime_a2 <- plot_fvalperc(datbench, title="TCGA full (p=19,353, n=404)")
 # Lower row
-#dattime_b1 <- plot_nperc(datbench2, title="TCGA subsampled p (n=413, kmax=50)")
-dattime_b2 <- plot_timeiterperc(datbench2, title="TCGA subsampled p (n=413, kmax=50)")
+dattime_a3 <- plot_cindexperc(datbench, title="TCGA full (p=19,353, n=404)")
+dattime_b2 <- plot_timeiterperc(datbench2, title="TCGA subsampled p (n=404, kmax=50)")
+dev.off()
 
 ```
 
+Taylor et al.:
 
-Process MSKCC transcriptome:
-
-```
-
-X2 <- mae_taylor[["gex.rma"]]
-Y2 <- Surv(event=colData(mae_taylor)[["disease_specific_recurrence_status"]], time=colData(mae_taylor)[["days_to_disease_specific_recurrence"]])
-names(Y2) <- colData(mae_taylor)[,"sample_name"]
-X2_samps <- colData(mae_taylor)$sample_name[-which(is.na(Y2))]
-Y2 <- Y2[-which(is.na(Y2))]
-Y2 <- Y2[-which(!X2_samps %in% colnames(mae_taylor[["gex.rma"]]))]
-X2_samps <- X2_samps[-which(!X2_samps %in% colnames(mae_taylor[["gex.rma"]]))]
-X2 <- mae_taylor[["gex.rma"]][,X2_samps]
-# Remove genes with redundant expression, e.g. 0 across all samples
-X2 <- X2[which(apply(X2, MARGIN=1, FUN=function(x) { !all(x==unique(x)[1]) })),]
-
-
-
-benchf <- function(p, kmax, percentage, solver, X = t(X2), Y=Y2, iter = 1){
-	t0 <- Sys.time()
-	if(!missing(p)){
-		fit <- oscar(x=X[,sample(1:ncol(X), p)], y=Y, family="cox", kmax=kmax, in_selection=3, percentage=percentage, solver=solver)
-	}else{
-		fit <- oscar(x=X, y=Y, family="cox", kmax=kmax, in_selection=3, percentage=percentage, solver=solver)
-	}
-	if(missing(p)){
-		p <- ncol(X)
-	}
-	t1 <- Sys.time()
-	dif <- t1 - t0
-	c("Time diff" = as.numeric(t1 - t0), "Time unit" = attr(dif, "units"), "kmax" = kmax, "percentage" = percentage, "solver" = ifelse(solver=="LMBM", 2, 1), "f(kmax)" = fit@fperk[fit@kmax], "p" = p, "cindex" = fit@goodness[fit@kmax], iter = as.numeric(iter))	
-}
-
-set.seed(1)
-benches <- benchf(kmax = 2, percentage = 0.01, solver = "LMBM")
-benches
-
-for(solv in "LMBM"){
-	for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
-		for(k in c(2:5, 7, 10, 20, 30, 50)){
-			bench <- benchf(kmax = k, percentage = perc, solver = solv, iter = 1)
-			benches <- rbind(benches, bench)
-			save.image("benchmarks_type1_mskcc.RData")
-		}
-	}
-}
-
-set.seed(1)
-benches2 <- benchf(kmax = 50, percentage = 0.01, p = 50, solver = "LMBM")
-benches2
-
-for(solv in "LMBM"){
-	for(iteration in 1:50){
-		for(perc in c(0.00001, 0.0001, 0.0002, 0.0005, 0.001, 0.005, 0.01, 0.02)){
-			for(k in c(50)){
-				for(p in c(50, 100, 200, 500, 1000, 2000, 5000, 10000)){
-					set.seed(iteration)
-					bench2 <- benchf(kmax = k, percentage = perc, solver = solv, p = p, iter = iteration)
-					benches2 <- rbind(benches2, bench2)
-					save.image("benchmarks_type2_mskcc.RData")
-				}
-			}
-		}
-	}
-}
+```{r bench_taylor}
 
 ## Plot results from Taylor et al. (MSKCC)
 
@@ -343,16 +427,17 @@ load("benchmarks_type2_mskcc.RData")
 datbench <- deparse_bench(benches)
 datbench2 <- deparse_bench(benches2)
 
-par(mfrow=c(2,2))
+pdf("SupFig_Benchmarks_Taylor.pdf", width=10, height=10)
+par(mfrow=c(2,2), las=1)
 # Upper row
 dattime_a1 <- plot_timeperc(datbench, title="MSKCC full (p=17,410, n=140)")
 dattime_a2 <- plot_fvalperc(datbench, title="MSKCC full (p=17,410, n=140)")
-dattime_a3 <- plot_cindexperc(datbench, title="MSKCC full (p=17,410, n=140)")
 # Lower row
+dattime_a3 <- plot_cindexperc(datbench, title="MSKCC full (p=17,410, n=140)")
 dattime_b2 <- plot_timeiterperc(datbench2, title="MSKCC subsampled p (n=140, kmax=50)")
+dev.off()
 
 ```
-
 
 
 

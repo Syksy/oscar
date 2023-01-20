@@ -254,6 +254,14 @@ oscar.bs <- function(
 		samps <- sample(1:nrow(fit@x), replace=TRUE)
 		xtemp <- fit@x[samps,]
 		ytemp <- fit@y[samps,]
+		# Failsafe to not produce any rendundant columns
+		while(any(apply(xtemp, MARGIN=2, FUN=\(q){ all(q==unique(q)[1]) }))){
+			warning("Boostrapping produces a redundant variable, re-sampling...")
+			# Sampling with replacement from rows
+			samps <- sample(1:nrow(fit@x), replace=TRUE)
+			xtemp <- fit@x[samps,]
+			ytemp <- fit@y[samps,]
+		}
 		# Wrap expression inside try for catching errors
 		try({
 			ftemp <- oscar::oscar(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, kmax = fit@kmax, print = verb, start = fit@start, verb = verb, in_selection=fit@in_selection, percentage = fit@percentage,...)		

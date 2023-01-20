@@ -301,3 +301,9 @@ In addition to target function values, the `oscar` object "tmp.log" includes als
 visu(tmp.log, y=c("goodness","target"),legend="topright")
 ```
 
+# Session info
+
+```{r session}
+sessionInfo()
+```
+

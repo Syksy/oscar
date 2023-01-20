@@ -2,7 +2,7 @@
 source("greedy.R")
 
 # Example code for validating three transcriptomics data across multiple methods
-library(curatedPCaData) # Version 0.9.42
+library(curatedPCaData) # Processing of PCa datasets
 library(survival) # Surv, coxph, etc
 
 ###
@@ -117,7 +117,6 @@ fit_oscar <- oscar(x=X1, y=Y1, family="cox", kmax=50, in_selection=3, percentage
 ## Fit Greedy FS
 set.seed(1)
 fit_greedy <- greedyfw(x = X1, y = Y1, verb = 1, maxk = 50, seed = 1, runCV = FALSE)
-#save.image("validate_workspace_jan13.RData")
 
 set.seed(1)
 ## glmnet (LASSO) fits
@@ -475,3 +474,21 @@ dev.off()
 
 
 	
+## Visualize some of the intersecting genes across methods
+# 3 heatmaps, of each dataset
+# Annotations for recurrence
+
+g <- c("PTER", "GPRC5D", "HSPA1B", "LINC00652", "NADK", "SEC61A2", "TMC6", "LEFTY2", "SLC14A2")
+
+X1_stat <- HeatmapAnnotation("Recurrence" = colData(mae_tcga)[c(rownames(X1), rownames(X4)),"disease_specific_recurrence_status"])
+X2_stat <- HeatmapAnnotation("Recurrence" = colData(mae_taylor)[rownames(X2),"disease_specific_recurrence_status"])
+X3_stat <- HeatmapAnnotation("Recurrence" = colData(mae_sun)[rownames(X3),"disease_specific_recurrence_status"])
+
+library(ComplexHeatmap)
+
+h1 <- ComplexHeatmap::Heatmap(t(rbind(X1[,g], X4[,g])), top_annotation = X1_stat, column_dend_reorder = order(colData(mae_tcga)[c(rownames(X1), rownames(X4)),"disease_specific_recurrence_status"]))
+h2 <- ComplexHeatmap::Heatmap(t(X2[,g]), top_annotation = X2_stat, column_dend_reorder = order(colData(mae_taylor)[rownames(X2),"disease_specific_recurrence_status"]))
+h3 <- ComplexHeatmap::Heatmap(t(X3[,g]), top_annotation = X3_stat, column_dend_reorder = order(colData(mae_sun)[rownames(X3),"disease_specific_recurrence_status"]))
+
+h1 + h2 + h3
+

@@ -104,7 +104,7 @@ plot.smoothing.spline <- function(
   plot(x,y,col=rainbow(length(x)),pch=19,cex=0.2,las=1,ylab=ylab,xlab=xlab)
   axis(side=2,col="red",las=1)
   title(a.title)
-  lines(predict(spline.costCI,seq(100,720,by=10)),lwd=1)
+  lines(predict(spline,seq(100,720,by=10)),lwd=1)
   
   plot(d2.spline$x,d2.spline$y,type='l',lwd=2,xlab=xlab,ylab="D2(spline)",las=1)
   abline(h=0)
