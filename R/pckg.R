@@ -17,5 +17,6 @@
 #' @importFrom methods new show
 #' @importFrom stats sd smooth.spline
 #' @importFrom utils str
+#' @importFrom pROC auc roc
 #' @useDynLib oscar, .registration=TRUE
 NULL
