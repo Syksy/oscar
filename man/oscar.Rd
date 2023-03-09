@@ -16,6 +16,10 @@ oscar(
   print = 3,
   kmax,
   sanitize = TRUE,
+  percentage = 1,
+  in_selection = 1,
+  storeX = TRUE,
+  storeY = TRUE,
   control,
   ...
 )
@@ -42,6 +46,14 @@ oscar(
 \item{kmax}{Maximum k step tested, by default all k are tested from k to maximum dimensionality, Default: ncol(x)}
 
 \item{sanitize}{Whether input column names should be cleaned of potentially problematic symbols, Default: TRUE}
+
+\item{percentage}{Percentage of possible starting points used within range [0,1], Default: 1}
+
+\item{in_selection}{Which starting point selection strategy is used (1, 2 or 3), Default: 1}
+
+\item{storeX}{If data matrix X should be saved in the model object; turning this off might would help with memory, Default: TRUE}
+
+\item{storeY}{If data response Y should be saved in the model object; turning this off might would help with memory, Default: TRUE}
 
 \item{control}{Tuning parameters for the optimizers, see function oscar.control(), Default: see ?oscar.control}
 

@@ -195,7 +195,7 @@ knitr::include_graphics("images/fig7_swiss_cv.png")
 
 # References
 
-1. Halkola AS, Joki K, Mirtti T, Makela MM, Aittokallio T, Laajala, TD. OSCAR: Optimal subset cardinality regression using the L0-pseudonorm. To be submitted.
+1. Halkola AS, Joki K, Mirtti T, Makela MM, Aittokallio T, Laajala, TD. OSCAR: Optimal subset cardinality regression using the L0-pseudonorm with applications to prognostic modelling of prostate cancer. Accepted.
 
 2. Joki K, Bagirov AM, Karmitsa N, Makela MM, Taheri S. Double Bundle Method for finding Clarke Stationary Points in Nonsmooth DC Programming. SIAM Journal on Optimization. 2018;28(2):1892-1919. \doi{10.1137/16M1115733}
 

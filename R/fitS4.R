@@ -89,6 +89,8 @@ setClass("oscar", # abbreviation
 #' @param print Level of verbosity in Fortran (may not be visible on all terminals); should be an integer between {range, range}, Default: 3
 #' @param kmax Maximum k step tested, by default all k are tested from k to maximum dimensionality, Default: ncol(x)
 #' @param sanitize Whether input column names should be cleaned of potentially problematic symbols, Default: TRUE
+#' @param percentage Percentage of possible starting points used within range [0,1], Default: 1
+#' @param in_selection Which starting point selection strategy is used (1, 2 or 3), Default: 1
 #' @param storeX If data matrix X should be saved in the model object; turning this off might would help with memory, Default: TRUE 
 #' @param storeY If data response Y should be saved in the model object; turning this off might would help with memory, Default: TRUE 
 #' @param control Tuning parameters for the optimizers, see function oscar.control(), Default: see ?oscar.control

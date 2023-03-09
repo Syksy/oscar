@@ -15143,11 +15143,11 @@ END MODULE lmbm_mod
                x_ed = 0.0_c_double    ! We initialize the previous solution, since we do not have a value for it 
                
                            
-               IF (iprint==1) THEN
-                 WRITE(*,*) '------------------------------------------------------------------------------------------'
-                 WRITE(*,*)  '  f  ', '  zero_elements  ', '  nonzero_elements  ', '  cost  ', '  num_kits  ', 'kits'   ! Prints the solution to the file 'ratkaisu.txt'
-                 WRITE(*,*) '------------------------------------------------------------------------------------------'
-               END IF              
+!               IF (iprint==1) THEN
+!                 WRITE(*,*) '------------------------------------------------------------------------------------------'
+!                 WRITE(*,*)  '  f  ', '  zero_elements  ', '  nonzero_elements  ', '  cost  ', '  num_kits  ', 'kits'   ! Prints the solution to the file 'ratkaisu.txt'
+!                 WRITE(*,*) '------------------------------------------------------------------------------------------'
+!               END IF              
               !--------------------------------------------------------------------------
               !                 POPULATING AND STORING OF DATA COMPLETED 
               !---------------------------------------------------------------------------           
@@ -15278,27 +15278,27 @@ END MODULE lmbm_mod
                    END DO
 
  
-                   IF ((iprint>=2) .OR. (iprint == -1)) THEN 
-                    WRITE(*,*)
-                    WRITE(*,*) '-**--**--**--**--**--**--**--**--**--**--**--**-'
-                    WRITE(*,*) 'Information about the best solution:'
-                    WRITE(*,*)                  
-                    WRITE(*,*)  '  f=',small 
-                    WRITE(*,*)  '  number of zero elements=',help_counter
-                    WRITE(*,*)  '  number of nonzero elements=',nft-help_counter 
-                    WRITE(*,*)  '  cost=',cost
-                    WRITE(*,*)  '  number of kits=',kit_num_ed 
-                    WRITE(*,*)  '  kits=',kits_beta_ed(1:kit_num_ed)    
-                    WRITE(*,*)                  
-                    WRITE(*,*) '-**--**--**--**--**--**--**--**--**--**--**--**-'
-                    WRITE(*,*)
-                    
-                  END IF
+!                   IF ((iprint>=2) .OR. (iprint == -1)) THEN 
+!                    WRITE(*,*)
+!                    WRITE(*,*) '-**--**--**--**--**--**--**--**--**--**--**--**-'
+!                    WRITE(*,*) 'Information about the best solution:'
+!                    WRITE(*,*)                  
+!                    WRITE(*,*)  '  f=',small 
+!                    WRITE(*,*)  '  number of zero elements=',help_counter
+!                    WRITE(*,*)  '  number of nonzero elements=',nft-help_counter 
+!                    WRITE(*,*)  '  cost=',cost
+!                    WRITE(*,*)  '  number of kits=',kit_num_ed 
+!                    WRITE(*,*)  '  kits=',kits_beta_ed(1:kit_num_ed)    
+!                    WRITE(*,*)                  
+!                    WRITE(*,*) '-**--**--**--**--**--**--**--**--**--**--**--**-'
+!                    WRITE(*,*)
+!                    
+!                  END IF
  
-                  IF (iprint==1) THEN
-                    WRITE(*,*) small, help_counter, nft-help_counter, &
-                    & cost, kit_num_ed, kits_beta_ed(1:kit_num_ed)                
-                  END IF
+!                  IF (iprint==1) THEN
+!                    WRITE(*,*) small, help_counter, nft-help_counter, &
+!                    & cost, kit_num_ed, kits_beta_ed(1:kit_num_ed)                
+!                  END IF
                    
                   CALL cpu_time(m_f_time)   ! Finish CPU timing    
                   m_cpu = m_f_time-m_s_time ! Used CPU
@@ -15337,7 +15337,7 @@ END MODULE lmbm_mod
                    f1_current = f1(info, beta_solution,problem1,user_n) ! The f_1 value without rescaling
                    f2_current = f2(info, beta_solution,problem1,user_n) ! The f_2 value without rescaling
                    fperk(k) = f1_current-f2_current                    ! The objective function value for problem 3 with k nonzero kits 				   
-                   WRITE(*,*)	"kits", k , "f=", fperk(k)
+!                   WRITE(*,*)	"kits", k , "f=", fperk(k)
                                     
                  END DO                  
                  
@@ -15404,9 +15404,9 @@ END MODULE lmbm_mod
              elapsed_time=(1.0_c_double*clock_end-clock_start)/clock_rate                
              
              
-            IF ((iprint >= 1) .OR. (iprint == -1)) THEN               
-                WRITE(*,*) 'Used CPU:', cpu   , 'Elapsed time:', elapsed_time             
-            END IF
+!            IF ((iprint >= 1) .OR. (iprint == -1)) THEN               
+!                WRITE(*,*) 'Used CPU:', cpu   , 'Elapsed time:', elapsed_time             
+!            END IF
        
              CALL deallocate_data_cox(info) 
              DEALLOCATE(mXt,mYt,mK,in_mC)
@@ -18135,10 +18135,10 @@ END MODULE lmbm_mod
                         run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
                         num_rho = 0                 ! The selection of the first value of penalization parameter rho
                                             
-                        IF (iprint >= 2) THEN
+!                        IF (iprint >= 2) THEN
 !                           WRITE(*,*) '-------------------------------------' 
 !                           WRITE(*,*) 'New start point used.' 
-                        END IF
+!                        END IF
                       
                         DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
                       
@@ -18279,20 +18279,20 @@ END MODULE lmbm_mod
                           f1_current = f1(info,beta_solution,problem1,user_n) 
                           f2_current = f2(info,beta_solution,problem2,user_n)
         
-                          IF (iprint > 2) THEN
-                             WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-                          END IF
+!                          IF (iprint > 2) THEN
+!                             WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+!                          END IF
                         
-                          IF (run_stop) THEN
-                            IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
-                              WRITE(*,*)
-                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                            END IF  
-                            IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
-                              WRITE(*,*)
-                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-                            END IF
-                          END IF
+!                          IF (run_stop) THEN
+!                            IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
+!                              WRITE(*,*)
+!                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
+!                            END IF  
+!                            IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
+!                              WRITE(*,*)
+!                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
+!                            END IF
+!                          END IF
                         
                         END DO
                            
@@ -18869,10 +18869,10 @@ END MODULE lmbm_mod
                         run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
                         num_rho = 0                 ! The selection of the first value of penalization parameter rho
                                             
-                        IF (iprint >= 2) THEN
+!                        IF (iprint >= 2) THEN
 !                           WRITE(*,*) '-------------------------------------' 
 !                           WRITE(*,*) 'New start point used.' 
-                        END IF
+!                        END IF
                       
                         DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
                       
@@ -19013,20 +19013,20 @@ END MODULE lmbm_mod
                           f1_current = f1(info,beta_solution,problem1,user_n) 
                           f2_current = f2(info,beta_solution,problem2,user_n)
         
-                          IF (iprint > 2) THEN
-                             WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-                          END IF
+!                          IF (iprint > 2) THEN
+!                             WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+!                          END IF
                         
-                          IF (run_stop) THEN
-                            IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
-                              WRITE(*,*)
-                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                            END IF  
-                            IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
-                              WRITE(*,*)
-                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-                            END IF
-                          END IF
+!                          IF (run_stop) THEN
+!                            IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
+!                              WRITE(*,*)
+!                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
+!                            END IF  
+!                            IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
+!                              WRITE(*,*)
+!                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
+!                            END IF
+!                          END IF
                         
                         END DO                          
                    
@@ -19602,10 +19602,10 @@ END MODULE lmbm_mod
                         run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
                         num_rho = 0                 ! The selection of the first value of penalization parameter rho
                                             
-                        IF (iprint >= 2) THEN
+!                        IF (iprint >= 2) THEN
 !                           WRITE(*,*) '-------------------------------------' 
 !                           WRITE(*,*) 'New start point used.' 
-                        END IF
+!                        END IF
                       
                         DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
                       
@@ -19746,20 +19746,20 @@ END MODULE lmbm_mod
                           f1_current = f1(info,beta_solution,problem1,user_n) 
                           f2_current = f2(info,beta_solution,problem2,user_n)
         
-                          IF (iprint > 2) THEN
-                             WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-                          END IF
+!                          IF (iprint > 2) THEN
+!                             WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
+!                          END IF
                         
-                          IF (run_stop) THEN
-                            IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
-                              WRITE(*,*)
-                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-                            END IF  
-                            IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
-                              WRITE(*,*)
-                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-                            END IF
-                          END IF
+!                          IF (run_stop) THEN
+!                            IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
+!                              WRITE(*,*)
+!                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
+!                            END IF  
+!                            IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
+!                              WRITE(*,*)
+!                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
+!                            END IF
+!                          END IF
                         
                         END DO
                            
