@@ -1,2 +1,5 @@
 ^data-raw$
 ^oscar.tws$
+^README\.Rmd$
+^README\.md$
+^README\.html$
