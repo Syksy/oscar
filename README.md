@@ -7,9 +7,9 @@ The R extension package `oscar` offers L0-pseudonorm based cardinality constrain
 
 # Citation
 
-Anni S. Halkola, Kaisa Joki, Tuomas Mirtti, Marko M. Mäkelä, Tero Aittokallio, Teemu D. Laajala. OSCAR: Optimal subset cardinality regression using the L0-pseudonorm with applications to prognostic modelling of prostate cancer. bioRxiv 2022.06.29.498064; doi: https://doi.org/10.1101/2022.06.29.498064
+If you use the `oscar` methodology/package, please use the following citation:
 
-<a href="https://www.biorxiv.org/content/10.1101/2022.06.29.498064v1" class="uri">Direct bioarXiv link to the preprint</a>
+Halkola AS, Joki K, Mirtti T, Mäkelä MM, Aittokallio T, Laajala TD (2023). OSCAR: Optimal subset cardinality regression using the L0-pseudonorm with applications to prognostic modelling of prostate cancer. PLoS Comput Biol 19(3): e1010333. <a href="https://doi.org/10.1371/journal.pcbi.1010333" class="uri">https://doi.org/10.1371/journal.pcbi.1010333</a>
 
 # CRAN
 
