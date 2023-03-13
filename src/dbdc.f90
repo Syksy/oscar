@@ -1996,8 +1996,8 @@
                !**************************** NEEDED FROM USER *************************************
                TYPE(set_info), INTENT(INOUT) :: set                       ! The set of information 
                
-               INTEGER(KIND=c_int), DIMENSION(2,nrecord) :: in_mY         ! observed times and labels matrix (column is an observation)  
                INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
+               INTEGER(KIND=c_int), DIMENSION(2,nrecord) :: in_mY         ! observed times and labels matrix (column is an observation)  
                !**************************** OTHER VARIABLES **************************************
                INTEGER :: i, j               
                
@@ -2067,8 +2067,8 @@
                !**************************** NEEDED FROM USER *************************************
                TYPE(set_info), INTENT(INOUT) :: set                       ! The set of information 
                
-               REAL(KIND=c_double), DIMENSION(nrecord) :: in_mY           ! vector of outputs in the mean square error model   
                INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
+               REAL(KIND=c_double), DIMENSION(nrecord) :: in_mY           ! vector of outputs in the mean square error model   
                !**************************** OTHER VARIABLES **************************************
                INTEGER :: j               
                
@@ -2131,8 +2131,8 @@
                !**************************** NEEDED FROM USER *************************************
                TYPE(set_info), INTENT(INOUT) :: set                       ! The set of information 
                
-               INTEGER(KIND=c_int), DIMENSION(nrecord) :: in_mY           ! vector of outputs in the mean square error model   
                INTEGER(KIND=c_int), INTENT(IN) :: nrecord                 ! the number of records (data points)
+               INTEGER(KIND=c_int), DIMENSION(nrecord) :: in_mY           ! vector of outputs in the mean square error model   
                !**************************** OTHER VARIABLES **************************************
                INTEGER :: j               
                
@@ -17684,6 +17684,10 @@ END MODULE lmbm_mod
 
                TYPE(set_info),INTENT(INOUT) :: info                              ! The set of information           
             
+               INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (also the dimension of the problem)
+               INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
+
              ! **--** REAL tables **--** 
                REAL(KIND=c_double), DIMENSION(nft,nrecord), INTENT(IN) :: in_mX  ! predictor matrix (column is an observation)
             
@@ -17705,9 +17709,6 @@ END MODULE lmbm_mod
              
              
              ! **--** INTEGERs **--**
-               INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (also the dimension of the problem)
-               INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
-               INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
                               
                INTEGER(KIND=c_int), INTENT(IN) :: kit_num_ed              ! The number of kits in the previous solution
                
@@ -18417,6 +18418,10 @@ END MODULE lmbm_mod
 
                TYPE(set_info),INTENT(INOUT) :: info                              ! The set of information           
             
+               INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (the dimension of the problem is nft+1)
+               INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
+
              ! **--** REAL tables **--** 
                REAL(KIND=c_double), DIMENSION(nft,nrecord), INTENT(IN) :: in_mX  ! predictor matrix (column is an observation)
             
@@ -18438,9 +18443,6 @@ END MODULE lmbm_mod
              
              
              ! **--** INTEGERs **--**
-               INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (the dimension of the problem is nft+1)
-               INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
-               INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
                               
                INTEGER(KIND=c_int), INTENT(IN) :: kit_num_ed              ! The number of kits in the previous solution
                
@@ -19151,6 +19153,10 @@ END MODULE lmbm_mod
 
                TYPE(set_info),INTENT(INOUT) :: info                              ! The set of information           
             
+               INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (the dimension of the problem is nft+1)
+               INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
+               INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
+
              ! **--** REAL tables **--** 
                REAL(KIND=c_double), DIMENSION(nft,nrecord), INTENT(IN) :: in_mX  ! predictor matrix (column is an observation)
             
@@ -19172,9 +19178,6 @@ END MODULE lmbm_mod
              
              
              ! **--** INTEGERs **--**
-               INTEGER(KIND = c_int), INTENT(IN) :: nft                   ! Number of features in x (the dimension of the problem is nft+1)
-               INTEGER(KIND = c_int), INTENT(IN) :: nk                    ! Number of kits for features
-               INTEGER(KIND = c_int), INTENT(IN) :: nrecord               ! Number of observations in data 
                               
                INTEGER(KIND=c_int), INTENT(IN) :: kit_num_ed              ! The number of kits in the previous solution
                
