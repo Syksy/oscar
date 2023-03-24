@@ -560,7 +560,7 @@ oscar <- function(
 			if(base::tolower(metric) %in% c("roc", "roc-auc", "auc")){
 				obj@goodness <- unlist(lapply(1:kmax, FUN=function(z){
 					pred <- cbind(1, x) %*% t(bperk[z,,drop=FALSE])
-					pROC::auc(pROC::roc(response = y, predictor = pred))
+					pROC::auc(pROC::roc(response = y, predictor = as.vector(pred), quiet = TRUE))
 				}))
 			# Accuracy
 			}else if(base::tolower(metric) == "accuracy"){
