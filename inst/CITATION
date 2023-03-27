@@ -8,7 +8,7 @@ bibentry(
    person(given = "Tero", family = "Aittokallio"),
    person(given = "Teemu D.", family = "Laajala")
   ),
-  title = "OSCAR: Optimal Subset Cardinality Regression (OSCAR) Models Using the L0-Pseudonorm",
+  title = "OSCAR: Optimal subset cardinality regression using the L0-pseudonorm with applications to prognostic modelling of prostate cancer",
   year = "2023",
   doi = "10.1371/journal.pcbi.1010333",
   journal = "PLOS Computational Biology",
@@ -20,3 +20,4 @@ bibentry(
     "https://doi.org/10.1371/journal.pcbi.1010333"
   )
 )
+
