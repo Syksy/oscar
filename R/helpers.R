@@ -264,7 +264,22 @@ oscar.bs <- function(
 		}
 		# Wrap expression inside try for catching errors
 		try({
-			ftemp <- oscar::oscar(x = xtemp, y = ytemp, k = fit@k, w = fit@w, family = fit@family, kmax = fit@kmax, print = verb, start = fit@start, verb = verb, in_selection=fit@in_selection, percentage = fit@percentage,...)		
+			# Exhaustively use same set of fitting parameters in CV fits as in original fit
+			ftemp <- oscar::oscar(
+				x = xtemp, 
+				y = ytemp, 
+				family = fit@family, 
+				k = fit@k, 
+				w = fit@w, 
+				kmax = fit@kmax,
+				verb = verb, 
+				start = fit@start, 
+				#rho = fit@rho,
+				solver = fit@solver,
+				in_selection = fit@in_selection, 
+				percentage = fit@percentage, 
+				...
+			)
 		})
 		# Return successfully fitted model
 		if(!inherits(ftemp,"try-error")){
@@ -374,7 +389,6 @@ oscar.sparsify <- function(
 	# Extract pairwise indices for non-zero elements
 	nonzeroes <- which(!bkorder==0, arr.ind=TRUE)
 	
-
 	smat <- Matrix::sparseMatrix(
 		i = nonzeroes[,1], # row indices of non-zero elements
 		j = nonzeroes[,2], # col indices of non-zero elements
