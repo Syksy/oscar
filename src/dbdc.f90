@@ -8598,6 +8598,8 @@ MODULE param  ! Parameters
 
 ! Intrinsic Functions
   INTRINSIC TINY,HUGE
+	
+  REAL(KIND = 4) :: a_huge, a_tiny ! single precision
 
 ! Parameters
   INTEGER(KIND=c_int), PARAMETER, PUBLIC :: maxeps = 20_c_int, maxnrs = 2000_c_int
@@ -8605,8 +8607,8 @@ MODULE param  ! Parameters
        zero    = 0.0_c_double,    & ! 
        half    = 0.5_c_double,    & ! 
        one     = 1.0_c_double,    & ! 
-       large   = 3.40282347*10.**38,  & !
-       small   = 1.17549435*10.**(-38)     ! 
+       large   = HUGE(a_huge), & ! Updated to use intrinsic function HUGE instead of fixed values
+       small   = TINY(a_tiny) ! Updated to use intrinsic function TINY instead of fixed values
 
 END MODULE param
 
