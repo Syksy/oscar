@@ -110,7 +110,7 @@ Fit model object can be inspected based on visual diagnostics such as cross-vali
 
 ```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="5-fold cross-validation for optimally generalizable cardinality 'k'"}
 # Perform 5-fold cross-validation to find out optimal k
-cv <- oscar.cv(fit, fold=5, seed=123, solver=2)
+cv <- oscar.cv(fit, fold=5, seed=123)
 # Visualize model generalization performance as a function of k
 oscar.cv.visu(cv)
 ```
@@ -125,7 +125,7 @@ Further, there is some uncertainty as to what order the coefficients should be n
 
 ```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="Selected variables over a set of bootstrap runs"}
 # Bootstrap original data 20 times (sampling with replacement and refitting)
-bs <- oscar.bs(fit, bootstrap=20, seed=234, solver=2)
+bs <- oscar.bs(fit, bootstrap=20, seed=234)
 # Visualize bootstrapped models
 oscar.bs.plot(fit=fit, bs=bs, nbins=20)
 ```
@@ -183,7 +183,7 @@ knitr::include_graphics("images/fig6_swiss_bs.png")
 
 ```{r eval=FALSE, dpi=150, fig.width=7, fig.height=7, out.width="100%", fig.cap="10-fold cross-validation for optimally generalizable cardinality 'k'"}
 # Perform 5-fold cross-validation to find out optimal k
-cv_swiss <- oscar.cv(fit_swiss, fold=10, seed=2, solver=2)
+cv_swiss <- oscar.cv(fit_swiss, fold=10, seed=2)
 # Visualize model generalization performance as a function of k
 oscar.cv.visu(cv_swiss)
 ```
@@ -201,7 +201,7 @@ knitr::include_graphics("images/fig7_swiss_cv.png")
 
 3. Haarala M, Miettinen K, Makela MM. New limited memory bundle method for large-scale nonsmooth optimization. Optimization Methods and Software. 2004;19(6):673-692. \doi{10.1080/10556780410001689225}
 
-4. Laajala TD, Murtojarvi M, Virkki A, Aittokallio T. ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to real-world patient cohorts. Bioinformatics. 2018;34(22):3957-3959. \doi{10.1093/bioinformatics/bty477}
+4. Laajala TD, Murtoj{\\\"a}rvi M, Virkki A, Aittokallio T. ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to real-world patient cohorts. Bioinformatics. 2018;34(22):3957-3959. \doi{10.1093/bioinformatics/bty477}
 
 # Session info
 ```{r sesinfo}
