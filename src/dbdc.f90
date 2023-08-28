@@ -17810,7 +17810,7 @@ END MODULE lmbm_mod
                
                REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
  
-               REAL(KIND=c_double) :: random_num      ! Random number  
+             !  REAL(KIND=c_double) :: random_num      ! Random number  
 
                INTEGER(KIND=c_int) :: n_starts        ! the number of generated starting points
           
@@ -18551,7 +18551,7 @@ END MODULE lmbm_mod
                
                REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
  
-               REAL(KIND=c_double) :: random_num      ! Random number  
+             !  REAL(KIND=c_double) :: random_num      ! Random number  
 
                INTEGER(KIND=c_int) :: n_starts        ! the number of generated starting points
           
@@ -19294,7 +19294,7 @@ END MODULE lmbm_mod
                
                REAL(KIND=c_double) :: tol_zero        ! The tolerance for value zero (i.e. if value is smaller than 'tol_zero' -> it is set to be zero
  
-               REAL(KIND=c_double) :: random_num      ! Random number  
+             !  REAL(KIND=c_double) :: random_num      ! Random number  
 
                INTEGER(KIND=c_int) :: n_starts        ! the number of generated starting points
           
