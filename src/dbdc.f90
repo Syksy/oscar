@@ -11,7 +11,7 @@
         !| |                       2) Mean square error model                                 | |
         !| |                       3) Logistic regression model                               | |
         !| |                                                                                  | |
-        !| |                       by Kaisa Joki (last modified  December  2022)              | |
+        !| |                       by Kaisa Joki, modified by Teemu Daniel Laajala            | |
         !| |                                                                                  | |
         !| |      Features :                                                                  | |
         !| |                                                                                  | |
@@ -17852,7 +17852,7 @@ END MODULE lmbm_mod
                
                INTEGER(KIND=c_int) :: nft_subp                      ! The number of features in SUBPROBLEM/ALTERED PROBLEM
 
-               INTEGER(KIND=c_int)  :: nkits_subp                   ! The indices of features in SUBPROBLEM/ALTERED PROBLEM 
+               INTEGER(KIND=c_int) :: nkits_subp                   ! The indices of features in SUBPROBLEM/ALTERED PROBLEM 
                
                LOGICAL :: kit_in_use            ! If .TRUE. kit is used in the solution
                LOGICAL :: run_stop              ! If .TRUE. run of this subroutine is stopped for selected k
@@ -17893,7 +17893,11 @@ END MODULE lmbm_mod
                                                  !                    accuracy.
                                                  !              -5  - Invalid input parameters.
                                                  !              -6  - Unspecified error.
-                                                 
+	
+		    ! RNG generation via C wrappers
+		    external getRNGseed, putRNGseed
+		    double precision unif1
+		    external unif1
  !** 
                     !--------------------------------------------        
                     !                INITIALIZATION
@@ -18002,8 +18006,11 @@ END MODULE lmbm_mod
                              IF (start == 4) THEN ! A random starting point is generated
                                x_0 = 0.01_c_double
                                DO ii = 1, nk
-                                 CALL RANDOM_NUMBER(random_num)
-                                 mRand(ii) = random_num
+                                 ! CALL RANDOM_NUMBER(random_num)
+                                 CALL getrngseed()                                 
+                                 ! mRand(ii) = random_num
+                                 mRand(ii) = unif1()
+                                 CALL putrngseed()
                                  mRandInd(ii) = ii
                                END DO 
                                CALL heapsort_ind(mRand,mRandInd)                    
@@ -18627,6 +18634,11 @@ END MODULE lmbm_mod
                                                  !                    accuracy.
                                                  !              -5  - Invalid input parameters.
                                                  !              -6  - Unspecified error.
+
+		    ! RNG generation via C wrappers
+		    external getRNGseed, putRNGseed
+		    double precision unif1
+		    external unif1
                                                  
  !** 
                     !--------------------------------------------        
@@ -18736,8 +18748,11 @@ END MODULE lmbm_mod
                              IF (start == 4) THEN ! A random starting point is generated
                                x_0 = 0.01_c_double
                                DO ii = 1, nk
-                                 CALL RANDOM_NUMBER(random_num)
-                                 mRand(ii) = random_num
+                                 ! CALL RANDOM_NUMBER(random_num)
+                                 CALL getrngseed()
+                                 ! mRand(ii) = random_num
+                                 mRand(ii) = unif1()
+                                 CALL putrngseed()
                                  mRandInd(ii) = ii
                                END DO 
                                CALL heapsort_ind(mRand,mRandInd)                    
@@ -19362,6 +19377,10 @@ END MODULE lmbm_mod
                                                  !                    accuracy.
                                                  !              -5  - Invalid input parameters.
                                                  !              -6  - Unspecified error.
+		    ! RNG generation via C wrappers
+		    external getrngseed, putrngseed
+		    double precision unif1
+		    external unif1
                                                  
  !** 
                     !--------------------------------------------        
@@ -19471,8 +19490,11 @@ END MODULE lmbm_mod
                              IF (start == 4) THEN ! A random starting point is generated
                                x_0 = 0.01_c_double
                                DO ii = 1, nk
-                                 CALL RANDOM_NUMBER(random_num)
-                                 mRand(ii) = random_num
+                                 ! CALL RANDOM_NUMBER(random_num)
+                                 CALL getrngseed()
+                                 ! mRand(ii) = random_num
+                                 mRand(ii) = unif1() 
+                                 CALL putrngseed()
                                  mRandInd(ii) = ii
                                END DO 
                                CALL heapsort_ind(mRand,mRandInd)                    
