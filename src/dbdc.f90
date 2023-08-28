@@ -17894,16 +17894,20 @@ END MODULE lmbm_mod
                                                  !              -5  - Invalid input parameters.
                                                  !              -6  - Unspecified error.
 	
-		    ! RNG generation via C wrappers
-		    external getrngseed, putrngseed
-		    double precision unif1
-		    external unif1
+                    ! RNG generation via C wrappers
+                    external getrngseed, putrngseed
+                    double precision unif1
+                    external unif1
  !** 
                     !--------------------------------------------        
                     !                INITIALIZATION
                     !--------------------------------------------
                     
                     ! **** GENERAL PARAMETERS FOR THE SUBROUTINE **** 
+
+                    IF (iprint <= 0) THEN
+                    	! iprint = 0
+                    END IF
                     
                     user_n = nft              ! The dimension of the original problem
                     iprint_DBDC = 0_c_int     ! The print is supressed 
@@ -18635,10 +18639,10 @@ END MODULE lmbm_mod
                                                  !              -5  - Invalid input parameters.
                                                  !              -6  - Unspecified error.
 
-		    ! RNG generation via C wrappers
-		    external getrngseed, putrngseed
-		    double precision unif1
-		    external unif1
+                    ! RNG generation via C wrappers
+                    external getrngseed, putrngseed
+                    double precision unif1
+                    external unif1
                                                  
  !** 
                     !--------------------------------------------        
@@ -18646,6 +18650,10 @@ END MODULE lmbm_mod
                     !--------------------------------------------
                     
                     ! **** GENERAL PARAMETERS FOR THE SUBROUTINE **** 
+
+                    IF (iprint <= 0) THEN
+                    	! iprint = 0
+                    END IF
                     
                     user_n = nft+1              ! The dimension of the original MSE problem
                     iprint_DBDC = 0_c_int       ! The print is supressed 
@@ -19377,10 +19385,10 @@ END MODULE lmbm_mod
                                                  !                    accuracy.
                                                  !              -5  - Invalid input parameters.
                                                  !              -6  - Unspecified error.
-		    ! RNG generation via C wrappers
-		    external getrngseed, putrngseed
-		    double precision unif1
-		    external unif1
+                    ! RNG generation via C wrappers
+                    external getrngseed, putrngseed
+                    double precision unif1
+                    external unif1
                                                  
  !** 
                     !--------------------------------------------        
@@ -19388,6 +19396,10 @@ END MODULE lmbm_mod
                     !--------------------------------------------
                     
                     ! **** GENERAL PARAMETERS FOR THE SUBROUTINE **** 
+                    
+                    IF (iprint <= 0) THEN
+                    	! iprint = 0
+                    END IF
                     
                     user_n = nft+1              ! The dimension of the original MSE problem
                     iprint_DBDC = 0_c_int       ! The print is supressed 
@@ -19629,11 +19641,6 @@ END MODULE lmbm_mod
                         run_stop = .FALSE.          ! Initialization of 'run_stop' to .FALSE. since we cannot stop
                         num_rho = 0                 ! The selection of the first value of penalization parameter rho
                                             
-!                        IF (iprint >= 2) THEN
-!                           WRITE(*,*) '-------------------------------------' 
-!                           WRITE(*,*) 'New start point used.' 
-!                        END IF
-                      
                         DO WHILE(.NOT. run_stop)    ! The optimization begins for the selected starting point      
                       
                           IF (k > 1) THEN  ! Procedure with more than one kit (i.e. k>1)
@@ -19773,23 +19780,7 @@ END MODULE lmbm_mod
                           f1_current = f1(info,beta_solution,problem1,user_n) 
                           f2_current = f2(info,beta_solution,problem2,user_n)
         
-!                          IF (iprint > 2) THEN
-!                             WRITE(*,*) 'rho', rho, 'f',f1_current-f2_current, 'kits', kit_num   
-!                          END IF
-                        
-!                          IF (run_stop) THEN
-!                            IF ((iprint >= 2) .AND. (kit_num <= k)) THEN   
-!                              WRITE(*,*)
-!                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num
-!                            END IF  
-!                            IF ((iprint >=2) .AND. (kit_num > k)) THEN                                      
-!                              WRITE(*,*)
-!                              WRITE(*,*) 'f=',f1_current-f2_current, 'and kits', kit_num, 'should be equal to', k 
-!                            END IF
-!                          END IF
-                        
                         END DO
-                           
                    
                    END DO
   
