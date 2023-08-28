@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <Rmath.h>
 #include <R_ext/Rdynload.h>
+#include <R_ext/RS.h>
+#include <R_ext/Random.h>
 
 // family Cox
 void F77_NAME(oscar_cox_f)(double *x, double *y, int *kits, double *cvec, int nrow, int ncol, int nkits, double *beta, double *fperk, int print, int start, int kmax,
@@ -22,6 +24,17 @@ void F77_NAME(oscar_logistic_f)(double *x, int *y, int *kits, double *cvec, int 
 							double inrdec, double inrinc, double ineps1, double ineps, double incrittol, int nKitOnes, int *betakits,
 							int solver_id, int in_na, int in_mcu, int in_mcinit, double in_tolf, double in_tolf2, double in_tolg, double in_tolg2, double in_eta, double in_epsL,
 			  				double in_percentage, int in_s_selection);
+
+// RNG generation passed from R to Fortran
+void F77_SUB(getRNGseed)(void) {
+	GetRNGstate();
+}
+void F77_SUB(putRNGseed)(void) {
+	PutRNGstate();
+}
+double F77_SUB(unif1)(void) {
+	return(unif_rand());
+}
 
 // Define the C wrapper function for Cox regression
 extern SEXP c_oscar_cox_f(SEXP x, SEXP y, SEXP kits, SEXP cvec, SEXP nrow, SEXP ncol, SEXP nkits, SEXP print, SEXP start, SEXP kmax,
