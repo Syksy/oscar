@@ -17895,7 +17895,7 @@ END MODULE lmbm_mod
                                                  !              -6  - Unspecified error.
 	
 		    ! RNG generation via C wrappers
-		    external getRNGseed, putRNGseed
+		    external getrngseed, putrngseed
 		    double precision unif1
 		    external unif1
  !** 
@@ -18636,7 +18636,7 @@ END MODULE lmbm_mod
                                                  !              -6  - Unspecified error.
 
 		    ! RNG generation via C wrappers
-		    external getRNGseed, putRNGseed
+		    external getrngseed, putrngseed
 		    double precision unif1
 		    external unif1
                                                  

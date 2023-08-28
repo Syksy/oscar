@@ -26,10 +26,10 @@ void F77_NAME(oscar_logistic_f)(double *x, int *y, int *kits, double *cvec, int 
 			  				double in_percentage, int in_s_selection);
 
 // RNG generation passed from R to Fortran
-void F77_SUB(getRNGseed)(void) {
+void F77_SUB(getrngseed)(void) {
 	GetRNGstate();
 }
-void F77_SUB(putRNGseed)(void) {
+void F77_SUB(putrngseed)(void) {
 	PutRNGstate();
 }
 double F77_SUB(unif1)(void) {
