@@ -8599,7 +8599,7 @@ MODULE param  ! Parameters
 ! Intrinsic Functions
   INTRINSIC TINY,HUGE
 	
-  REAL(KIND = 4) :: a_huge, a_tiny ! single precision
+  REAL(KIND = c_double) :: a_huge, a_tiny ! single precision
 
 ! Parameters
   INTEGER(KIND=c_int), PARAMETER, PUBLIC :: maxeps = 20_c_int, maxnrs = 2000_c_int
